@@ -1,7 +1,6 @@
 <template>
     <div>
-        Register
-Sig
+Welcome to workspace
     </div>
 </template>
 

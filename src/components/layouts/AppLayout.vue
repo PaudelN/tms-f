@@ -1,27 +1,27 @@
 <script setup lang="ts">
   import ModeToggle from "@/components/common/ModeToggle.vue";
-import UserProfileMenu from "@/components/common/UserProfileMenu.vue";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+  import UserProfileMenu from "@/components/common/UserProfileMenu.vue";
+  import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+  import { Button } from "@/components/ui/button";
+  import { Input } from "@/components/ui/input";
   // import { ClipboardIcon } from "@heroicons/vue/16/solid";
   import {
-  Bars3Icon,
-  BellIcon,
-  // ClockIcon,
-  // DocumentTextIcon,
-  MagnifyingGlassIcon,
-} from "@heroicons/vue/24/outline";
-import { Icon } from "@iconify/vue";
-import { computed, ref } from "vue";
-import { useRoute } from "vue-router";
+    Bars3Icon,
+    BellIcon,
+    // ClockIcon,
+    // DocumentTextIcon,
+    MagnifyingGlassIcon,
+  } from "@heroicons/vue/24/outline";
+  import { Icon } from "@iconify/vue";
+  import { computed, ref } from "vue";
+  import { useRoute } from "vue-router";
 
   const route = useRoute();
   const sidebarOpen = ref(false);
   const sidebarCollapsed = ref(false);
 
   const navigation = [
-    { name: "Dashboard", icon: "lucide:layout-dashboard", href: "/" },
+    { name: "Dashboard", icon: "lucide:layout-dashboard", href: "/dashboard" },
     { name: "Work Space", icon: "lucide:gallery-vertical", href: "/workspace" },
     { name: "Project", icon: "lucide:folder-tree", href: "/projects" },
     { name: "Board", icon: "lucide:columns-3", href: "/pipeline" },
@@ -41,15 +41,6 @@ import { useRoute } from "vue-router";
     return current ? current.name : "Dashboard";
   });
 
-  const profileOpen = ref(false);
-
-  const toggleProfile = () => {
-    profileOpen.value = !profileOpen.value;
-  };
-
-  const closeProfile = () => {
-    profileOpen.value = false;
-  };
 
   const isActive = (href: string) => route.path === href;
 
@@ -74,7 +65,7 @@ import { useRoute } from "vue-router";
       >
         <div class="flex items-center gap-3">
           <div
-            class="flex items-center justify-center w-9 h-9 rounded-md bg-gradient-to-br from-primary to-primary/80 shadow-md"
+            class="flex items-center justify-center w-9 h-9 rounded-md bg-linear-to-br from-primary to-primary/80 shadow-md"
           >
             <span class="text-foreground font-bold text-lg tracking-tight"
               >T</span
@@ -84,7 +75,7 @@ import { useRoute } from "vue-router";
             <span
               class="text-base font-semibold tracking-tight leading-none text-foreground"
             >
-              TaskFlow
+              Taskification
             </span>
             <span
               class="text-[10px] font-medium text-muted-foreground tracking-wider uppercase mt-0.5"
@@ -126,11 +117,10 @@ import { useRoute } from "vue-router";
       </nav>
 
       <!-- User Profile Section -->
-<div
-  ref="menuRef"
-  class="absolute bottom-0 left-0 right-0 border-t border-border/60 bg-card/70 backdrop-blur"
->
-
+      <div
+        ref="menuRef"
+        class="absolute bottom-0 left-0 right-0 border-t border-border/60 bg-card/70 backdrop-blur"
+      >
         <UserProfileMenu :sidebarCollapsed="sidebarCollapsed" />
       </div>
     </aside>
@@ -253,7 +243,7 @@ import { useRoute } from "vue-router";
         <div class="flex h-16 items-center px-6 border-b">
           <div class="flex items-center gap-3">
             <div
-              class="flex items-center justify-center w-9 h-9 rounded-md bg-gradient-to-br from-primary to-primary/80 shadow-md"
+              class="flex items-center justify-center w-9 h-9 rounded-md bg-linear-to-br from-primary to-primary/80 shadow-md"
             >
               <span class="text-foreground font-bold text-lg tracking-tight"
                 >T</span
@@ -300,7 +290,7 @@ import { useRoute } from "vue-router";
           <div class="flex items-center gap-3">
             <Avatar class="h-9 w-9 ring-2 ring-primary/10">
               <AvatarFallback
-                class="bg-gradient-to-br from-primary to-primary/80 text-foreground text-sm"
+                class="bg-linear-to-br from-primary to-primary/80 text-foreground text-sm"
               >
                 MO
               </AvatarFallback>
