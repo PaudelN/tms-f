@@ -4,10 +4,7 @@
       <!-- Loading State -->
       <div v-if="loading" class="flex items-center justify-center py-20">
         <div class="text-center">
-          <svg class="animate-spin h-12 w-12 text-primary mx-auto mb-4" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
+          <Spinner class="h-12 w-12 text-primary mx-auto mb-4" />
           <p class="text-muted-foreground">Loading workspace...</p>
         </div>
       </div>
@@ -17,15 +14,9 @@
         <!-- Header -->
         <div class="mb-8">
           <div class="flex items-center gap-4 mb-4">
-            <button
-              @click="router.back()"
-              class="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-all"
-              title="Go back"
-            >
-              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
+            <Button variant="ghost" size="icon" title="Go back" @click="router.back()">
+              <ArrowLeft class="h-5 w-5" />
+            </Button>
             <div>
               <h1 class="text-4xl font-bold text-foreground mb-2">
                 Edit Workspace
@@ -41,9 +32,7 @@
         <Card>
           <CardHeader>
             <CardTitle class="flex items-center gap-2">
-              <svg class="h-5 w-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
+              <Pencil class="h-5 w-5 text-primary" />
               Workspace Details
             </CardTitle>
           </CardHeader>
@@ -109,9 +98,7 @@
 
               <!-- Error Alert -->
               <Alert v-if="workspaceStore.hasError" variant="destructive">
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+                <AlertTriangle class="h-4 w-4" />
                 <AlertTitle>Error</AlertTitle>
                 <AlertDescription>
                   {{ workspaceStore.errorMessage }}
@@ -133,10 +120,7 @@
                   :disabled="workspaceStore.isLoading || !hasChanges"
                   class="flex-1 gap-2"
                 >
-                  <svg v-if="workspaceStore.isLoading" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
+                  <Spinner v-if="workspaceStore.isLoading" class="h-4 w-4" />
                   <span>{{ workspaceStore.isLoading ? 'Saving...' : 'Save Changes' }}</span>
                 </Button>
               </div>
@@ -167,6 +151,8 @@ import {
   AlertDescription,
   AlertTitle,
 } from '@/components/ui/alert'
+import Spinner from '@/components/ui/spinner/Spinner.vue'
+import { AlertTriangle, ArrowLeft, Pencil } from 'lucide-vue-next'
 
 const route = useRoute()
 const router = useRouter()

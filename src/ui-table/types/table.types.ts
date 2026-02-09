@@ -1,3 +1,5 @@
+import type { Component } from "vue";
+
 // Core table column definition
 export interface TableColumn<T = any> {
   key: string;
@@ -55,6 +57,7 @@ export interface TableConfig {
   showSearch?: boolean;
   showColumnToggle?: boolean;
   showRefresh?: boolean;
+  mobileView?: "table" | "list";
   emptyMessage?: string;
   errorMessage?: string;
 }
@@ -105,7 +108,7 @@ export type TableRow<T = any> = T;
 // Action types for table interactions
 export interface TableAction<T = any> {
   label: string;
-  icon?: string;
+  icon?: Component;
   onClick: (row: T) => void;
   variant?: "default" | "destructive" | "outline" | "ghost";
   show?: (row: T) => boolean;
@@ -114,10 +117,22 @@ export interface TableAction<T = any> {
 // Bulk action types
 export interface BulkAction<T = any> {
   label: string;
-  icon?: string;
+  icon?: Component;
   onClick: (selectedRows: T[]) => void;
   variant?: "default" | "destructive" | "outline" | "ghost";
   disabled?: (selectedRows: T[]) => boolean;
+}
+
+export interface TableSelectionConfig<T = any> {
+  enabled?: boolean;
+  rowKey?: keyof T | string;
+  onChange?: (selectedRows: T[]) => void;
+}
+
+export interface TableFeatures<T = any> {
+  selection?: TableSelectionConfig<T>;
+  rowActions?: TableAction<T>[];
+  bulkActions?: BulkAction<T>[];
 }
 
 // Table event types

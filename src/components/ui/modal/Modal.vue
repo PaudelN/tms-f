@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue';
-import { XMarkIcon } from '@heroicons/vue/24/outline';
+import { Button } from '@/components/ui/button';
+import { X } from 'lucide-vue-next';
 
 interface Props {
   open: boolean;
@@ -76,30 +77,32 @@ watch(() => props.open, (isOpen) => {
         >
           <div
             v-if="open"
-            :class="['bg-white rounded-lg shadow-xl w-full', dialogClass]"
+            :class="['bg-card rounded-lg shadow-xl w-full', dialogClass]"
             role="dialog"
             aria-modal="true"
           >
             <!-- Header -->
-            <div v-if="title || $slots.header" class="flex items-start justify-between p-6 border-b border-gray-200">
+            <div v-if="title || $slots.header" class="flex items-start justify-between p-6 border-b border-border">
               <div class="flex-1">
                 <slot name="header">
-                  <h3 class="text-lg font-semibold text-gray-900">
+                  <h3 class="text-lg font-semibold text-card-foreground">
                     {{ title }}
                   </h3>
-                  <p v-if="description" class="mt-1 text-sm text-gray-500">
+                  <p v-if="description" class="mt-1 text-sm text-muted-foreground">
                     {{ description }}
                   </p>
                 </slot>
               </div>
-              <button
+              <Button
                 v-if="showClose"
                 type="button"
-                class="ml-4 text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-500 rounded"
+                variant="ghost"
+                size="icon"
+                class="ml-4 text-muted-foreground hover:text-foreground"
                 @click="close"
               >
-                <XMarkIcon class="h-5 w-5" />
-              </button>
+                <X class="h-5 w-5" />
+              </Button>
             </div>
 
             <!-- Content -->
@@ -108,7 +111,7 @@ watch(() => props.open, (isOpen) => {
             </div>
 
             <!-- Footer -->
-            <div v-if="$slots.footer" class="flex items-center justify-end gap-2 p-6 border-t border-gray-200">
+            <div v-if="$slots.footer" class="flex items-center justify-end gap-2 p-6 border-t border-border">
               <slot name="footer" :close="close" />
             </div>
           </div>
