@@ -7,6 +7,9 @@ import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarInset,
   SidebarMenu,
@@ -63,47 +66,50 @@ const isActive = (href: string) => route.path === href;
 <template>
   <SidebarProvider>
     <Sidebar variant="inset" collapsible="icon" class="border-r border-border/60">
-      <SidebarHeader class="px-4 py-4">
-        <div class="flex items-center gap-3 group-data-[collapsible=icon]:justify-center">
-          <div
-            class="flex items-center justify-center w-9 h-9 rounded-md bg-linear-to-br from-primary to-primary/80 shadow-md"
-          >
-            <span class="text-foreground font-bold text-lg tracking-tight">T</span>
-          </div>
-          <div class="flex flex-col group-data-[collapsible=icon]:hidden">
-            <span class="text-base font-semibold tracking-tight leading-none">
-              Taskification
-            </span>
-            <span
-              class="text-[10px] font-medium text-muted-foreground tracking-wider uppercase mt-0.5"
-            >
-              Track Plan Achieve
-            </span>
-          </div>
-        </div>
-      </SidebarHeader>
-
-      <SidebarContent class="px-2">
+      <SidebarHeader>
         <SidebarMenu>
-          <SidebarMenuItem
-            v-for="item in navigation"
-            :key="item.name"
-          >
-            <SidebarMenuButton
-              as-child
-              :is-active="isActive(item.href)"
-              :tooltip="item.name"
-            >
-              <router-link
-                :to="item.href"
-                class="flex items-center gap-3"
+          <SidebarMenuItem>
+            <SidebarMenuButton size="lg" class="gap-3">
+              <div
+                class="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm"
               >
-                <component :is="item.icon" class="h-4 w-4" />
-                <span class="truncate">{{ item.name }}</span>
-              </router-link>
+                <GalleryVerticalEnd class="size-4" />
+              </div>
+              <div class="grid flex-1 text-left text-sm leading-tight">
+                <span class="truncate font-semibold">Taskification</span>
+                <span class="truncate text-xs text-muted-foreground">Track Plan Achieve</span>
+              </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
+      </SidebarHeader>
+
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>Platform</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem
+                v-for="item in navigation"
+                :key="item.name"
+              >
+                <SidebarMenuButton
+                  as-child
+                  :is-active="isActive(item.href)"
+                  :tooltip="item.name"
+                >
+                  <router-link
+                    :to="item.href"
+                    class="flex items-center gap-3"
+                  >
+                    <component :is="item.icon" class="h-4 w-4" />
+                    <span class="truncate">{{ item.name }}</span>
+                  </router-link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
 
       <SidebarFooter class="p-0">
@@ -114,10 +120,13 @@ const isActive = (href: string) => route.path === href;
 
     <SidebarInset>
       <header
-        class="sticky top-0 z-40 bg-card/95 backdrop-blur-md supports-backdrop-filter:bg-card/95 shadow-sm"
+        class="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-2 border-b border-border/60 bg-card/95 backdrop-blur-md supports-backdrop-filter:bg-card/95 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12"
       >
-        <div class="flex h-14 items-center gap-3 px-6">
-          <SidebarTrigger class="shrink-0" />
+        <div class="flex items-center gap-2 px-4">
+          <SidebarTrigger class="-ml-1" />
+        </div>
+
+        <div class="flex flex-1 items-center gap-3 px-2">
 
           <div class="flex items-center gap-3">
             <h1 class="text-lg font-semibold text-foreground tracking-tight">

@@ -35,13 +35,39 @@
         v-else
         v-for="(item, index) in items"
         :key="index"
-        class="px-4 py-3 hover:bg-accent transition-colors cursor-pointer"
+        class="px-4 py-4 space-y-3"
       >
-        <slot name="item" :item="item" :index="index">
-          <div class="text-sm text-foreground">
-            {{ item }}
+        <div class="flex items-start justify-between gap-3">
+          <div class="space-y-2 flex-1">
+            <div
+              v-for="column in columns"
+              :key="column.key"
+              class="flex items-center justify-between gap-3"
+            >
+              <span class="text-xs text-muted-foreground">
+                {{ column.label }}
+              </span>
+              <span class="text-sm text-card-foreground text-right">
+                <slot name="item" :item="item" :column="column" :index="index">
+                  {{ column.formatter ? column.formatter(item[column.key], item) : item[column.key] }}
+                </slot>
+              </span>
+            </div>
           </div>
-        </slot>
+          <div v-if="rowActions?.length" class="flex flex-col gap-2">
+            <Button
+              v-for="action in rowActions"
+              :key="action.label"
+              size="sm"
+              variant="ghost"
+              class="justify-start gap-2"
+              @click="$emit('row-action', action, item)"
+            >
+              <component v-if="action.icon" :is="action.icon" class="h-4 w-4" />
+              {{ action.label }}
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -56,11 +82,15 @@
 </template>
 
 <script setup lang="ts">
+import { Button } from "@/components/ui/button";
 import Spinner from "@/components/ui/spinner/Spinner.vue";
 import { List } from "lucide-vue-next";
+import type { TableAction, TableColumn } from "./types/table.types";
 
 interface Props {
   items: any[];
+  columns: TableColumn[];
+  rowActions?: TableAction[];
   loading?: boolean;
   showFooter?: boolean;
 }
@@ -68,5 +98,10 @@ interface Props {
 withDefaults(defineProps<Props>(), {
   loading: false,
   showFooter: true,
+  rowActions: () => [],
 });
+
+defineEmits<{
+  "row-action": [action: TableAction, row: any];
+}>();
 </script>

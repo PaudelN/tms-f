@@ -402,6 +402,7 @@ import WorkspaceFilters from "@/components/workspace/WorkspaceFilters.vue";
 import WorkspaceHeader from "@/components/workspace/WorkspaceHeader.vue";
 import WorkspaceOverview from "@/components/workspace/WorkspaceOverview.vue";
 import WorkspaceTabs from "@/components/workspace/WorkspaceTabs.vue";
+import { notify } from "@/helpers/toast";
 import type { Workspace } from "@/stores/workspace";
 import { useWorkspaceStore } from "@/stores/workspace";
 import type { ApiResponse, TableColumn, ViewMode } from "@/ui-table/types/table.types";
@@ -681,9 +682,11 @@ async function confirmDelete() {
   deleteLoading.value = true;
   try {
     await workspaceStore.deleteWorkspace(workspaceToDelete.value.id);
+    notify.success("Workspace deleted", `Removed ${workspaceToDelete.value.name}.`);
     deleteModalOpen.value = false;
     workspaceToDelete.value = null;
   } catch (error) {
+    notify.error("Delete failed", "Unable to delete the workspace.");
     console.error("Failed to delete:", error);
   } finally {
     deleteLoading.value = false;

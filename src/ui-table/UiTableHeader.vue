@@ -1,32 +1,23 @@
 <template>
-  <div class="bg-card border-border border-b px-5 py-4">
-    <div class="flex flex-wrap items-center justify-between gap-4">
-      <div v-if="showSearch" class="flex-1 min-w-[220px]">
-        <div class="relative">
-          <Search
-            class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
-          />
-          <Input
-            type="text"
-            :value="searchValue"
-            @input="handleSearchInput"
-            :placeholder="searchPlaceholder"
-            class="block w-full pl-10 pr-4 py-2.5 text-sm rounded-lg border-input bg-background text-foreground placeholder-muted-foreground focus:ring-ring focus:ring-2 focus:outline-none transition-all"
-          />
-        </div>
+  <div class="bg-card border-b border-border px-4 py-3">
+    <div class="flex flex-wrap items-center gap-3">
+      <div class="flex-1 min-w-[220px]" v-if="showSearch">
+        <Input
+          class="max-w-sm"
+          :placeholder="searchPlaceholder"
+          :model-value="searchValue"
+          @update:model-value="updateSearch"
+        />
       </div>
 
       <div class="flex flex-wrap items-center gap-2">
-        <div v-if="selectedRows.length" class="flex items-center gap-2">
+        <div v-if="selectedCount > 0" class="flex items-center gap-2">
           <Badge variant="secondary" class="text-xs">
-            {{ selectedRows.length }} selected
+            {{ selectedCount }} selected
           </Badge>
           <DropdownMenu v-if="bulkActions.length">
             <DropdownMenuTrigger as-child>
-              <Button variant="outline" size="sm" class="gap-2">
-                <Layers class="h-4 w-4" />
-                Bulk actions
-              </Button>
+              <Button variant="outline" size="sm">Bulk actions</Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" class="w-48">
               <DropdownMenuLabel>Apply to selected</DropdownMenuLabel>
@@ -42,46 +33,37 @@
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button
-            variant="ghost"
-            size="sm"
-            class="text-muted-foreground"
-            @click="$emit('clear-selection')"
-          >
-            Clear
-          </Button>
+          <Button variant="ghost" size="sm" @click="$emit('clear-selection')">Clear</Button>
         </div>
 
         <Button
           v-if="showRefresh"
-          @click="$emit('refresh')"
-          :disabled="loading"
           variant="outline"
           size="sm"
           class="gap-2"
-          title="Refresh"
+          :disabled="loading"
+          @click="$emit('refresh')"
         >
           <RefreshCcw :class="['h-4 w-4', loading && 'animate-spin']" />
-          <span>Refresh</span>
+          Refresh
         </Button>
 
         <DropdownMenu v-if="showColumnToggle">
           <DropdownMenuTrigger as-child>
-            <Button variant="outline" size="sm" class="gap-2">
-              <Columns2 class="h-4 w-4" />
+            <Button variant="outline" size="sm" class="ml-auto">
               Columns
+              <ChevronDown class="ml-2 h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" class="w-56">
-            <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
-            <DropdownMenuSeparator />
+          <DropdownMenuContent align="end">
             <DropdownMenuCheckboxItem
-              v-for="column in columns"
-              :key="column.key"
-              :checked="column.visible"
-              @update:checked="$emit('toggle-column', column.key)"
+              v-for="column in toggleableColumns"
+              :key="column.id"
+              class="capitalize"
+              :model-value="column.getIsVisible()"
+              @update:model-value="column.toggleVisibility(!!$event)"
             >
-              {{ column.label }}
+              {{ column.id }}
             </DropdownMenuCheckboxItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -91,7 +73,10 @@
 </template>
 
 <script setup lang="ts">
+import type { Table } from "@tanstack/vue-table";
+import { computed } from "vue";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -102,41 +87,46 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Columns2, Layers, RefreshCcw, Search } from "lucide-vue-next";
-import type { BulkAction, TableColumn } from "./types/table.types";
+import { ChevronDown, RefreshCcw } from "lucide-vue-next";
+import type { BulkAction } from "./types/table.types";
 
 interface Props {
+  table: Table<any>;
   searchValue: string;
   searchPlaceholder?: string;
-  columns: TableColumn[];
   showSearch?: boolean;
   showColumnToggle?: boolean;
   showRefresh?: boolean;
   loading?: boolean;
   bulkActions?: BulkAction[];
-  selectedRows?: any[];
+  selectedCount?: number;
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   searchPlaceholder: "Search...",
   showSearch: true,
   showColumnToggle: true,
   showRefresh: true,
   loading: false,
   bulkActions: () => [],
-  selectedRows: () => [],
+  selectedCount: 0,
 });
 
 const emit = defineEmits<{
   "update:search": [value: string];
   refresh: [];
-  "toggle-column": [columnKey: string];
   "clear-selection": [];
 }>();
 
-function handleSearchInput(event: Event) {
-  const target = event.target as HTMLInputElement;
-  emit("update:search", target.value);
+const toggleableColumns = computed(() =>
+  props.table.getAllColumns().filter((column) => column.getCanHide()),
+);
+
+const selectedRows = computed(() =>
+  props.table.getFilteredSelectedRowModel().rows.map((row) => row.original),
+);
+
+function updateSearch(value: string | number) {
+  emit("update:search", String(value));
 }
 </script>

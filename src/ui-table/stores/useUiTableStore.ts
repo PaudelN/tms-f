@@ -174,6 +174,17 @@ export const useUiTableStore = defineStore(
       table.pagination.currentPage = 1; // Reset to first page on sort
     };
 
+    const setSortState = (
+      tableId: string,
+      column: string | null,
+      order: "asc" | "desc" | null,
+    ) => {
+      const table = tables.value[tableId];
+      if (!table) return;
+      table.sort = { column, order };
+      table.pagination.currentPage = 1;
+    };
+
 
     const setPage = (tableId: string, page: number) => {
       const table = tables.value[tableId];
@@ -364,6 +375,7 @@ export const useUiTableStore = defineStore(
       updateTableData,
       setSearch,
       setSort,
+      setSortState,
       setPage,
       nextPage,
       previousPage,
