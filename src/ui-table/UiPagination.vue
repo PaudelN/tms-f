@@ -1,6 +1,5 @@
 <template>
-  <div class="flex items-center justify-between gap-4 px-1 py-2">
-    <!-- Items info -->
+  <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-1 py-2">
     <div class="text-xs text-muted-foreground">
       <span v-if="total > 0">
         Showing {{ startItem }}-{{ endItem }} of {{ total }}
@@ -8,155 +7,147 @@
       <span v-else>No items</span>
     </div>
 
-    <!-- Pagination controls -->
-    <div class="flex items-center gap-2">
-      <!-- Per page selector -->
+    <div class="flex flex-wrap items-center gap-3">
       <div class="flex items-center gap-2">
-        <label for="perPage" class="text-xs text-muted-foreground">
-          Per page:
-        </label>
-        <select
-          id="perPage"
-          :value="perPage"
-          @change="handlePerPageChange"
-          class="h-8 rounded-md border border-input bg-background px-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all"
-        >
-          <option v-for="size in pageSizes" :key="size" :value="size">
-            {{ size }}
-          </option>
-        </select>
+        <span class="text-xs text-muted-foreground">Per page:</span>
+        <Select :model-value="String(perPage)" @update:model-value="handlePerPageChange">
+          <SelectTrigger class="h-8 w-[90px] text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem v-for="size in pageSizes" :key="size" :value="String(size)">
+              {{ size }}
+            </SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
-      <!-- Page buttons -->
       <div class="flex items-center gap-1">
-        <!-- First page -->
-        <button
-          @click="emitPageChange(1)"
+        <Button
+          variant="outline"
+          size="icon"
+          class="h-8 w-8"
           :disabled="currentPage === 1"
-          class="h-8 w-8 rounded-md border border-input bg-background text-foreground disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent hover:text-accent-foreground transition-all text-xs font-medium"
           title="First page"
+          @click="emitPageChange(1)"
         >
-          <span class="flex items-center justify-center">
-            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
-            </svg>
-          </span>
-        </button>
+          <ChevronsLeft class="h-4 w-4" />
+        </Button>
 
-        <!-- Previous page -->
-        <button
-          @click="emitPageChange(currentPage - 1)"
+        <Button
+          variant="outline"
+          size="icon"
+          class="h-8 w-8"
           :disabled="currentPage === 1"
-          class="h-8 w-8 rounded-md border border-input bg-background text-foreground disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent hover:text-accent-foreground transition-all text-xs font-medium"
           title="Previous page"
+          @click="emitPageChange(currentPage - 1)"
         >
-          <span class="flex items-center justify-center">
-            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-            </svg>
-          </span>
-        </button>
+          <ChevronLeft class="h-4 w-4" />
+        </Button>
 
-        <!-- Page numbers -->
-        <button
+        <Button
           v-for="page in visiblePages"
           :key="page"
+          :variant="page === currentPage ? 'default' : 'outline'"
+          size="sm"
+          class="h-8 min-w-[2rem]"
           @click="emitPageChange(page)"
-          :class="[
-            'h-8 min-w-[2rem] px-2 rounded-md border text-xs font-medium transition-all',
-            page === currentPage
-              ? 'bg-primary text-primary-foreground border-primary'
-              : 'border-input bg-background text-foreground hover:bg-accent hover:text-accent-foreground'
-          ]"
         >
           {{ page }}
-        </button>
+        </Button>
 
-        <!-- Next page -->
-        <button
-          @click="emitPageChange(currentPage + 1)"
+        <Button
+          variant="outline"
+          size="icon"
+          class="h-8 w-8"
           :disabled="currentPage === totalPages"
-          class="h-8 w-8 rounded-md border border-input bg-background text-foreground disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent hover:text-accent-foreground transition-all text-xs font-medium"
           title="Next page"
+          @click="emitPageChange(currentPage + 1)"
         >
-          <span class="flex items-center justify-center">
-            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-            </svg>
-          </span>
-        </button>
+          <ChevronRight class="h-4 w-4" />
+        </Button>
 
-        <!-- Last page -->
-        <button
-          @click="emitPageChange(totalPages)"
+        <Button
+          variant="outline"
+          size="icon"
+          class="h-8 w-8"
           :disabled="currentPage === totalPages"
-          class="h-8 w-8 rounded-md border border-input bg-background text-foreground disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent hover:text-accent-foreground transition-all text-xs font-medium"
           title="Last page"
+          @click="emitPageChange(totalPages)"
         >
-          <span class="flex items-center justify-center">
-            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
-            </svg>
-          </span>
-        </button>
+          <ChevronsRight class="h-4 w-4" />
+        </Button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed } from "vue";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+} from "lucide-vue-next";
 
 interface Props {
-  currentPage: number
-  totalPages: number
-  total: number
-  perPage: number
-  pageSizes?: number[]
+  currentPage: number;
+  totalPages: number;
+  total: number;
+  perPage: number;
+  pageSizes?: number[];
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  pageSizes: () => [5, 10, 20, 50, 100]
-})
+  pageSizes: () => [5, 10, 20, 50, 100],
+});
 
 const emit = defineEmits<{
-  'page-change': [page: number]
-  'per-page-change': [perPage: number]
-}>()
+  "page-change": [page: number];
+  "per-page-change": [perPage: number];
+}>();
 
 const startItem = computed(() => {
-  return props.total === 0 ? 0 : (props.currentPage - 1) * props.perPage + 1
-})
+  return props.total === 0 ? 0 : (props.currentPage - 1) * props.perPage + 1;
+});
 
 const endItem = computed(() => {
-  return Math.min(props.currentPage * props.perPage, props.total)
-})
+  return Math.min(props.currentPage * props.perPage, props.total);
+});
 
 const visiblePages = computed(() => {
-  const pages: number[] = []
-  const maxVisible = 5
-  let start = Math.max(1, props.currentPage - Math.floor(maxVisible / 2))
-  let end = Math.min(props.totalPages, start + maxVisible - 1)
+  const pages: number[] = [];
+  const maxVisible = 5;
+  let start = Math.max(1, props.currentPage - Math.floor(maxVisible / 2));
+  let end = Math.min(props.totalPages, start + maxVisible - 1);
 
   if (end - start < maxVisible - 1) {
-    start = Math.max(1, end - maxVisible + 1)
+    start = Math.max(1, end - maxVisible + 1);
   }
 
   for (let i = start; i <= end; i++) {
-    pages.push(i)
+    pages.push(i);
   }
 
-  return pages
-})
+  return pages;
+});
 
 function emitPageChange(page: number) {
   if (page !== props.currentPage && page >= 1 && page <= props.totalPages) {
-    emit('page-change', page)
+    emit("page-change", page);
   }
 }
 
-function handlePerPageChange(event: Event) {
-  const target = event.target as HTMLSelectElement
-  emit('per-page-change', Number(target.value))
+function handlePerPageChange(value: string) {
+  emit("per-page-change", Number(value));
 }
 </script>
