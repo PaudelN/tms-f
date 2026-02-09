@@ -1,108 +1,102 @@
 <template>
   <div class="space-y-6">
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-      <Card class="hover:shadow-md transition-shadow">
-        <CardContent class="p-6">
-          <div class="flex items-center justify-between mb-4">
-            <div class="h-12 w-12 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
-              <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-              </svg>
-            </div>
-            <div class="text-right">
-              <p class="text-xs text-muted-foreground mb-1">Total</p>
-              <p class="text-3xl font-bold text-foreground">{{ totalWorkspaces }}</p>
-            </div>
+      <div class="bg-card rounded-2xl p-6 shadow-sm border border-border hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between mb-4">
+          <div class="h-12 w-12 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
+            <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+            </svg>
           </div>
-          <div class="flex items-center justify-between text-xs">
-            <span class="text-muted-foreground">Workspaces</span>
-            <Badge variant="secondary" class="gap-1 text-emerald-600">
-              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" />
-              </svg>
-              12%
-            </Badge>
+          <div class="text-right">
+            <p class="text-xs text-muted-foreground mb-1">Total</p>
+            <p class="text-3xl font-bold text-foreground">{{ totalWorkspaces }}</p>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+        <div class="flex items-center justify-between text-xs">
+          <span class="text-muted-foreground">Workspaces</span>
+          <span class="text-green-600 font-medium flex items-center gap-1">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" />
+            </svg>
+            12%
+          </span>
+        </div>
+      </div>
 
-      <Card class="hover:shadow-md transition-shadow">
-        <CardContent class="p-6">
-          <div class="flex items-center justify-between mb-4">
-            <div class="h-12 w-12 rounded-xl bg-gradient-to-br from-emerald-500/20 to-emerald-500/10 flex items-center justify-center">
-              <svg class="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div class="text-right">
-              <p class="text-xs text-muted-foreground mb-1">Active</p>
-              <p class="text-3xl font-bold text-foreground">{{ activeCount }}</p>
-            </div>
+      <div class="bg-card rounded-2xl p-6 shadow-sm border border-border hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between mb-4">
+          <div class="h-12 w-12 rounded-xl bg-gradient-to-br from-green-500/20 to-green-500/10 flex items-center justify-center">
+            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
           </div>
-          <div class="w-full bg-muted rounded-full h-1.5">
-            <div
-              class="bg-emerald-500 h-1.5 rounded-full transition-all duration-500"
-              :style="{ width: `${progressPercentage.active}%` }"
-            ></div>
+          <div class="text-right">
+            <p class="text-xs text-muted-foreground mb-1">Active</p>
+            <p class="text-3xl font-bold text-foreground">{{ activeCount }}</p>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+        <div class="w-full bg-muted rounded-full h-1.5">
+          <div
+            class="bg-green-500 h-1.5 rounded-full transition-all duration-500"
+            :style="{ width: `${progressPercentage.active}%` }"
+          ></div>
+        </div>
+      </div>
 
-      <Card class="hover:shadow-md transition-shadow">
-        <CardContent class="p-6">
-          <div class="flex items-center justify-between mb-4">
-            <div class="h-12 w-12 rounded-xl bg-gradient-to-br from-orange-500/20 to-orange-500/10 flex items-center justify-center">
-              <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
-              </svg>
-            </div>
-            <div class="text-right">
-              <p class="text-xs text-muted-foreground mb-1">Archived</p>
-              <p class="text-3xl font-bold text-foreground">{{ archivedCount }}</p>
-            </div>
+      <div class="bg-card rounded-2xl p-6 shadow-sm border border-border hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between mb-4">
+          <div class="h-12 w-12 rounded-xl bg-gradient-to-br from-orange-500/20 to-orange-500/10 flex items-center justify-center">
+            <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+            </svg>
           </div>
-          <div class="w-full bg-muted rounded-full h-1.5">
-            <div
-              class="bg-orange-500 h-1.5 rounded-full transition-all duration-500"
-              :style="{ width: `${progressPercentage.archived}%` }"
-            ></div>
+          <div class="text-right">
+            <p class="text-xs text-muted-foreground mb-1">Archived</p>
+            <p class="text-3xl font-bold text-foreground">{{ archivedCount }}</p>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+        <div class="w-full bg-muted rounded-full h-1.5">
+          <div
+            class="bg-orange-500 h-1.5 rounded-full transition-all duration-500"
+            :style="{ width: `${progressPercentage.archived}%` }"
+          ></div>
+        </div>
+      </div>
 
-      <Card class="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 hover:shadow-md transition-shadow">
-        <CardContent class="p-6">
-          <div class="flex items-center justify-between mb-4">
-            <div class="h-12 w-12 rounded-xl bg-primary/20 flex items-center justify-center">
-              <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-              </svg>
-            </div>
-            <Badge variant="secondary" class="text-primary bg-primary/20">🏆 MVP</Badge>
+      <div class="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent rounded-2xl p-6 shadow-sm border border-primary/20 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between mb-4">
+          <div class="h-12 w-12 rounded-xl bg-primary/20 flex items-center justify-center">
+            <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+            </svg>
           </div>
-          <div class="text-sm">
-            <p class="text-muted-foreground text-xs mb-1">Top Contributor</p>
-            <p class="font-bold text-foreground truncate">{{ topContributor?.name }}</p>
-            <p class="text-xs text-muted-foreground mt-1">
-              {{ topContributor?.workspaceCount }} workspaces created
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+          <span class="text-xs font-semibold px-2.5 py-1 bg-primary/20 text-primary rounded-full">
+            🏆 MVP
+          </span>
+        </div>
+        <div class="text-sm">
+          <p class="text-muted-foreground text-xs mb-1">Top Contributor</p>
+          <p class="font-bold text-foreground truncate">{{ topContributor?.name }}</p>
+          <p class="text-xs text-muted-foreground mt-1">
+            {{ topContributor?.workspaceCount }} workspaces created
+          </p>
+        </div>
+      </div>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      <Card class="overflow-hidden">
-        <CardHeader class="p-5 border-b border-border bg-gradient-to-r from-primary/5 to-transparent">
-          <CardTitle class="text-sm font-semibold flex items-center gap-2">
+      <div class="bg-card rounded-2xl shadow-sm border border-border overflow-hidden">
+        <div class="p-5 border-b border-border bg-gradient-to-r from-primary/5 to-transparent flex items-center justify-between">
+          <h3 class="text-sm font-semibold text-foreground flex items-center gap-2">
             <svg class="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
             </svg>
             Pinned Workspaces
-          </CardTitle>
-          <Badge variant="secondary">{{ pinnedWorkspaces.length }}</Badge>
-        </CardHeader>
-        <CardContent class="p-4 max-h-72 overflow-y-auto">
+          </h3>
+          <span class="text-xs text-muted-foreground">{{ pinnedWorkspaces.length }}</span>
+        </div>
+        <div class="p-4 max-h-72 overflow-y-auto">
           <div v-if="pinnedWorkspaces.length === 0" class="text-center py-8">
             <svg class="w-10 h-10 text-muted-foreground mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
@@ -124,27 +118,31 @@
                   <p class="text-sm font-medium text-foreground truncate">{{ workspace.name }}</p>
                   <p class="text-xs text-muted-foreground">{{ formatDate(workspace.created_at) }}</p>
                 </div>
-                <Button variant="ghost" size="icon" class="opacity-0 group-hover:opacity-100" @click.stop="emit('togglePin', workspace.id)">
+                <button
+                  type="button"
+                  class="opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                  @click.stop="emit('togglePin', workspace.id)"
+                >
                   <svg class="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                   </svg>
-                </Button>
+                </button>
               </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      <Card class="overflow-hidden">
-        <CardHeader class="p-5 border-b border-border bg-gradient-to-r from-emerald-500/5 to-transparent">
-          <CardTitle class="text-sm font-semibold flex items-center gap-2">
-            <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div class="bg-card rounded-2xl shadow-sm border border-border overflow-hidden">
+        <div class="p-5 border-b border-border bg-gradient-to-r from-green-500/5 to-transparent flex items-center justify-between">
+          <h3 class="text-sm font-semibold text-foreground flex items-center gap-2">
+            <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             Recent Activity
-          </CardTitle>
-        </CardHeader>
-        <CardContent class="p-4 max-h-72 overflow-y-auto">
+          </h3>
+        </div>
+        <div class="p-4 max-h-72 overflow-y-auto">
           <div class="space-y-3">
             <div
               v-for="activity in teamActivities.slice(0, 5)"
@@ -163,24 +161,24 @@
               </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      <Card class="overflow-hidden">
-        <CardHeader class="p-5 border-b border-border bg-gradient-to-r from-orange-500/5 to-transparent">
-          <CardTitle class="text-sm font-semibold flex items-center gap-2">
+      <div class="bg-card rounded-2xl shadow-sm border border-border overflow-hidden">
+        <div class="p-5 border-b border-border bg-gradient-to-r from-orange-500/5 to-transparent">
+          <h3 class="text-sm font-semibold text-foreground flex items-center gap-2">
             <svg class="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
             </svg>
             Activity Overview
-          </CardTitle>
-        </CardHeader>
-        <CardContent class="p-4">
+          </h3>
+        </div>
+        <div class="p-4">
           <div class="space-y-4">
             <div>
               <div class="flex items-center justify-between mb-2">
                 <span class="text-xs text-muted-foreground">Most Active</span>
-                <Badge variant="secondary">47 activities</Badge>
+                <span class="text-xs font-semibold text-foreground">47 activities</span>
               </div>
               <div class="flex items-center gap-2">
                 <div class="h-8 w-8 rounded-lg bg-orange-500/10 flex items-center justify-center">
@@ -197,7 +195,7 @@
             <div class="pt-3 border-t border-border">
               <div class="flex items-center justify-between mb-2">
                 <span class="text-xs text-muted-foreground">Files Uploaded Today</span>
-                <Badge variant="secondary">{{ recentFiles.length }}</Badge>
+                <span class="text-xs font-semibold text-foreground">{{ recentFiles.length }}</span>
               </div>
               <div class="space-y-2">
                 <div
@@ -221,24 +219,21 @@
             <div class="pt-3 border-t border-border">
               <div class="flex items-center justify-between mb-2">
                 <span class="text-xs text-muted-foreground">Next Event</span>
-                <Badge variant="secondary" class="text-primary">{{ formatEventDate(upcomingEvents[0]?.date) }}</Badge>
+                <span class="text-xs font-medium text-primary">{{ formatEventDate(upcomingEvents[0]?.date) }}</span>
               </div>
-              <div v-if="upcomingEvents[0]" class="p-3 rounded-lg bg-primary/5 border border-primary/20">
+              <div v-if="upcomingEvents[0]" class="p-2 rounded-lg bg-primary/5 border-l-2 border-primary">
                 <p class="text-sm font-medium text-foreground">{{ upcomingEvents[0].title }}</p>
                 <p class="text-xs text-muted-foreground">{{ upcomingEvents[0].workspace }}</p>
               </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Workspace } from "@/stores/workspace";
 
 type TopContributor = {
