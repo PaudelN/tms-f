@@ -1,125 +1,119 @@
 <template>
-  <div class="bg-card rounded-xl shadow-sm border border-border p-4">
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div>
-        <label class="block text-xs font-medium text-muted-foreground mb-2">Filter by Owner</label>
-        <select
-          :value="filterOwner"
-          class="w-full px-3 py-2 bg-background border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring text-foreground"
-          @change="updateOwner"
-        >
-          <option value="">All Owners</option>
-          <option v-for="owner in uniqueOwners" :key="owner.id" :value="owner.id">
-            {{ owner.name }}
-          </option>
-        </select>
-      </div>
-
-      <div>
-        <label class="block text-xs font-medium text-muted-foreground mb-2">Filter by Status</label>
-        <select
-          :value="filterStatus"
-          class="w-full px-3 py-2 bg-background border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring text-foreground"
-          @change="updateStatus"
-        >
-          <option value="">All Statuses</option>
-          <option value="active">Active</option>
-          <option value="archived">Archived</option>
-        </select>
-      </div>
-
-      <div class="flex items-end gap-2">
-        <div class="flex-1">
-          <label class="block text-xs font-medium text-muted-foreground mb-2">View Mode</label>
-          <UiViews :model-value="currentView" @update:model-value="emit('update:currentView', $event)" />
+  <Card>
+    <CardContent class="p-4">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-xs font-medium text-muted-foreground mb-2">Filter by Owner</label>
+          <Select :model-value="filterOwner" @update:model-value="emit('update:filterOwner', $event)">
+            <SelectTrigger>
+              <SelectValue placeholder="All Owners" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All Owners</SelectItem>
+              <SelectItem v-for="owner in uniqueOwners" :key="owner.id" :value="owner.id.toString()">
+                {{ owner.name }}
+              </SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
-        <div class="relative">
-          <button
-            type="button"
-            class="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/80 transition-all text-sm font-medium whitespace-nowrap"
-            @click="emit('toggleExportMenu')"
-          >
-            Export
-          </button>
-          <div
-            v-if="showExportMenu"
-            class="absolute right-0 mt-2 w-40 bg-popover border border-border rounded-lg shadow-lg py-2 z-50"
-          >
-            <button
-              type="button"
-              class="w-full px-4 py-2 text-left text-sm hover:bg-accent text-popover-foreground transition-colors"
-              @click="emit('export', 'csv')"
-            >
-              CSV
-            </button>
-            <button
-              type="button"
-              class="w-full px-4 py-2 text-left text-sm hover:bg-accent text-popover-foreground transition-colors"
-              @click="emit('export', 'json')"
-            >
-              JSON
-            </button>
+        <div>
+          <label class="block text-xs font-medium text-muted-foreground mb-2">Filter by Status</label>
+          <Select :model-value="filterStatus" @update:model-value="emit('update:filterStatus', $event)">
+            <SelectTrigger>
+              <SelectValue placeholder="All Statuses" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All Statuses</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="archived">Archived</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div class="flex items-end gap-2">
+          <div class="flex-1">
+            <label class="block text-xs font-medium text-muted-foreground mb-2">View Mode</label>
+            <UiViews :model-value="currentView" @update:model-value="emit('update:currentView', $event)" />
           </div>
+
+          <div class="relative">
+            <Button variant="secondary" size="sm" @click="emit('toggleExportMenu')">
+              Export
+            </Button>
+            <div
+              v-if="showExportMenu"
+              class="absolute right-0 mt-2 w-40 bg-popover border border-border rounded-lg shadow-lg py-2 z-50"
+            >
+              <Button
+                variant="ghost"
+                size="sm"
+                class="w-full justify-start"
+                @click="emit('export', 'csv')"
+              >
+                CSV
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                class="w-full justify-start"
+                @click="emit('export', 'json')"
+              >
+                JSON
+              </Button>
+            </div>
+          </div>
+
+          <Button variant="secondary" size="sm" @click="emit('share')">Share</Button>
         </div>
-
-        <button
-          type="button"
-          class="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/80 transition-all text-sm font-medium whitespace-nowrap"
-          @click="emit('share')"
-        >
-          Share
-        </button>
       </div>
-    </div>
 
-    <div v-if="hasActiveFilters" class="mt-4 flex items-center gap-2 flex-wrap">
-      <span class="text-xs text-muted-foreground">Active filters:</span>
-      <button
-        v-if="quickSearchQuery"
-        type="button"
-        class="px-2.5 py-1 bg-primary/10 text-primary text-xs rounded-lg flex items-center gap-1.5 hover:bg-primary/20 transition-colors"
-        @click="emit('update:quickSearchQuery', '')"
-      >
-        <span>"{{ quickSearchQuery }}"</span>
-        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
-      <button
-        v-if="filterOwner"
-        type="button"
-        class="px-2.5 py-1 bg-primary/10 text-primary text-xs rounded-lg flex items-center gap-1.5 hover:bg-primary/20 transition-colors"
-        @click="emit('update:filterOwner', '')"
-      >
-        <span>{{ getOwnerName(filterOwner) }}</span>
-        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
-      <button
-        v-if="filterStatus"
-        type="button"
-        class="px-2.5 py-1 bg-primary/10 text-primary text-xs rounded-lg flex items-center gap-1.5 hover:bg-primary/20 transition-colors"
-        @click="emit('update:filterStatus', '')"
-      >
-        <span>{{ filterStatus }}</span>
-        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
-      <button
-        type="button"
-        class="px-2.5 py-1 bg-destructive/10 text-destructive text-xs rounded-lg hover:bg-destructive/20 transition-colors"
-        @click="emit('clearAllFilters')"
-      >
-        Clear all
-      </button>
-    </div>
-  </div>
+      <div v-if="hasActiveFilters" class="mt-4 flex items-center gap-2 flex-wrap">
+        <span class="text-xs text-muted-foreground">Active filters:</span>
+        <Badge
+          v-if="quickSearchQuery"
+          variant="secondary"
+          class="gap-2"
+        >
+          "{{ quickSearchQuery }}"
+          <button type="button" @click="emit('update:quickSearchQuery', '')">
+            <span class="sr-only">Clear search</span>
+            ✕
+          </button>
+        </Badge>
+        <Badge v-if="filterOwner" variant="secondary" class="gap-2">
+          {{ getOwnerName(filterOwner) }}
+          <button type="button" @click="emit('update:filterOwner', '')">
+            <span class="sr-only">Clear owner</span>
+            ✕
+          </button>
+        </Badge>
+        <Badge v-if="filterStatus" variant="secondary" class="gap-2">
+          {{ filterStatus }}
+          <button type="button" @click="emit('update:filterStatus', '')">
+            <span class="sr-only">Clear status</span>
+            ✕
+          </button>
+        </Badge>
+        <Button variant="ghost" size="sm" class="text-destructive" @click="emit('clearAllFilters')">
+          Clear all
+        </Button>
+      </div>
+    </CardContent>
+  </Card>
 </template>
 
 <script setup lang="ts">
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { ViewMode } from "@/ui-table/types/table.types";
 import UiViews from "@/ui-table/UiViews.vue";
 
@@ -128,7 +122,7 @@ type Owner = {
   name: string;
 };
 
-const props = defineProps<{
+defineProps<{
   filterOwner: string;
   filterStatus: string;
   currentView: ViewMode;
@@ -149,12 +143,4 @@ const emit = defineEmits<{
   (e: "share"): void;
   (e: "clearAllFilters"): void;
 }>();
-
-function updateOwner(event: Event) {
-  emit("update:filterOwner", (event.target as HTMLSelectElement).value);
-}
-
-function updateStatus(event: Event) {
-  emit("update:filterStatus", (event.target as HTMLSelectElement).value);
-}
 </script>
