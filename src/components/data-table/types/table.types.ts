@@ -43,7 +43,7 @@ export interface ApiResponse<T = any> {
 }
 
 // Table configuration
-export interface TableConfig {
+export interface TableConfig<T = any> {
   defaultPerPage?: number;
   defaultSortBy?: string | null;
   defaultSortOrder?: "asc" | "desc" | null;
@@ -57,6 +57,10 @@ export interface TableConfig {
   showRefresh?: boolean;
   emptyMessage?: string;
   errorMessage?: string;
+  rowKey?: string;
+  selectable?: boolean;
+  rowActions?: TableAction<T>[];
+  bulkActions?: BulkAction<T>[];
 }
 
 // Table state (stored in Pinia)

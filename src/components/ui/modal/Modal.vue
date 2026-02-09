@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue';
-import { XMarkIcon } from '@heroicons/vue/24/outline';
+import { X } from "lucide-vue-next";
 
 interface Props {
   open: boolean;
@@ -98,7 +98,7 @@ watch(() => props.open, (isOpen) => {
                 class="ml-4 text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-500 rounded"
                 @click="close"
               >
-                <XMarkIcon class="h-5 w-5" />
+                <X class="h-5 w-5" />
               </button>
             </div>
 

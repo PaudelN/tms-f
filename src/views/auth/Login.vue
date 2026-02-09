@@ -4,16 +4,16 @@
   >
     <div class="absolute inset-0 overflow-hidden opacity-5">
       <div class="absolute top-20 left-10 animate-float">
-        <Icon icon="lucide:log-in" class="w-20 h-20 text-primary" />
+        <LogIn class="w-20 h-20 text-primary" />
       </div>
       <div class="absolute top-40 right-20 animate-float-delay-1">
-        <Icon icon="lucide:shield-check" class="w-24 h-24 text-primary" />
+        <ShieldCheck class="w-24 h-24 text-primary" />
       </div>
       <div class="absolute bottom-32 left-1/4 animate-float-delay-2">
-        <Icon icon="lucide:sparkles" class="w-16 h-16 text-primary" />
+        <Sparkles class="w-16 h-16 text-primary" />
       </div>
       <div class="absolute bottom-20 right-1/3 animate-float-delay-3">
-        <Icon icon="lucide:lock" class="w-20 h-20 text-primary" />
+        <Lock class="w-20 h-20 text-primary" />
       </div>
     </div>
 
@@ -47,10 +47,7 @@
           v-if="authStore.successMessage"
           class="mb-6 p-4 bg-green-500/10 border border-green-500/50 rounded-lg flex items-center gap-3 animate-slide-down"
         >
-          <Icon
-            icon="lucide:check-circle"
-            class="w-5 h-5 text-green-600 dark:text-green-400"
-          />
+          <CheckCircle2 class="w-5 h-5 text-green-600 dark:text-green-400" />
           <p class="text-green-600 dark:text-green-400 text-sm">
             {{ authStore.successMessage }}
           </p>
@@ -61,10 +58,7 @@
           v-if="authStore.loginErrors.general"
           class="mb-6 p-4 bg-red-500/10 border border-red-500/50 rounded-lg flex items-center gap-3 animate-slide-down"
         >
-          <Icon
-            icon="lucide:alert-circle"
-            class="w-5 h-5 text-red-600 dark:text-red-400"
-          />
+          <AlertCircle class="w-5 h-5 text-red-600 dark:text-red-400" />
           <p class="text-red-600 dark:text-red-400 text-sm">
             {{ authStore.loginErrors.general }}
           </p>
@@ -72,11 +66,11 @@
 
         <form @submit.prevent="handleLogin" class="space-y-5">
           <!-- Email Field -->
-          <div class="space-y-2 animate-fade-in" style="animation-delay: 0.1s">
+          <div class="space-y-2 animate-fade-in animate-delay-100">
             <Label
               class="text-sm font-medium text-foreground flex items-center gap-2"
             >
-              <Icon icon="lucide:mail" class="w-4 h-4" />
+              <Mail class="w-4 h-4" />
               Email Address
             </Label>
             <div class="relative group">
@@ -95,14 +89,14 @@
               <div
                 class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
               >
-                <Icon icon="lucide:at-sign" class="w-5 h-5" />
+                <AtSign class="w-5 h-5" />
               </div>
             </div>
             <p
               v-if="authStore.loginErrors.email"
               class="text-red-500 text-sm flex items-center gap-1 animate-shake"
             >
-              <Icon icon="lucide:alert-circle" class="w-3.5 h-3.5" />
+              <AlertCircle class="w-3.5 h-3.5" />
               {{
                 Array.isArray(authStore.loginErrors.email)
                   ? authStore.loginErrors.email[0]
@@ -112,11 +106,11 @@
           </div>
 
           <!-- Password Field -->
-          <div class="space-y-2 animate-fade-in" style="animation-delay: 0.2s">
+          <div class="space-y-2 animate-fade-in animate-delay-200">
             <Label
               class="text-sm font-medium text-foreground flex items-center gap-2"
             >
-              <Icon icon="lucide:lock" class="w-4 h-4" />
+              <Lock class="w-4 h-4" />
               Password
             </Label>
             <div class="relative group">
@@ -135,7 +129,7 @@
               <div
                 class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
               >
-                <Icon icon="lucide:key" class="w-5 h-5" />
+                <Key class="w-5 h-5" />
               </div>
               <button
                 type="button"
@@ -143,15 +137,15 @@
                 :disabled="authStore.isLoading"
                 class="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
               >
-                <Icon v-if="!showPassword" icon="lucide:eye" class="w-5 h-5" />
-                <Icon v-else icon="lucide:eye-off" class="w-5 h-5" />
+                <Eye v-if="!showPassword" class="w-5 h-5" />
+                <EyeOff v-else class="w-5 h-5" />
               </button>
             </div>
             <p
               v-if="authStore.loginErrors.password"
               class="text-red-500 text-sm flex items-center gap-1 animate-shake"
             >
-              <Icon icon="lucide:alert-circle" class="w-3.5 h-3.5" />
+              <AlertCircle class="w-3.5 h-3.5" />
               {{
                 Array.isArray(authStore.loginErrors.password)
                   ? authStore.loginErrors.password[0]
@@ -161,10 +155,7 @@
           </div>
 
           <!-- Remember Me & Forgot Password -->
-          <div
-            class="flex items-center justify-between animate-fade-in"
-            style="animation-delay: 0.3s"
-          >
+          <div class="flex items-center justify-between animate-fade-in animate-delay-300">
             <div class="flex items-center gap-2">
               <Checkbox
                 type="checkbox"
@@ -191,11 +182,10 @@
           <Button
             type="submit"
             :disabled="authStore.isLoading"
-            class="w-full py-3 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-lg shadow-md transition-all duration-200 transform hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 animate-fade-in"
-            style="animation-delay: 0.4s"
+            class="w-full py-3 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-lg shadow-md transition-all duration-200 transform hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 animate-fade-in animate-delay-400"
           >
             <template v-if="authStore.isLoading">
-              <Icon icon="svg-spinners:ring-resize" class="w-5 h-5" />
+              <Loader2 class="w-5 h-5 animate-spin" />
               Signing in...
             </template>
             <template v-else> Sign In </template>
@@ -203,10 +193,7 @@
         </form>
 
         <!-- Divider -->
-        <div
-          class="relative my-6 animate-fade-in"
-          style="animation-delay: 0.5s"
-        >
+        <div class="relative my-6 animate-fade-in animate-delay-500">
           <div class="absolute inset-0 flex items-center">
             <div class="w-full border-t border-border"></div>
           </div>
@@ -218,16 +205,13 @@
         </div>
 
         <!-- Social Login Buttons -->
-        <div
-          class="grid grid-cols-2 gap-3 animate-fade-in"
-          style="animation-delay: 0.6s"
-        >
+        <div class="grid grid-cols-2 gap-3 animate-fade-in animate-delay-600">
           <Button
             type="button"
             variant="outline"
             class="w-full py-2.5 flex items-center justify-center gap-2 border-border hover:bg-accent transition-colors"
           >
-            <Icon icon="lucide:chrome" class="w-5 h-5" />
+            <Chrome class="w-5 h-5" />
             <span class="text-sm font-medium">Google</span>
           </Button>
           <Button
@@ -235,15 +219,12 @@
             variant="outline"
             class="w-full py-2.5 flex items-center justify-center gap-2 border-border hover:bg-accent transition-colors"
           >
-            <Icon icon="lucide:github" class="w-5 h-5" />
+            <Github class="w-5 h-5" />
             <span class="text-sm font-medium">GitHub</span>
           </Button>
         </div>
 
-        <div
-          class="mt-6 text-center animate-fade-in"
-          style="animation-delay: 0.7s"
-        >
+        <div class="mt-6 text-center animate-fade-in animate-delay-700">
           <p class="text-muted-foreground text-sm">
             Don't have an account?
             <a
@@ -256,10 +237,9 @@
         </div>
 
         <div
-          class="mt-6 flex items-center justify-center gap-2 text-muted-foreground text-xs animate-fade-in"
-          style="animation-delay: 0.8s"
+          class="mt-6 flex items-center justify-center gap-2 text-muted-foreground text-xs animate-fade-in animate-delay-800"
         >
-          <Icon icon="lucide:shield-check" class="w-3.5 h-3.5" />
+          <ShieldCheck class="w-3.5 h-3.5" />
           <span>Secured with 256-bit encryption</span>
         </div>
       </div>
@@ -274,7 +254,22 @@
   import Label from "@/components/ui/label/Label.vue";
   import { useAuthStore } from "@/stores/auth";
   import type { LoginForm } from "@/types/loginForm";
-  import { Icon } from "@iconify/vue";
+  import {
+    AlertCircle,
+    AtSign,
+    CheckCircle2,
+    Chrome,
+    Eye,
+    EyeOff,
+    Github,
+    Key,
+    Loader2,
+    Lock,
+    LogIn,
+    Mail,
+    ShieldCheck,
+    Sparkles,
+  } from "lucide-vue-next";
   import { onMounted, ref } from "vue";
   import { useRouter } from "vue-router";
 
@@ -298,122 +293,3 @@
     }
   });
 </script>
-
-<style scoped>
-  @keyframes float {
-    0%,
-    100% {
-      transform: translateY(0px);
-    }
-    50% {
-      transform: translateY(-10px);
-    }
-  }
-
-  @keyframes float-delay-1 {
-    0%,
-    100% {
-      transform: translateY(0px);
-    }
-    50% {
-      transform: translateY(-15px);
-    }
-  }
-
-  @keyframes float-delay-2 {
-    0%,
-    100% {
-      transform: translateY(0px);
-    }
-    50% {
-      transform: translateY(-12px);
-    }
-  }
-
-  @keyframes float-delay-3 {
-    0%,
-    100% {
-      transform: translateY(0px);
-    }
-    50% {
-      transform: translateY(-8px);
-    }
-  }
-
-  @keyframes slide-up {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  @keyframes slide-down {
-    from {
-      opacity: 0;
-      transform: translateY(-10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  @keyframes fade-in {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-
-  @keyframes shake {
-    0%,
-    100% {
-      transform: translateX(0);
-    }
-    25% {
-      transform: translateX(-5px);
-    }
-    75% {
-      transform: translateX(5px);
-    }
-  }
-
-  .animate-float {
-    animation: float 8s ease-in-out infinite;
-  }
-
-  .animate-float-delay-1 {
-    animation: float-delay-1 9s ease-in-out infinite;
-  }
-
-  .animate-float-delay-2 {
-    animation: float-delay-2 10s ease-in-out infinite;
-  }
-
-  .animate-float-delay-3 {
-    animation: float-delay-3 11s ease-in-out infinite;
-  }
-
-  .animate-slide-up {
-    animation: slide-up 0.5s ease-out;
-  }
-
-  .animate-slide-down {
-    animation: slide-down 0.3s ease-out;
-  }
-
-  .animate-fade-in {
-    animation: fade-in 0.5s ease-out forwards;
-    opacity: 0;
-  }
-
-  .animate-shake {
-    animation: shake 0.3s ease-in-out;
-  }
-</style>

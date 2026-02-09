@@ -4,9 +4,7 @@
       <div class="bg-card rounded-2xl p-6 shadow-sm border border-border hover:shadow-md transition-shadow">
         <div class="flex items-center justify-between mb-4">
           <div class="h-12 w-12 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
-            <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-            </svg>
+            <Folder class="w-6 h-6 text-primary" />
           </div>
           <div class="text-right">
             <p class="text-xs text-muted-foreground mb-1">Total</p>
@@ -16,9 +14,7 @@
         <div class="flex items-center justify-between text-xs">
           <span class="text-muted-foreground">Workspaces</span>
           <span class="text-green-600 font-medium flex items-center gap-1">
-            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" />
-            </svg>
+            <ArrowUpRight class="w-3 h-3" />
             12%
           </span>
         </div>
@@ -27,49 +23,41 @@
       <div class="bg-card rounded-2xl p-6 shadow-sm border border-border hover:shadow-md transition-shadow">
         <div class="flex items-center justify-between mb-4">
           <div class="h-12 w-12 rounded-xl bg-gradient-to-br from-green-500/20 to-green-500/10 flex items-center justify-center">
-            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+            <CircleCheck class="w-6 h-6 text-green-600" />
           </div>
           <div class="text-right">
             <p class="text-xs text-muted-foreground mb-1">Active</p>
             <p class="text-3xl font-bold text-foreground">{{ activeCount }}</p>
           </div>
         </div>
-        <div class="w-full bg-muted rounded-full h-1.5">
-          <div
-            class="bg-green-500 h-1.5 rounded-full transition-all duration-500"
-            :style="{ width: `${progressPercentage.active}%` }"
-          ></div>
-        </div>
+        <Progress
+          :model-value="progressPercentage.active"
+          class="h-1.5"
+          indicator-class="bg-green-500"
+        />
       </div>
 
       <div class="bg-card rounded-2xl p-6 shadow-sm border border-border hover:shadow-md transition-shadow">
         <div class="flex items-center justify-between mb-4">
           <div class="h-12 w-12 rounded-xl bg-gradient-to-br from-orange-500/20 to-orange-500/10 flex items-center justify-center">
-            <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
-            </svg>
+            <Archive class="w-6 h-6 text-orange-600" />
           </div>
           <div class="text-right">
             <p class="text-xs text-muted-foreground mb-1">Archived</p>
             <p class="text-3xl font-bold text-foreground">{{ archivedCount }}</p>
           </div>
         </div>
-        <div class="w-full bg-muted rounded-full h-1.5">
-          <div
-            class="bg-orange-500 h-1.5 rounded-full transition-all duration-500"
-            :style="{ width: `${progressPercentage.archived}%` }"
-          ></div>
-        </div>
+        <Progress
+          :model-value="progressPercentage.archived"
+          class="h-1.5"
+          indicator-class="bg-orange-500"
+        />
       </div>
 
       <div class="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent rounded-2xl p-6 shadow-sm border border-primary/20 hover:shadow-md transition-shadow">
         <div class="flex items-center justify-between mb-4">
           <div class="h-12 w-12 rounded-xl bg-primary/20 flex items-center justify-center">
-            <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-            </svg>
+            <Sparkles class="w-6 h-6 text-primary" />
           </div>
           <span class="text-xs font-semibold px-2.5 py-1 bg-primary/20 text-primary rounded-full">
             🏆 MVP
@@ -89,18 +77,14 @@
       <div class="bg-card rounded-2xl shadow-sm border border-border overflow-hidden">
         <div class="p-5 border-b border-border bg-gradient-to-r from-primary/5 to-transparent flex items-center justify-between">
           <h3 class="text-sm font-semibold text-foreground flex items-center gap-2">
-            <svg class="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-            </svg>
+            <Star class="w-4 h-4 text-primary" />
             Pinned Workspaces
           </h3>
           <span class="text-xs text-muted-foreground">{{ pinnedWorkspaces.length }}</span>
         </div>
         <div class="p-4 max-h-72 overflow-y-auto">
           <div v-if="pinnedWorkspaces.length === 0" class="text-center py-8">
-            <svg class="w-10 h-10 text-muted-foreground mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-            </svg>
+            <Star class="w-10 h-10 text-muted-foreground mx-auto mb-2" />
             <p class="text-xs text-muted-foreground">No pinned workspaces yet</p>
           </div>
           <div class="space-y-2">
@@ -118,15 +102,15 @@
                   <p class="text-sm font-medium text-foreground truncate">{{ workspace.name }}</p>
                   <p class="text-xs text-muted-foreground">{{ formatDate(workspace.created_at) }}</p>
                 </div>
-                <button
+                <Button
                   type="button"
-                  class="opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                  variant="ghost"
+                  size="icon"
+                  class="h-7 w-7 opacity-0 group-hover:opacity-100"
                   @click.stop="emit('togglePin', workspace.id)"
                 >
-                  <svg class="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                  </svg>
-                </button>
+                  <Star class="w-4 h-4 text-primary" />
+                </Button>
               </div>
             </div>
           </div>
@@ -136,9 +120,7 @@
       <div class="bg-card rounded-2xl shadow-sm border border-border overflow-hidden">
         <div class="p-5 border-b border-border bg-gradient-to-r from-green-500/5 to-transparent flex items-center justify-between">
           <h3 class="text-sm font-semibold text-foreground flex items-center gap-2">
-            <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+            <Clock class="w-4 h-4 text-green-600" />
             Recent Activity
           </h3>
         </div>
@@ -167,9 +149,7 @@
       <div class="bg-card rounded-2xl shadow-sm border border-border overflow-hidden">
         <div class="p-5 border-b border-border bg-gradient-to-r from-orange-500/5 to-transparent">
           <h3 class="text-sm font-semibold text-foreground flex items-center gap-2">
-            <svg class="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
+            <BarChart3 class="w-4 h-4 text-orange-600" />
             Activity Overview
           </h3>
         </div>
@@ -204,9 +184,7 @@
                   class="flex items-center gap-2 p-2 rounded-lg hover:bg-accent transition-colors cursor-pointer"
                 >
                   <div :class="file.iconBg" class="h-7 w-7 rounded flex items-center justify-center flex-shrink-0">
-                    <svg class="w-3.5 h-3.5" :class="file.iconColor" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="file.iconPath" />
-                    </svg>
+                  <component :is="file.icon" class="w-3.5 h-3.5" :class="file.iconColor" />
                   </div>
                   <div class="flex-1 min-w-0">
                     <p class="text-xs font-medium text-foreground truncate">{{ file.name }}</p>
@@ -234,7 +212,19 @@
 </template>
 
 <script setup lang="ts">
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import type { Workspace } from "@/stores/workspace";
+import {
+  Archive,
+  ArrowUpRight,
+  BarChart3,
+  CircleCheck,
+  Clock,
+  Folder,
+  Sparkles,
+  Star,
+} from "lucide-vue-next";
 
 type TopContributor = {
   name: string;
@@ -259,7 +249,7 @@ type RecentFile = {
   size: string;
   iconBg: string;
   iconColor: string;
-  iconPath: string;
+  icon: any;
 };
 
 type UpcomingEvent = {

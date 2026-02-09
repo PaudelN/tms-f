@@ -1,4 +1,4 @@
-import api from "@/lib/axios";
+import api from "@/services/http";
 import router from "@/router";
 import type { LoginForm } from "@/types/loginForm";
 import type { Errors, RegisterForm } from "@/types/registerForm";

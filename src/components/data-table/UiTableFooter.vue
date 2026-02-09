@@ -1,10 +1,11 @@
 <template>
-  <div class="bg-card border-t border-gray-200 px-4 py-3">
+  <div class="bg-card border-t border-border px-4 py-3">
     <UiPagination
       :current-page="pagination.currentPage"
       :total-pages="pagination.totalPages"
       :total="pagination.total"
       :per-page="pagination.perPage"
+      :page-sizes="pageSizes"
       @page-change="$emit('page-change', $event)"
       @per-page-change="$emit('per-page-change', $event)"
     />
@@ -17,6 +18,7 @@
 
   interface Props {
     pagination: PaginationState;
+    pageSizes?: number[];
   }
 
   defineProps<Props>();

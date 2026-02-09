@@ -1,4 +1,4 @@
-import AppLayout from "@/components/layouts/AppLayout.vue";
+import AppLayout from "@/layouts/AppLayout.vue";
 import { useAuthStore } from "@/stores/auth";
 import {
   createRouter,

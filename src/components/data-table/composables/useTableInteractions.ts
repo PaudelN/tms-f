@@ -11,7 +11,7 @@ export function useTableInteractions<T = any>(
   tableId: string,
   columns: TableColumn<T>[],
   fetchFn: TableFetchFn<T>,
-  config: TableConfig = {},
+  config: TableConfig<T> = {},
 ) {
   const store = useUiTableStore();
   const fetchInProgress = ref(false);
