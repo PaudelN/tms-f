@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue';
-import { XMarkIcon } from '@heroicons/vue/24/outline';
+import { computed, watch } from "vue";
+import { X } from "lucide-vue-next";
 
 interface Props {
   open: boolean;
@@ -11,28 +11,28 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  size: 'md',
+  size: "md",
   showClose: true,
 });
 
 const emit = defineEmits<{
-  'update:open': [value: boolean];
+  "update:open": [value: boolean];
   close: [];
 }>();
 
 const sizeClasses = {
-  sm: 'max-w-sm',
-  md: 'max-w-md',
-  lg: 'max-w-lg',
-  xl: 'max-w-xl',
-  full: 'max-w-full mx-4',
+  sm: "max-w-sm",
+  md: "max-w-md",
+  lg: "max-w-lg",
+  xl: "max-w-xl",
+  full: "max-w-full mx-4",
 };
 
 const dialogClass = computed(() => sizeClasses[props.size]);
 
 function close() {
-  emit('update:open', false);
-  emit('close');
+  emit("update:open", false);
+  emit("close");
 }
 
 function handleBackdropClick(e: MouseEvent) {
@@ -44,9 +44,9 @@ function handleBackdropClick(e: MouseEvent) {
 // Prevent body scroll when modal is open
 watch(() => props.open, (isOpen) => {
   if (isOpen) {
-    document.body.style.overflow = 'hidden';
+    document.body.style.overflow = "hidden";
   } else {
-    document.body.style.overflow = '';
+    document.body.style.overflow = "";
   }
 });
 </script>
@@ -98,7 +98,7 @@ watch(() => props.open, (isOpen) => {
                 class="ml-4 text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-500 rounded"
                 @click="close"
               >
-                <XMarkIcon class="h-5 w-5" />
+                <X class="h-5 w-5" />
               </button>
             </div>
 

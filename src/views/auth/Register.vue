@@ -4,16 +4,16 @@
   >
     <div class="absolute inset-0 overflow-hidden opacity-5">
       <div class="absolute top-20 left-10 animate-float">
-        <Icon icon="lucide:user-plus" class="w-20 h-20 text-primary" />
+        <UserPlus class="w-20 h-20 text-primary" />
       </div>
       <div class="absolute top-40 right-20 animate-float-delay-1">
-        <Icon icon="lucide:shield-check" class="w-24 h-24 text-primary" />
+        <ShieldCheck class="w-24 h-24 text-primary" />
       </div>
       <div class="absolute bottom-32 left-1/4 animate-float-delay-2">
-        <Icon icon="lucide:sparkles" class="w-16 h-16 text-primary" />
+        <Sparkles class="w-16 h-16 text-primary" />
       </div>
       <div class="absolute bottom-20 right-1/3 animate-float-delay-3">
-        <Icon icon="lucide:lock" class="w-20 h-20 text-primary" />
+        <Lock class="w-20 h-20 text-primary" />
       </div>
     </div>
 
@@ -48,10 +48,7 @@
           v-if="authStore.successMessage"
           class="mb-6 p-4 bg-green-500/10 border border-green-500/50 rounded-lg flex items-center gap-3 animate-slide-down"
         >
-          <Icon
-            icon="lucide:check-circle"
-            class="w-5 h-5 text-green-600 dark:text-green-400"
-          />
+          <CheckCircle class="w-5 h-5 text-green-600 dark:text-green-400" />
           <p class="text-green-600 dark:text-green-400 text-sm">
             {{ authStore.successMessage }}
           </p>
@@ -61,21 +58,18 @@
           v-if="authStore.registrationErrors.general"
           class="mb-6 p-4 bg-red-500/10 border border-red-500/50 rounded-lg flex items-center gap-3 animate-slide-down"
         >
-          <Icon
-            icon="lucide:alert-circle"
-            class="w-5 h-5 text-red-600 dark:text-red-400"
-          />
+          <AlertCircle class="w-5 h-5 text-red-600 dark:text-red-400" />
           <p class="text-red-600 dark:text-red-400 text-sm">
             {{ authStore.registrationErrors.general }}
           </p>
         </div>
 
         <form @submit.prevent="handleRegister" class="space-y-5">
-          <div class="space-y-2 animate-fade-in" style="animation-delay: 0.1s">
+          <div class="space-y-2 animate-fade-in [animation-delay:100ms]">
             <Label
               class="text-sm font-medium text-foreground flex items-center gap-2"
             >
-              <Icon icon="lucide:user" class="w-4 h-4" />
+              <User class="w-4 h-4" />
               Full Name
             </Label>
             <div class="relative group">
@@ -94,14 +88,14 @@
               <div
                 class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
               >
-                <Icon icon="lucide:user-circle" class="w-5 h-5" />
+                <UserCircle class="w-5 h-5" />
               </div>
             </div>
             <p
               v-if="authStore.registrationErrors.name"
               class="text-red-500 text-sm flex items-center gap-1 animate-shake"
             >
-              <Icon icon="lucide:alert-circle" class="w-3.5 h-3.5" />
+              <AlertCircle class="w-3.5 h-3.5" />
               {{
                 Array.isArray(authStore.registrationErrors.name)
                   ? authStore.registrationErrors.name[0]
@@ -110,11 +104,11 @@
             </p>
           </div>
 
-          <div class="space-y-2 animate-fade-in" style="animation-delay: 0.2s">
+          <div class="space-y-2 animate-fade-in [animation-delay:200ms]">
             <Label
               class="text-sm font-medium text-foreground flex items-center gap-2"
             >
-              <Icon icon="lucide:mail" class="w-4 h-4" />
+              <Mail class="w-4 h-4" />
               Email Address
             </Label>
             <div class="relative group">
@@ -133,14 +127,14 @@
               <div
                 class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
               >
-                <Icon icon="lucide:at-sign" class="w-5 h-5" />
+                <AtSign class="w-5 h-5" />
               </div>
             </div>
             <p
               v-if="authStore.registrationErrors.email"
               class="text-red-500 text-sm flex items-center gap-1 animate-shake"
             >
-              <Icon icon="lucide:alert-circle" class="w-3.5 h-3.5" />
+              <AlertCircle class="w-3.5 h-3.5" />
               {{
                 Array.isArray(authStore.registrationErrors.email)
                   ? authStore.registrationErrors.email[0]
@@ -149,11 +143,11 @@
             </p>
           </div>
 
-          <div class="space-y-2 animate-fade-in" style="animation-delay: 0.3s">
+          <div class="space-y-2 animate-fade-in [animation-delay:300ms]">
             <Label
               class="text-sm font-medium text-foreground flex items-center gap-2"
             >
-              <Icon icon="lucide:lock" class="w-4 h-4" />
+              <Lock class="w-4 h-4" />
               Password
             </Label>
             <div class="relative group">
@@ -173,17 +167,19 @@
               <div
                 class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
               >
-                <Icon icon="lucide:key" class="w-5 h-5" />
+                <Key class="w-5 h-5" />
               </div>
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon"
                 @click="showPassword = !showPassword"
                 :disabled="authStore.isLoading"
-                class="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                class="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               >
-                <Icon v-if="!showPassword" icon="lucide:eye" class="w-5 h-5" />
-                <Icon v-else icon="lucide:eye-off" class="w-5 h-5" />
-              </button>
+                <Eye v-if="!showPassword" class="w-5 h-5" />
+                <EyeOff v-else class="w-5 h-5" />
+              </Button>
             </div>
 
             <div class="space-y-2" v-if="formData.password">
@@ -238,7 +234,7 @@
               v-if="authStore.registrationErrors.password"
               class="text-red-500 text-sm flex items-center gap-1 animate-shake"
             >
-              <Icon icon="lucide:alert-circle" class="w-3.5 h-3.5" />
+              <AlertCircle class="w-3.5 h-3.5" />
               {{
                 Array.isArray(authStore.registrationErrors.password)
                   ? authStore.registrationErrors.password[0]
@@ -247,11 +243,11 @@
             </p>
           </div>
 
-          <div class="space-y-2 animate-fade-in" style="animation-delay: 0.4s">
+          <div class="space-y-2 animate-fade-in [animation-delay:400ms]">
             <Label
               class="text-sm font-medium text-foreground flex items-center gap-2"
             >
-              <Icon icon="lucide:shield-check" class="w-4 h-4" />
+              <ShieldCheck class="w-4 h-4" />
               Confirm Password
             </Label>
             <div class="relative group">
@@ -270,27 +266,25 @@
               <div
                 class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
               >
-                <Icon icon="lucide:lock" class="w-5 h-5" />
+                <Lock class="w-5 h-5" />
               </div>
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon"
                 @click="showConfirmPassword = !showConfirmPassword"
                 :disabled="authStore.isLoading"
-                class="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                class="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               >
-                <Icon
-                  v-if="!showConfirmPassword"
-                  icon="lucide:eye"
-                  class="w-5 h-5"
-                />
-                <Icon v-else icon="lucide:eye-off" class="w-5 h-5" />
-              </button>
+                <Eye v-if="!showConfirmPassword" class="w-5 h-5" />
+                <EyeOff v-else class="w-5 h-5" />
+              </Button>
             </div>
             <p
               v-if="authStore.registrationErrors.password_confirmation"
               class="text-red-500 text-sm flex items-center gap-1 animate-shake"
             >
-              <Icon icon="lucide:alert-circle" class="w-3.5 h-3.5" />
+              <AlertCircle class="w-3.5 h-3.5" />
               {{
                 Array.isArray(
                   authStore.registrationErrors.password_confirmation,
@@ -304,11 +298,10 @@
           <Button
             type="submit"
             :disabled="authStore.isLoading"
-            class="w-full py-3 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-lg shadow-md transition-all duration-200 transform hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 animate-fade-in"
-            style="animation-delay: 0.5s"
+            class="w-full py-3 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-lg shadow-md transition-all duration-200 transform hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 animate-fade-in [animation-delay:500ms]"
           >
             <template v-if="authStore.isLoading">
-              <Icon icon="svg-spinners:ring-resize" class="w-5 h-5" />
+              <Loader2 class="w-5 h-5 animate-spin" />
               Creating Account...
             </template>
             <template v-else> Create Account </template>
@@ -316,8 +309,7 @@
         </form>
 
         <div
-          class="mt-6 text-center animate-fade-in"
-          style="animation-delay: 0.6s"
+          class="mt-6 text-center animate-fade-in [animation-delay:600ms]"
         >
           <p class="text-muted-foreground text-sm">
             Already have an account?
@@ -331,10 +323,9 @@
         </div>
 
         <div
-          class="mt-6 flex items-center justify-center gap-2 text-muted-foreground text-xs animate-fade-in"
-          style="animation-delay: 0.7s"
+          class="mt-6 flex items-center justify-center gap-2 text-muted-foreground text-xs animate-fade-in [animation-delay:700ms]"
         >
-          <Icon icon="lucide:shield-check" class="w-3.5 h-3.5" />
+          <ShieldCheck class="w-3.5 h-3.5" />
           <span>Secured with 256-bit encryption</span>
         </div>
       </div>
@@ -344,14 +335,29 @@
 
 <script setup lang="ts">
   import Button from "@/components/ui/button/Button.vue";
-import Input from "@/components/ui/input/Input.vue";
-import Label from "@/components/ui/label/Label.vue";
-import Progress from "@/components/ui/progress/Progress.vue";
-import { useAuthStore } from "@/stores/auth";
-import type { PasswordStrength, RegisterForm } from "@/types/registerForm";
-import { Icon } from "@iconify/vue";
-import { computed, onMounted, ref } from "vue";
-import { useRouter } from "vue-router";
+  import Input from "@/components/ui/input/Input.vue";
+  import Label from "@/components/ui/label/Label.vue";
+  import Progress from "@/components/ui/progress/Progress.vue";
+  import { useAuthStore } from "@/stores/auth";
+  import type { PasswordStrength, RegisterForm } from "@/types/registerForm";
+  import { computed, onMounted, ref } from "vue";
+  import { useRouter } from "vue-router";
+  import {
+    AlertCircle,
+    AtSign,
+    CheckCircle,
+    Eye,
+    EyeOff,
+    Key,
+    Loader2,
+    Lock,
+    Mail,
+    ShieldCheck,
+    Sparkles,
+    User,
+    UserCircle,
+    UserPlus,
+  } from "lucide-vue-next";
 
   const authStore = useAuthStore();
   const showPassword = ref(false);
@@ -440,122 +446,3 @@ import { useRouter } from "vue-router";
     }
   });
 </script>
-
-<style scoped>
-  @keyframes float {
-    0%,
-    100% {
-      transform: translateY(0px);
-    }
-    50% {
-      transform: translateY(-10px);
-    }
-  }
-
-  @keyframes float-delay-1 {
-    0%,
-    100% {
-      transform: translateY(0px);
-    }
-    50% {
-      transform: translateY(-15px);
-    }
-  }
-
-  @keyframes float-delay-2 {
-    0%,
-    100% {
-      transform: translateY(0px);
-    }
-    50% {
-      transform: translateY(-12px);
-    }
-  }
-
-  @keyframes float-delay-3 {
-    0%,
-    100% {
-      transform: translateY(0px);
-    }
-    50% {
-      transform: translateY(-8px);
-    }
-  }
-
-  @keyframes slide-up {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  @keyframes slide-down {
-    from {
-      opacity: 0;
-      transform: translateY(-10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  @keyframes fade-in {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-
-  @keyframes shake {
-    0%,
-    100% {
-      transform: translateX(0);
-    }
-    25% {
-      transform: translateX(-5px);
-    }
-    75% {
-      transform: translateX(5px);
-    }
-  }
-
-  .animate-float {
-    animation: float 8s ease-in-out infinite;
-  }
-
-  .animate-float-delay-1 {
-    animation: float-delay-1 9s ease-in-out infinite;
-  }
-
-  .animate-float-delay-2 {
-    animation: float-delay-2 10s ease-in-out infinite;
-  }
-
-  .animate-float-delay-3 {
-    animation: float-delay-3 11s ease-in-out infinite;
-  }
-
-  .animate-slide-up {
-    animation: slide-up 0.5s ease-out;
-  }
-
-  .animate-slide-down {
-    animation: slide-down 0.3s ease-out;
-  }
-
-  .animate-fade-in {
-    animation: fade-in 0.5s ease-out forwards;
-    opacity: 0;
-  }
-
-  .animate-shake {
-    animation: shake 0.3s ease-in-out;
-  }
-</style>

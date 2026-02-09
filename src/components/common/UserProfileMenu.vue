@@ -1,7 +1,7 @@
 <template>
   <div
     ref="menuRef"
-    class="absolute bottom-0 left-0 right-0 border-t border-border/60 bg-card/70 backdrop-blur"
+    class="border-t border-border/60 bg-card/70 backdrop-blur"
   >
     <div class="relative">
       <div
@@ -26,7 +26,7 @@
           </p>
         </div>
 
-        <ChevronDownIcon
+        <ChevronDown
           class="h-4 w-4 text-muted-foreground transition-transform duration-200"
           :class="profileOpen ? '-rotate-90' : ''"
         />
@@ -91,10 +91,12 @@
             </p>
 
             <div class="max-h-48 overflow-y-auto">
-              <button
+              <Button
                 v-for="user in authStore.users"
                 :key="user.id"
-                class="group w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-accent transition-colors"
+                variant="ghost"
+                size="sm"
+                class="group w-full justify-start gap-3 px-3"
               >
                 <Avatar class="h-7 w-7 ring-1 ring-border/60">
                   <AvatarFallback class="text-xs font-semibold">
@@ -108,44 +110,52 @@
                     {{ user.email }}
                   </p>
                 </div>
-              </button>
+              </Button>
             </div>
           </div>
 
           <div class="p-2 border-t border-border/60 space-y-1">
-            <button
+            <Button
               @click="profileOpen = false"
-              class="w-full cursor-pointer flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent transition-colors"
+              variant="ghost"
+              size="sm"
+              class="w-full justify-start gap-2"
             >
-              <Icon icon="lucide:id-card" class="h-4 w-4" />
+              <IdCard class="h-4 w-4" />
               Profile
-            </button>
+            </Button>
 
-            <button
+            <Button
               @click="profileOpen = false"
-              class="w-full cursor-pointer flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent transition-colors"
+              variant="ghost"
+              size="sm"
+              class="w-full justify-start gap-2"
             >
-              <Icon icon="lucide:users" class="h-4 w-4" />
+              <Users class="h-4 w-4" />
               Users
-            </button>
+            </Button>
 
-            <button
+            <Button
               @click="profileOpen = false"
-              class="w-full cursor-pointer flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent transition-colors"
+              variant="ghost"
+              size="sm"
+              class="w-full justify-start gap-2"
             >
-              <Icon icon="lucide:settings" class="h-4 w-4" />
+              <Settings class="h-4 w-4" />
               Settings
-            </button>
+            </Button>
 
             <div class="h-px bg-border/60 my-1" />
 
-            <button
+            <Button
               @click="handleLogout"
-              class="w-full cursor-pointer flex items-center gap-2 px-3 py-2 text-sm rounded-md text-destructive hover:bg-destructive/10 transition-colors"
+              variant="ghost"
+              size="sm"
+              class="w-full justify-start gap-2 text-destructive hover:text-destructive"
             >
-              <Icon icon="lucide:log-out" class="h-4 w-4" />
+              <LogOut class="h-4 w-4" />
               Logout
-            </button>
+            </Button>
           </div>
         </div>
       </Transition>
@@ -154,24 +164,24 @@
 </template>
 
 <script setup lang="ts">
+import { Button } from "@/components/ui/button";
 import Avatar from "@/components/ui/avatar/Avatar.vue";
 import AvatarFallback from "@/components/ui/avatar/AvatarFallback.vue";
-import { ChevronDownIcon } from "@heroicons/vue/24/outline";
-import { Icon } from "@iconify/vue";
 import { onClickOutside } from "@vueuse/core";
 import { ref, computed, onMounted } from "vue";
 import { useAuthStore } from "@/stores/auth";
 import { storeToRefs } from "pinia";
-
-defineProps<{
-  sidebarCollapsed: boolean;
-}>();
+import { ChevronDown, IdCard, LogOut, Settings, Users } from "lucide-vue-next";
+import { useSidebar } from "@/components/ui/sidebar";
 
 const authStore = useAuthStore();
 const { user } = storeToRefs(authStore); 
 
+const { state } = useSidebar();
+
 const menuRef = ref<HTMLElement | null>(null);
 const profileOpen = ref(false);
+const sidebarCollapsed = computed(() => state.value === "collapsed");
 
 const toggleProfile = () => {
   profileOpen.value = !profileOpen.value;
@@ -207,5 +217,3 @@ onMounted(async () => {
   await authStore.fetchUsers(); 
 });
 </script>
-
-

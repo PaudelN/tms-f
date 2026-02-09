@@ -43,6 +43,15 @@ export const useUiTableStore = defineStore(
       tables.value[tableId]?.columns.filter((col) => col.visible !== false) ||
       [];
 
+    const getRowIdKey = (tableId: string) =>
+      tables.value[tableId]?.rowIdKey || "id";
+
+    const getSelectedRowIds = (tableId: string) =>
+      tables.value[tableId]?.selectedRowIds || [];
+
+    const isRowSelected = (tableId: string, rowId: string | number) =>
+      tables.value[tableId]?.selectedRowIds.includes(rowId) || false;
+
     const getColumnByKey = (tableId: string, columnKey: string) =>
       tables.value[tableId]?.columns.find((col) => col.key === columnKey);
 
@@ -94,6 +103,7 @@ export const useUiTableStore = defineStore(
         defaultPerPage = 10,
         defaultSortBy = null,
         defaultSortOrder = null,
+        rowIdKey = "id",
       } = config;
 
       const initializedColumns = columns.map((col) => ({
@@ -114,6 +124,8 @@ export const useUiTableStore = defineStore(
           totalPages: 0,
         },
         columns: initializedColumns,
+        rowIdKey,
+        selectedRowIds: [],
         initialized: true,
       };
     };
@@ -142,6 +154,14 @@ export const useUiTableStore = defineStore(
         totalPages: response.meta.last_page,
       };
       table.error = null;
+      const availableIds = new Set(
+        table.data
+          .map((row: any) => row?.[table.rowIdKey])
+          .filter((id: string | number) => id !== undefined),
+      );
+      table.selectedRowIds = table.selectedRowIds.filter((id) =>
+        availableIds.has(id),
+      );
     };
 
     const setSearch = (tableId: string, search: string) => {
@@ -278,6 +298,7 @@ export const useUiTableStore = defineStore(
       table.pagination.currentPage = 1;
       table.sort = { column: null, order: null };
       table.error = null;
+      table.selectedRowIds = [];
     };
 
     const resetTableFull = (tableId: string, config: TableConfig = {}) => {
@@ -299,6 +320,7 @@ export const useUiTableStore = defineStore(
         totalPages: 0,
       };
       table.error = null;
+      table.selectedRowIds = [];
     };
 
     const destroyTable = (tableId: string) => {
@@ -311,6 +333,37 @@ export const useUiTableStore = defineStore(
       table.data = [];
       table.pagination.total = 0;
       table.pagination.totalPages = 0;
+      table.selectedRowIds = [];
+    };
+
+    const toggleRowSelection = (
+      tableId: string,
+      rowId: string | number,
+    ) => {
+      const table = tables.value[tableId];
+      if (!table) return;
+      if (table.selectedRowIds.includes(rowId)) {
+        table.selectedRowIds = table.selectedRowIds.filter(
+          (id) => id !== rowId,
+        );
+      } else {
+        table.selectedRowIds = [...table.selectedRowIds, rowId];
+      }
+    };
+
+    const setRowSelection = (
+      tableId: string,
+      rowIds: Array<string | number>,
+    ) => {
+      const table = tables.value[tableId];
+      if (!table) return;
+      table.selectedRowIds = rowIds;
+    };
+
+    const clearSelection = (tableId: string) => {
+      const table = tables.value[tableId];
+      if (!table) return;
+      table.selectedRowIds = [];
     };
 
     // Bulk operations
@@ -346,6 +399,9 @@ export const useUiTableStore = defineStore(
       getPagination,
       getColumns,
       getVisibleColumns,
+      getRowIdKey,
+      getSelectedRowIds,
+      isRowSelected,
       getColumnByKey,
       isInitialized,
       hasData,
@@ -381,6 +437,9 @@ export const useUiTableStore = defineStore(
       destroyTable,
       clearData,
       updateMultipleColumns,
+      toggleRowSelection,
+      setRowSelection,
+      clearSelection,
     };
   },
   {

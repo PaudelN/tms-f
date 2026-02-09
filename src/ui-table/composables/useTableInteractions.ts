@@ -74,6 +74,8 @@ export function useTableInteractions<T = any>(
   const sort = computed(() => store.getSort(tableId));
   const visibleColumns = computed(() => store.getVisibleColumns(tableId));
   const allColumns = computed(() => store.getColumns(tableId));
+  const rowIdKey = computed(() => store.getRowIdKey(tableId));
+  const selectedRowIds = computed(() => store.getSelectedRowIds(tableId));
   const hasData = computed(() => store.hasData(tableId));
   const isEmpty = computed(() => store.isEmpty(tableId));
   const hasError = computed(() => store.hasError(tableId));
@@ -198,6 +200,18 @@ export function useTableInteractions<T = any>(
     fetchData();
   }
 
+  function toggleRowSelection(rowId: string | number) {
+    store.toggleRowSelection(tableId, rowId);
+  }
+
+  function setRowSelection(rowIds: Array<string | number>) {
+    store.setRowSelection(tableId, rowIds);
+  }
+
+  function clearSelection() {
+    store.clearSelection(tableId);
+  }
+
   function handleReset() {
     store.resetTable(tableId);
     fetchData();
@@ -249,6 +263,8 @@ export function useTableInteractions<T = any>(
     sort,
     visibleColumns,
     allColumns,
+    rowIdKey,
+    selectedRowIds,
     hasData,
     isEmpty,
     hasError,
@@ -263,6 +279,9 @@ export function useTableInteractions<T = any>(
     handlePerPageChange,
     handleColumnToggle,
     handleRefresh,
+    toggleRowSelection,
+    setRowSelection,
+    clearSelection,
     handleReset,
     handleNextPage,
     handlePreviousPage,
