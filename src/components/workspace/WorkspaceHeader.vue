@@ -20,44 +20,33 @@
 
     <div class="flex items-center gap-3">
       <div class="relative">
-        <input
-          :value="searchQuery"
+        <Search class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Input
+          :model-value="searchQuery"
           type="text"
           placeholder="Quick search..."
           class="w-64 pl-10 pr-4 py-2.5 bg-card border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground shadow-sm"
-          @input="updateSearch"
+          @update:model-value="emit('update:searchQuery', $event)"
         />
-        <svg
-          class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-          />
-        </svg>
       </div>
 
-      <button
+      <Button
         type="button"
-        class="px-5 py-2.5 bg-primary text-primary-foreground rounded-xl font-semibold shadow-sm hover:shadow hover:opacity-90 transition-all flex items-center gap-2"
+        class="px-5 py-2.5 font-semibold shadow-sm hover:shadow flex items-center gap-2"
         @click="emit('create')"
       >
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-        </svg>
+        <Plus class="w-4 h-4" />
         <span>New Workspace</span>
-      </button>
+      </Button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-const props = defineProps<{
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Plus, Search } from "lucide-vue-next";
+defineProps<{
   activeCount: number;
   archivedCount: number;
   pinnedCount: number;
@@ -68,8 +57,4 @@ const emit = defineEmits<{
   (e: "update:searchQuery", value: string): void;
   (e: "create"): void;
 }>();
-
-function updateSearch(event: Event) {
-  emit("update:searchQuery", (event.target as HTMLInputElement).value);
-}
 </script>

@@ -4,10 +4,7 @@
       <!-- Loading State -->
       <div v-if="workspaceStore.isDetailLoading" class="flex items-center justify-center py-20">
         <div class="text-center">
-          <svg class="animate-spin h-12 w-12 text-primary mx-auto mb-4" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
+          <Spinner class="h-12 w-12 text-primary mx-auto mb-4" />
           <p class="text-muted-foreground">Loading workspace details...</p>
         </div>
       </div>
@@ -16,9 +13,7 @@
       <div v-else-if="workspaceStore.hasError" class="flex items-center justify-center py-20">
         <div class="text-center">
           <div class="h-16 w-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
-            <svg class="h-8 w-8 text-destructive" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+            <AlertCircle class="h-8 w-8 text-destructive" />
           </div>
           <h3 class="text-lg font-semibold text-foreground mb-2">Error Loading Workspace</h3>
           <p class="text-muted-foreground mb-4">{{ workspaceStore.errorMessage }}</p>
@@ -34,15 +29,16 @@
         <!-- Header -->
         <div class="flex items-start justify-between">
           <div class="flex items-start gap-4">
-            <button
-              @click="router.back()"
-              class="mt-1 p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-all"
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              class="mt-1 text-muted-foreground hover:text-foreground"
               title="Go back"
+              @click="router.back()"
             >
-              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
+              <ArrowLeft class="h-5 w-5" />
+            </Button>
 
             <div>
               <h1 class="text-4xl font-bold text-foreground mb-2">
@@ -56,15 +52,11 @@
 
           <div class="flex gap-2">
             <Button variant="outline" @click="handleEdit" class="gap-2">
-              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
+              <Pencil class="h-4 w-4" />
               Edit
             </Button>
             <Button variant="destructive" @click="handleDelete" class="gap-2">
-              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
+              <Trash2 class="h-4 w-4" />
               Delete
             </Button>
           </div>
@@ -76,9 +68,7 @@
           <Card>
             <CardHeader>
               <CardTitle class="text-lg flex items-center gap-2">
-                <svg class="h-5 w-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
+                <User class="h-5 w-5 text-primary" />
                 Owner
               </CardTitle>
             </CardHeader>
@@ -102,9 +92,7 @@
           <Card>
             <CardHeader>
               <CardTitle class="text-lg flex items-center gap-2">
-                <svg class="h-5 w-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+                <Info class="h-5 w-5 text-primary" />
                 Information
               </CardTitle>
             </CardHeader>
@@ -129,9 +117,7 @@
         <Card v-if="workspace.description">
           <CardHeader>
             <CardTitle class="text-lg flex items-center gap-2">
-              <svg class="h-5 w-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />
-              </svg>
+              <AlignLeft class="h-5 w-5 text-primary" />
               Description
             </CardTitle>
           </CardHeader>
@@ -144,18 +130,14 @@
         <Card>
           <CardHeader>
             <CardTitle class="text-lg flex items-center gap-2">
-              <svg class="h-5 w-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+              <Clock class="h-5 w-5 text-primary" />
               Recent Activity
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div class="text-center py-8">
               <div class="h-12 w-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
-                <svg class="h-6 w-6 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+                <Clock class="h-6 w-6 text-muted-foreground" />
               </div>
               <p class="text-sm text-muted-foreground">No recent activity</p>
             </div>
@@ -183,10 +165,7 @@
             :disabled="deleteLoading"
             class="gap-2"
           >
-            <svg v-if="deleteLoading" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
+            <Spinner v-if="deleteLoading" class="h-4 w-4" />
             <span>{{ deleteLoading ? 'Deleting...' : 'Delete' }}</span>
           </Button>
         </DialogFooter>
@@ -214,6 +193,8 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import Spinner from '@/components/ui/spinner/Spinner.vue'
+import { AlignLeft, AlertCircle, ArrowLeft, Clock, Info, Pencil, Trash2, User } from 'lucide-vue-next'
 
 const route = useRoute()
 const router = useRouter()
