@@ -1,50 +1,43 @@
 <template>
   <div
     ref="menuRef"
-    class="absolute bottom-0 left-0 right-0 border-t border-border/60 bg-card/70 backdrop-blur"
+    class="border-t border-border/60 bg-card/70 backdrop-blur"
   >
     <div class="relative">
-      <div
-        v-if="!sidebarCollapsed"
+      <Button
+        type="button"
+        variant="ghost"
+        class="flex h-auto w-full items-center px-4 py-3"
         @click="toggleProfile"
-        class="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-accent/40 transition-colors"
       >
-        <Avatar class="h-9 w-9 ring-1 ring-border/60">
-          <AvatarFallback
-            class="bg-linear-to-br from-primary to-primary/80 text-foreground text-sm font-semibold"
-          >
-            {{ userInitials }}
-          </AvatarFallback>
-        </Avatar>
+        <div
+          class="flex w-full items-center gap-3"
+          :class="sidebarCollapsed ? 'justify-center' : ''"
+        >
+          <Avatar class="h-9 w-9 ring-1 ring-border/60">
+            <AvatarFallback
+              class="bg-linear-to-br from-primary to-primary/80 text-foreground text-sm font-semibold"
+            >
+              {{ userInitials }}
+            </AvatarFallback>
+          </Avatar>
 
-        <div class="flex-1 min-w-0 leading-tight">
-          <p class="text-sm font-medium truncate">
-            {{ authStore.user?.name || "User" }}
-          </p>
-          <p class="text-xs text-muted-foreground truncate">
-            {{ authStore.user?.email || "" }}
-          </p>
+          <div v-if="!sidebarCollapsed" class="flex-1 min-w-0 leading-tight text-left">
+            <p class="text-sm font-medium truncate">
+              {{ authStore.user?.name || "User" }}
+            </p>
+            <p class="text-xs text-muted-foreground truncate">
+              {{ authStore.user?.email || "" }}
+            </p>
+          </div>
+
+          <ChevronDownIcon
+            v-if="!sidebarCollapsed"
+            class="h-4 w-4 text-muted-foreground transition-transform duration-200"
+            :class="profileOpen ? '-rotate-90' : ''"
+          />
         </div>
-
-        <ChevronDownIcon
-          class="h-4 w-4 text-muted-foreground transition-transform duration-200"
-          :class="profileOpen ? '-rotate-90' : ''"
-        />
-      </div>
-
-      <div
-        v-else
-        @click="toggleProfile"
-        class="flex justify-center px-4 py-3 cursor-pointer hover:bg-accent/40 transition-colors"
-      >
-        <Avatar class="h-9 w-9 ring-1 ring-border/60">
-          <AvatarFallback
-            class="bg-linear-to-br from-primary to-primary/80 text-foreground text-sm font-semibold"
-          >
-            {{ userInitials }}
-          </AvatarFallback>
-        </Avatar>
-      </div>
+      </Button>
 
       <Transition
         enter-active-class="transition duration-200 ease-out"
@@ -91,10 +84,13 @@
             </p>
 
             <div class="max-h-48 overflow-y-auto">
-              <button
+              <Button
                 v-for="user in authStore.users"
                 :key="user.id"
-                class="group w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-accent transition-colors"
+                type="button"
+                variant="ghost"
+                size="sm"
+                class="w-full justify-start gap-3 px-3 py-2"
               >
                 <Avatar class="h-7 w-7 ring-1 ring-border/60">
                   <AvatarFallback class="text-xs font-semibold">
@@ -108,44 +104,52 @@
                     {{ user.email }}
                   </p>
                 </div>
-              </button>
+              </Button>
             </div>
           </div>
 
           <div class="p-2 border-t border-border/60 space-y-1">
-            <button
+            <Button
+              type="button"
+              variant="ghost"
+              class="w-full justify-start gap-2"
               @click="profileOpen = false"
-              class="w-full cursor-pointer flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent transition-colors"
             >
-              <Icon icon="lucide:id-card" class="h-4 w-4" />
+              <IdCardIcon class="h-4 w-4" />
               Profile
-            </button>
+            </Button>
 
-            <button
+            <Button
+              type="button"
+              variant="ghost"
+              class="w-full justify-start gap-2"
               @click="profileOpen = false"
-              class="w-full cursor-pointer flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent transition-colors"
             >
-              <Icon icon="lucide:users" class="h-4 w-4" />
+              <UsersIcon class="h-4 w-4" />
               Users
-            </button>
+            </Button>
 
-            <button
+            <Button
+              type="button"
+              variant="ghost"
+              class="w-full justify-start gap-2"
               @click="profileOpen = false"
-              class="w-full cursor-pointer flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent transition-colors"
             >
-              <Icon icon="lucide:settings" class="h-4 w-4" />
+              <SettingsIcon class="h-4 w-4" />
               Settings
-            </button>
+            </Button>
 
             <div class="h-px bg-border/60 my-1" />
 
-            <button
+            <Button
+              type="button"
+              variant="ghost"
+              class="w-full justify-start gap-2 text-destructive hover:text-destructive"
               @click="handleLogout"
-              class="w-full cursor-pointer flex items-center gap-2 px-3 py-2 text-sm rounded-md text-destructive hover:bg-destructive/10 transition-colors"
             >
-              <Icon icon="lucide:log-out" class="h-4 w-4" />
+              <LogOutIcon class="h-4 w-4" />
               Logout
-            </button>
+            </Button>
           </div>
         </div>
       </Transition>
@@ -156,19 +160,23 @@
 <script setup lang="ts">
 import Avatar from "@/components/ui/avatar/Avatar.vue";
 import AvatarFallback from "@/components/ui/avatar/AvatarFallback.vue";
-import { ChevronDownIcon } from "@heroicons/vue/24/outline";
-import { Icon } from "@iconify/vue";
+import { Button } from "@/components/ui/button";
+import { useSidebar } from "@/components/ui/sidebar/utils";
+import {
+  ChevronDownIcon,
+  IdCardIcon,
+  LogOutIcon,
+  SettingsIcon,
+  UsersIcon,
+} from "lucide-vue-next";
 import { onClickOutside } from "@vueuse/core";
 import { ref, computed, onMounted } from "vue";
 import { useAuthStore } from "@/stores/auth";
 import { storeToRefs } from "pinia";
 
-defineProps<{
-  sidebarCollapsed: boolean;
-}>();
-
 const authStore = useAuthStore();
-const { user } = storeToRefs(authStore); 
+const { user } = storeToRefs(authStore);
+const { state } = useSidebar();
 
 const menuRef = ref<HTMLElement | null>(null);
 const profileOpen = ref(false);
@@ -176,6 +184,8 @@ const profileOpen = ref(false);
 const toggleProfile = () => {
   profileOpen.value = !profileOpen.value;
 };
+
+const sidebarCollapsed = computed(() => state.value === "collapsed");
 
 const userInitials = computed(() => {
   if (!user.value?.name) return "U";
@@ -204,8 +214,7 @@ onClickOutside(menuRef, () => {
 });
 
 onMounted(async () => {
-  await authStore.fetchUsers(); 
+  await authStore.fetchUsers();
 });
 </script>
-
 

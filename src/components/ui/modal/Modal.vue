@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue';
-import { XMarkIcon } from '@heroicons/vue/24/outline';
+import { computed, watch } from "vue";
+import { Button } from "@/components/ui/button";
+import { XIcon } from "lucide-vue-next";
 
 interface Props {
   open: boolean;
@@ -11,28 +12,28 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  size: 'md',
+  size: "md",
   showClose: true,
 });
 
 const emit = defineEmits<{
-  'update:open': [value: boolean];
+  "update:open": [value: boolean];
   close: [];
 }>();
 
 const sizeClasses = {
-  sm: 'max-w-sm',
-  md: 'max-w-md',
-  lg: 'max-w-lg',
-  xl: 'max-w-xl',
-  full: 'max-w-full mx-4',
+  sm: "max-w-sm",
+  md: "max-w-md",
+  lg: "max-w-lg",
+  xl: "max-w-xl",
+  full: "max-w-full mx-4",
 };
 
 const dialogClass = computed(() => sizeClasses[props.size]);
 
 function close() {
-  emit('update:open', false);
-  emit('close');
+  emit("update:open", false);
+  emit("close");
 }
 
 function handleBackdropClick(e: MouseEvent) {
@@ -42,13 +43,16 @@ function handleBackdropClick(e: MouseEvent) {
 }
 
 // Prevent body scroll when modal is open
-watch(() => props.open, (isOpen) => {
-  if (isOpen) {
-    document.body.style.overflow = 'hidden';
-  } else {
-    document.body.style.overflow = '';
-  }
-});
+watch(
+  () => props.open,
+  (isOpen) => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+  },
+);
 </script>
 
 <template>
@@ -81,7 +85,10 @@ watch(() => props.open, (isOpen) => {
             aria-modal="true"
           >
             <!-- Header -->
-            <div v-if="title || $slots.header" class="flex items-start justify-between p-6 border-b border-gray-200">
+            <div
+              v-if="title || $slots.header"
+              class="flex items-start justify-between p-6 border-b border-gray-200"
+            >
               <div class="flex-1">
                 <slot name="header">
                   <h3 class="text-lg font-semibold text-gray-900">
@@ -92,14 +99,16 @@ watch(() => props.open, (isOpen) => {
                   </p>
                 </slot>
               </div>
-              <button
+              <Button
                 v-if="showClose"
                 type="button"
-                class="ml-4 text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-500 rounded"
+                size="icon"
+                variant="ghost"
+                class="ml-4 text-gray-400 hover:text-gray-500"
                 @click="close"
               >
-                <XMarkIcon class="h-5 w-5" />
-              </button>
+                <XIcon class="h-5 w-5" />
+              </Button>
             </div>
 
             <!-- Content -->
