@@ -182,6 +182,13 @@ export function useTableInteractions<T = any>(
     }
   }
 
+  function handleSortingChange(
+    columnKey: string | null,
+    order: "asc" | "desc" | null,
+  ) {
+    store.setSorting(tableId, columnKey, order);
+  }
+
   function handlePageChange(page: number) {
     store.setPage(tableId, page);
   }
@@ -259,6 +266,7 @@ export function useTableInteractions<T = any>(
     // Actions
     handleSearch,
     handleSort,
+    handleSortingChange,
     handlePageChange,
     handlePerPageChange,
     handleColumnToggle,
