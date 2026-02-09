@@ -6,7 +6,7 @@
     <hr />
 
     <h2>Users List</h2>
-    <ul>
+    <ul class="list-disc pl-6">
       <li v-for="u in users" :key="u.id">
         {{ u.name }} - {{ u.email }}
       </li>
@@ -29,10 +29,3 @@ onMounted(async () => {
   }
 });
 </script>
-
-<style scoped>
-ul {
-  list-style-type: disc;
-  padding-left: 1.5rem;
-}
-</style>
