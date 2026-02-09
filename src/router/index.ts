@@ -35,7 +35,22 @@ const routes: RouteRecordRaw[] = [
       {
         path: "/workspace",
         name: "workspace",
-        component: () => import("@/views/workspace/Workspace.vue"),
+        component: () => import("@/views/workspace/index.vue"),
+      },
+      {
+        path: "/workspace/add",
+        name: "workspace-add",
+        component: () => import("@/views/workspace/add.vue"),
+      },
+      {
+        path: "/workspace/:id",
+        name: "workspace-detail",
+        component: () => import("@/views/workspace/detail.vue"),
+      },
+      {
+        path: "/workspace/:id/edit",
+        name: "workspace-edit",
+        component: () => import("@/views/workspace/edit.vue"),
       },
     ],
   },
@@ -72,7 +87,6 @@ router.beforeEach((to, from, next) => {
   )
     next({ name: "dashboard" });
   else next();
-
 });
 
 export default router;
