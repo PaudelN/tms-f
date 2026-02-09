@@ -1,13 +1,14 @@
 <template>
   <div
     ref="menuRef"
-    class="absolute bottom-0 left-0 right-0 border-t border-border/60 bg-card/70 backdrop-blur"
+    class="border-t border-border/60 bg-card/70 backdrop-blur"
   >
     <div class="relative">
-      <div
+      <Button
         v-if="!sidebarCollapsed"
+        variant="ghost"
+        class="w-full justify-start gap-3 px-4 py-3"
         @click="toggleProfile"
-        class="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-accent/40 transition-colors"
       >
         <Avatar class="h-9 w-9 ring-1 ring-border/60">
           <AvatarFallback
@@ -17,7 +18,7 @@
           </AvatarFallback>
         </Avatar>
 
-        <div class="flex-1 min-w-0 leading-tight">
+        <div class="flex-1 min-w-0 leading-tight text-left">
           <p class="text-sm font-medium truncate">
             {{ authStore.user?.name || "User" }}
           </p>
@@ -26,16 +27,18 @@
           </p>
         </div>
 
-        <ChevronDownIcon
+        <ChevronDown
           class="h-4 w-4 text-muted-foreground transition-transform duration-200"
           :class="profileOpen ? '-rotate-90' : ''"
         />
-      </div>
+      </Button>
 
-      <div
+      <Button
         v-else
+        variant="ghost"
+        size="icon"
+        class="w-full h-auto py-3"
         @click="toggleProfile"
-        class="flex justify-center px-4 py-3 cursor-pointer hover:bg-accent/40 transition-colors"
       >
         <Avatar class="h-9 w-9 ring-1 ring-border/60">
           <AvatarFallback
@@ -44,7 +47,7 @@
             {{ userInitials }}
           </AvatarFallback>
         </Avatar>
-      </div>
+      </Button>
 
       <Transition
         enter-active-class="transition duration-200 ease-out"
@@ -91,10 +94,11 @@
             </p>
 
             <div class="max-h-48 overflow-y-auto">
-              <button
+              <Button
                 v-for="user in authStore.users"
                 :key="user.id"
-                class="group w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-accent transition-colors"
+                variant="ghost"
+                class="group w-full justify-start gap-3 px-3 py-2"
               >
                 <Avatar class="h-7 w-7 ring-1 ring-border/60">
                   <AvatarFallback class="text-xs font-semibold">
@@ -108,44 +112,48 @@
                     {{ user.email }}
                   </p>
                 </div>
-              </button>
+              </Button>
             </div>
           </div>
 
           <div class="p-2 border-t border-border/60 space-y-1">
-            <button
+            <Button
+              variant="ghost"
+              class="w-full justify-start gap-2 text-sm"
               @click="profileOpen = false"
-              class="w-full cursor-pointer flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent transition-colors"
             >
-              <Icon icon="lucide:id-card" class="h-4 w-4" />
+              <IdCard class="h-4 w-4" />
               Profile
-            </button>
+            </Button>
 
-            <button
+            <Button
+              variant="ghost"
+              class="w-full justify-start gap-2 text-sm"
               @click="profileOpen = false"
-              class="w-full cursor-pointer flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent transition-colors"
             >
-              <Icon icon="lucide:users" class="h-4 w-4" />
+              <Users class="h-4 w-4" />
               Users
-            </button>
+            </Button>
 
-            <button
+            <Button
+              variant="ghost"
+              class="w-full justify-start gap-2 text-sm"
               @click="profileOpen = false"
-              class="w-full cursor-pointer flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent transition-colors"
             >
-              <Icon icon="lucide:settings" class="h-4 w-4" />
+              <Settings class="h-4 w-4" />
               Settings
-            </button>
+            </Button>
 
             <div class="h-px bg-border/60 my-1" />
 
-            <button
+            <Button
+              variant="ghost"
+              class="w-full justify-start gap-2 text-sm text-destructive hover:text-destructive"
               @click="handleLogout"
-              class="w-full cursor-pointer flex items-center gap-2 px-3 py-2 text-sm rounded-md text-destructive hover:bg-destructive/10 transition-colors"
             >
-              <Icon icon="lucide:log-out" class="h-4 w-4" />
+              <LogOut class="h-4 w-4" />
               Logout
-            </button>
+            </Button>
           </div>
         </div>
       </Transition>
@@ -156,22 +164,27 @@
 <script setup lang="ts">
 import Avatar from "@/components/ui/avatar/Avatar.vue";
 import AvatarFallback from "@/components/ui/avatar/AvatarFallback.vue";
-import { ChevronDownIcon } from "@heroicons/vue/24/outline";
-import { Icon } from "@iconify/vue";
+import { Button } from "@/components/ui/button";
+import {
+  ChevronDown,
+  IdCard,
+  LogOut,
+  Settings,
+  Users,
+} from "lucide-vue-next";
 import { onClickOutside } from "@vueuse/core";
-import { ref, computed, onMounted } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useAuthStore } from "@/stores/auth";
 import { storeToRefs } from "pinia";
+import { useSidebar } from "@/components/ui/sidebar";
 
-defineProps<{
-  sidebarCollapsed: boolean;
-}>();
-
+const { state } = useSidebar();
 const authStore = useAuthStore();
 const { user } = storeToRefs(authStore); 
 
 const menuRef = ref<HTMLElement | null>(null);
 const profileOpen = ref(false);
+const sidebarCollapsed = computed(() => state.value === "collapsed");
 
 const toggleProfile = () => {
   profileOpen.value = !profileOpen.value;
@@ -207,5 +220,3 @@ onMounted(async () => {
   await authStore.fetchUsers(); 
 });
 </script>
-
-
