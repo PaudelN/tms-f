@@ -4,7 +4,7 @@ export interface TableColumn<T = any> {
   label: string;
   sortable?: boolean;
   visible?: boolean;
-  width?: string;
+  widthClass?: string;
   align?: "left" | "center" | "right";
   formatter?: (value: any, row: T) => string;
   cellClass?: string | ((row: T) => string);
@@ -55,6 +55,7 @@ export interface TableConfig {
   showSearch?: boolean;
   showColumnToggle?: boolean;
   showRefresh?: boolean;
+  rowIdKey?: string;
   emptyMessage?: string;
   errorMessage?: string;
 }
@@ -68,6 +69,8 @@ export interface TableState<T = any> {
   sort: SortState;
   pagination: PaginationState;
   columns: TableColumn<T>[];
+  rowIdKey: string;
+  selectedRowIds: Array<string | number>;
   initialized: boolean;
 }
 

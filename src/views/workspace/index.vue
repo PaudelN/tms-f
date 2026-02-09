@@ -56,6 +56,8 @@
             table-id="workspaces-table"
             :columns="columns"
             :fetch-fn="fetchWorkspaces"
+            :row-actions="rowActions"
+            :bulk-actions="bulkActions"
             :config="{
               defaultPerPage: 10,
               defaultSortBy: 'created_at',
@@ -70,20 +72,18 @@
               <div class="flex items-center gap-3">
                 <div class="h-10 w-10 rounded-xl bg-primary/20 flex items-center justify-center relative">
                   <span class="text-primary text-sm font-bold">{{ row.name.charAt(0).toUpperCase() }}</span>
-                  <button
+                  <Button
                     type="button"
-                    class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-card border border-border flex items-center justify-center hover:bg-primary hover:border-primary transition-colors group"
+                    variant="ghost"
+                    size="icon"
+                    class="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-card border border-border hover:bg-primary hover:border-primary transition-colors"
                     @click.stop="togglePin(row.id)"
                   >
-                    <svg
+                    <Star
                       class="w-2.5 h-2.5"
-                      :class="isPinned(row.id) ? 'text-primary' : 'text-muted-foreground group-hover:text-white'"
-                      fill="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                    </svg>
-                  </button>
+                      :class="isPinned(row.id) ? 'text-primary' : 'text-muted-foreground'"
+                    />
+                  </Button>
                 </div>
                 <div class="min-w-0">
                   <div class="font-semibold text-foreground truncate flex items-center gap-2">
@@ -128,71 +128,6 @@
               </div>
             </template>
 
-            <template #cell-actions="{ row }">
-              <div class="flex items-center justify-center gap-1">
-                <button
-                  type="button"
-                  class="p-2 rounded-lg hover:bg-accent text-primary transition-all"
-                  title="View"
-                  @click="handleView(row.id)"
-                >
-                  <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                    />
-                  </svg>
-                </button>
-                <button
-                  type="button"
-                  class="p-2 rounded-lg hover:bg-accent text-foreground transition-all"
-                  title="Edit"
-                  @click="handleEdit(row.id)"
-                >
-                  <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                    />
-                  </svg>
-                </button>
-                <button
-                  type="button"
-                  class="p-2 rounded-lg hover:bg-accent text-orange-600 transition-all"
-                  :title="row.isArchived ? 'Unarchive' : 'Archive'"
-                  @click="toggleArchive(row.id)"
-                >
-                  <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"
-                    />
-                  </svg>
-                </button>
-                <button
-                  type="button"
-                  class="p-2 rounded-lg hover:bg-destructive/10 text-destructive transition-all"
-                  title="Delete"
-                  @click="handleDelete(row.id, row.name)"
-                >
-                  <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                    />
-                  </svg>
-                </button>
-              </div>
-            </template>
           </UiTable>
 
           <UiList v-else-if="currentView === 'list'" :items="filteredWorkspaces" :loading="workspaceStore.isLoading">
@@ -220,21 +155,12 @@
                 <div class="flex items-center gap-3 flex-shrink-0 ml-4">
                   <span class="text-xs text-muted-foreground">{{ formatDate(item.created_at) }}</span>
                   <div class="flex gap-1">
-                    <button type="button" class="p-1.5 rounded hover:bg-accent/50" @click.stop="togglePin(item.id)">
-                      <svg
-                        class="w-3.5 h-3.5"
-                        :class="isPinned(item.id) ? 'text-primary' : 'text-muted-foreground'"
-                        fill="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                      </svg>
-                    </button>
-                    <button type="button" class="p-1.5 rounded hover:bg-accent/50 text-primary" @click="handleView(item.id)">
-                      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                      </svg>
-                    </button>
+                    <Button variant="ghost" size="icon" class="h-7 w-7" @click.stop="togglePin(item.id)">
+                      <Star class="w-3.5 h-3.5" :class="isPinned(item.id) ? 'text-primary' : 'text-muted-foreground'" />
+                    </Button>
+                    <Button variant="ghost" size="icon" class="h-7 w-7 text-primary" @click="handleView(item.id)">
+                      <ChevronRight class="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -256,16 +182,15 @@
                     </div>
                     <div class="font-medium text-sm text-foreground">{{ item.name }}</div>
                   </div>
-                  <button type="button" class="opacity-0 group-hover:opacity-100" @click.stop="togglePin(item.id)">
-                    <svg
-                      class="w-3.5 h-3.5"
-                      :class="isPinned(item.id) ? 'text-primary' : 'text-muted-foreground'"
-                      fill="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                    </svg>
-                  </button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    class="opacity-0 group-hover:opacity-100 h-7 w-7"
+                    @click.stop="togglePin(item.id)"
+                  >
+                    <Star class="w-3.5 h-3.5" :class="isPinned(item.id) ? 'text-primary' : 'text-muted-foreground'" />
+                  </Button>
                 </div>
                 <div v-if="item.description" class="text-xs text-muted-foreground line-clamp-2 mb-3">
                   {{ item.description }}
@@ -273,26 +198,12 @@
                 <div class="flex items-center justify-between pt-3 border-t border-border">
                   <span class="text-xs text-muted-foreground">{{ formatDate(item.created_at) }}</span>
                   <div class="flex gap-1">
-                    <button type="button" class="p-1.5 rounded hover:bg-accent" @click.stop="handleEdit(item.id)">
-                      <svg class="h-3.5 w-3.5 text-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                        />
-                      </svg>
-                    </button>
-                    <button type="button" class="p-1.5 rounded hover:bg-accent" @click.stop="toggleArchive(item.id)">
-                      <svg class="h-3.5 w-3.5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"
-                        />
-                      </svg>
-                    </button>
+                    <Button variant="ghost" size="icon" class="h-7 w-7" @click.stop="handleEdit(item.id)">
+                      <Pencil class="h-3.5 w-3.5 text-foreground" />
+                    </Button>
+                    <Button variant="ghost" size="icon" class="h-7 w-7" @click.stop="toggleArchive(item.id)">
+                      <Archive class="h-3.5 w-3.5 text-orange-600" />
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -305,9 +216,9 @@
         <div class="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
           <div class="p-5 border-b border-border flex items-center justify-between">
             <h3 class="text-sm font-semibold text-foreground">All Notifications</h3>
-            <button type="button" class="text-sm text-primary hover:underline" @click="markAllAsRead">
+            <Button variant="ghost" size="sm" class="text-primary" @click="markAllAsRead">
               Mark all as read
-            </button>
+            </Button>
           </div>
           <div class="divide-y divide-border">
             <div
@@ -319,9 +230,7 @@
             >
               <div class="flex items-start gap-4">
                 <div :class="notification.iconBg" class="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <svg class="w-5 h-5" :class="notification.iconColor" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="notification.iconPath" />
-                  </svg>
+                  <component :is="notification.icon" class="w-5 h-5" :class="notification.iconColor" />
                 </div>
                 <div class="flex-1 min-w-0">
                   <div class="flex items-start justify-between gap-4">
@@ -353,14 +262,7 @@
         <DialogFooter class="gap-2 sm:gap-0">
           <Button variant="outline" @click="deleteModalOpen = false">Cancel</Button>
           <Button variant="destructive" @click="confirmDelete" :disabled="deleteLoading" class="gap-2">
-            <svg v-if="deleteLoading" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path
-                class="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              ></path>
-            </svg>
+            <Loader2 v-if="deleteLoading" class="h-4 w-4 animate-spin" />
             <span>{{ deleteLoading ? "Deleting..." : "Delete" }}</span>
           </Button>
         </DialogFooter>
@@ -377,12 +279,7 @@
           <div>
             <label class="block text-xs font-medium text-muted-foreground mb-2">Invite Link</label>
             <div class="flex items-center gap-2">
-              <input
-                type="text"
-                :value="shareLink"
-                readonly
-                class="flex-1 px-3 py-2 bg-muted border border-input rounded-lg text-sm text-foreground"
-              />
+              <Input type="text" :model-value="shareLink" readonly class="flex-1" />
               <Button size="sm" @click="copyShareLink">Copy</Button>
             </div>
           </div>
@@ -398,18 +295,35 @@
 <script setup lang="ts">
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import WorkspaceFilters from "@/components/workspace/WorkspaceFilters.vue";
 import WorkspaceHeader from "@/components/workspace/WorkspaceHeader.vue";
 import WorkspaceOverview from "@/components/workspace/WorkspaceOverview.vue";
 import WorkspaceTabs from "@/components/workspace/WorkspaceTabs.vue";
 import type { Workspace } from "@/stores/workspace";
 import { useWorkspaceStore } from "@/stores/workspace";
-import type { ApiResponse, TableColumn, ViewMode } from "@/ui-table/types/table.types";
+import type { ApiResponse, BulkAction, TableAction, TableColumn, ViewMode } from "@/ui-table/types/table.types";
 import UiKanban from "@/ui-table/UiKanban.vue";
 import UiList from "@/ui-table/UiList.vue";
 import UiTable from "@/ui-table/UiTable.vue";
 import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
+import {
+  Archive,
+  Bell,
+  ChevronRight,
+  Download,
+  Eye,
+  File,
+  FileSpreadsheet,
+  FileText,
+  LayoutDashboard,
+  Layers,
+  Loader2,
+  Pencil,
+  Star,
+  Trash2,
+} from "lucide-vue-next";
 
 const router = useRouter();
 const workspaceStore = useWorkspaceStore();
@@ -419,18 +333,18 @@ const tabs = computed(() => [
   {
     id: "overview" as const,
     label: "Overview",
-    icon: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6",
+    icon: LayoutDashboard,
   },
   {
     id: "workspaces" as const,
     label: "All Workspaces",
-    icon: "M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z",
+    icon: Layers,
     badge: workspaceStore.totalWorkspaces,
   },
   {
     id: "notifications" as const,
     label: "Notifications",
-    icon: "M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9",
+    icon: Bell,
     badge: notifications.value.filter((notification) => !notification.read).length || undefined,
   },
 ]);
@@ -547,8 +461,7 @@ const notifications = ref([
     read: false,
     iconBg: "bg-primary/10",
     iconColor: "text-primary",
-    iconPath:
-      "M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z",
+    icon: Pencil,
   },
   {
     id: 2,
@@ -558,8 +471,7 @@ const notifications = ref([
     read: false,
     iconBg: "bg-green-500/10",
     iconColor: "text-green-600",
-    iconPath:
-      "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4",
+    icon: Eye,
   },
   {
     id: 3,
@@ -569,7 +481,7 @@ const notifications = ref([
     read: true,
     iconBg: "bg-orange-500/10",
     iconColor: "text-orange-600",
-    iconPath: "M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4",
+    icon: Archive,
   },
 ]);
 
@@ -598,8 +510,7 @@ const recentFiles = ref([
     uploadedAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
     iconBg: "bg-red-500/10",
     iconColor: "text-red-600",
-    iconPath:
-      "M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z",
+    icon: FileText,
   },
   {
     id: 2,
@@ -608,8 +519,7 @@ const recentFiles = ref([
     uploadedAt: new Date(Date.now() - 5 * 60 * 60 * 1000),
     iconBg: "bg-purple-500/10",
     iconColor: "text-purple-600",
-    iconPath:
-      "M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z",
+    icon: File,
   },
   {
     id: 3,
@@ -618,8 +528,7 @@ const recentFiles = ref([
     uploadedAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
     iconBg: "bg-blue-500/10",
     iconColor: "text-blue-600",
-    iconPath:
-      "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 01 17 8.414V19a2 2 0 01-2 2z",
+    icon: FileText,
   },
   {
     id: 4,
@@ -628,16 +537,58 @@ const recentFiles = ref([
     uploadedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
     iconBg: "bg-green-500/10",
     iconColor: "text-green-600",
-    iconPath:
-      "M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 01 17 8.414V19a2 2 0 01-2 2z",
+    icon: FileSpreadsheet,
   },
 ]);
 
 const columns: TableColumn<Workspace>[] = [
-  { key: "name", label: "Workspace", sortable: true, width: "35%" },
-  { key: "user", label: "Owner", sortable: false, width: "25%" },
-  { key: "created_at", label: "Created", sortable: true, width: "20%" },
-  { key: "actions", label: "Actions", sortable: false, align: "center", width: "20%" },
+  { key: "name", label: "Workspace", sortable: true, widthClass: "min-w-[280px]" },
+  { key: "user", label: "Owner", sortable: false, widthClass: "min-w-[220px]" },
+  { key: "created_at", label: "Created", sortable: true, widthClass: "min-w-[180px]" },
+];
+
+const rowActions: TableAction<Workspace>[] = [
+  {
+    label: "View",
+    icon: Eye,
+    onClick: (row) => handleView(row.id),
+  },
+  {
+    label: "Edit",
+    icon: Pencil,
+    onClick: (row) => handleEdit(row.id),
+  },
+  {
+    label: "Toggle Archive",
+    icon: Archive,
+    onClick: (row) => toggleArchive(row.id),
+  },
+  {
+    label: "Delete",
+    icon: Trash2,
+    variant: "destructive",
+    onClick: (row) => handleDelete(row.id, row.name),
+  },
+];
+
+const bulkActions: BulkAction<Workspace>[] = [
+  {
+    label: "Archive",
+    icon: Archive,
+    onClick: (selectedRows) => selectedRows.forEach((row) => toggleArchive(row.id)),
+    disabled: (selectedRows) => selectedRows.length === 0,
+  },
+  {
+    label: "Export selected",
+    icon: Download,
+    onClick: (selectedRows) =>
+      downloadFile(
+        JSON.stringify(selectedRows, null, 2),
+        "workspaces-selected.json",
+        "application/json",
+      ),
+    disabled: (selectedRows) => selectedRows.length === 0,
+  },
 ];
 
 watch(currentView, (newView) => {

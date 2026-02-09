@@ -9,6 +9,9 @@
       :columns="allColumns"
       :show-refresh="showRefresh"
       :loading="loading"
+      :bulk-actions="headerBulkActions"
+      :selected-count="selectedRowIds.length"
+      @clear-selection="clearSelection"
       @update:search="handleSearch"
       @refresh="handleRefresh"
       @toggle-column="handleColumnToggle"
@@ -21,6 +24,11 @@
       :loading="loading"
       :error="error"
       :sort="sort || { column: null, order: null }"
+      :row-actions="rowActions"
+      :row-id-key="rowIdKey"
+      :selected-row-ids="selectedRowIds"
+      @toggle-row="toggleRowSelection"
+      @toggle-all="setRowSelection"
       @sort="handleSort"
       @refresh="handleRefresh"
     >
@@ -41,11 +49,14 @@
 </template>
 
 <script setup lang="ts">
+  import { computed } from "vue";
   import { useTableInteractions } from "./composables/useTableInteractions";
   import type {
     TableColumn,
     TableConfig,
     TableFetchFn,
+    TableAction,
+    BulkAction,
   } from "./types/table.types";
   import UiTableBody from "./UiTableBody.vue";
   import UiTableFooter from "./UiTableFooter.vue";
@@ -58,6 +69,8 @@
     config?: TableConfig;
     searchPlaceholder?: string;
     showRefresh?: boolean;
+    rowActions?: TableAction[];
+    bulkActions?: BulkAction[];
   }
 
   const props = withDefaults(defineProps<Props>(), {
@@ -76,16 +89,38 @@
     sort,
     visibleColumns,
     allColumns,
+    rowIdKey,
+    selectedRowIds,
     handleSearch,
     handleSort,
     handlePageChange,
     handlePerPageChange,
     handleColumnToggle,
     handleRefresh,
+    toggleRowSelection,
+    setRowSelection,
+    clearSelection,
   } = useTableInteractions(
     props.tableId,
     props.columns,
     props.fetchFn,
     props.config,
+  );
+
+  const selectedRows = computed(() => {
+    const key = rowIdKey.value;
+    return tableData.value.filter((row: any) =>
+      selectedRowIds.value.includes(row?.[key]),
+    );
+  });
+
+  const headerBulkActions = computed(() =>
+    (props.bulkActions || []).map((action) => ({
+      ...action,
+      onClick: () => action.onClick(selectedRows.value),
+      disabled: action.disabled
+        ? action.disabled(selectedRows.value)
+        : false,
+    })),
   );
 </script>
