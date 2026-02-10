@@ -52,6 +52,11 @@ const routes: RouteRecordRaw[] = [
         name: "workspace-edit",
         component: () => import("@/views/workspace/edit.vue"),
       },
+      {
+        path: "/tasks",
+        name: "tasks",
+        component: () => import("@/views/tasks/index.vue"),
+      },
     ],
   },
 
@@ -73,7 +78,7 @@ const router = createRouter({
   routes,
 });
 
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, _from, next) => {
   const authStore = useAuthStore();
 
   if (
