@@ -239,6 +239,22 @@
     box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.05), 0 1px 2px -1px rgb(0 0 0 / 0.05);
   }
 
+
+  .shadow-clay-sm {
+    box-shadow: 0 1px 1px rgb(15 23 42 / 0.06), 0 6px 18px rgb(15 23 42 / 0.05);
+  }
+
+  .shadow-clay-md {
+    box-shadow: 0 2px 4px rgb(15 23 42 / 0.06), 0 10px 28px rgb(15 23 42 / 0.08);
+  }
+
+  .surface-clay {
+    border-radius: 0.75rem;
+    border: 1px solid rgb(var(--color-border));
+    background-color: rgb(var(--color-card));
+    box-shadow: 0 1px 1px rgb(15 23 42 / 0.06), 0 6px 18px rgb(15 23 42 / 0.05);
+  }
+
   /* Refined scrollbar for webkit browsers */
   ::-webkit-scrollbar {
     width: 8px;

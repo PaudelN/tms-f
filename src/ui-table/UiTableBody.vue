@@ -128,14 +128,20 @@
 import type { TableColumn, SortState } from './types/table.types'
 
 interface Props {
-  data: any[]
-  visibleColumns: TableColumn[]
-  loading: boolean
-  error: string | null
-  sort: SortState
+  data?: Record<string, unknown>[]
+  visibleColumns?: TableColumn[]
+  loading?: boolean
+  error?: string | null
+  sort?: SortState
 }
 
-defineProps<Props>()
+withDefaults(defineProps<Props>(), {
+  data: () => [],
+  visibleColumns: () => [],
+  loading: false,
+  error: null,
+  sort: () => ({ column: null, order: null }),
+})
 
 defineEmits<{
   sort: [columnKey: string]

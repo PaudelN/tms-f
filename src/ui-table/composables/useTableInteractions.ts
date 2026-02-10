@@ -7,7 +7,7 @@ import type {
   TableFetchFn,
 } from "../types/table.types";
 
-export function useTableInteractions<T = any>(
+export function useTableInteractions<T extends Record<string, unknown>>(
   tableId: string,
   columns: TableColumn<T>[],
   fetchFn: TableFetchFn<T>,
@@ -88,7 +88,7 @@ export function useTableInteractions<T = any>(
     // Ensure table is initialized
     const table = store.getTable(tableId);
     if (!table) {
-      console.warn(`Table ${tableId} not initialized`);
+      store.setError(tableId, `Table ${tableId} not initialized`);
       return;
     }
 
@@ -117,10 +117,9 @@ export function useTableInteractions<T = any>(
       });
 
       store.updateTableData(tableId, response);
-    } catch (err: any) {
-      const errorMessage = err.message || "Failed to fetch data";
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to fetch data";
       store.setError(tableId, errorMessage);
-      console.error(`Table ${tableId} fetch error:`, err);
     } finally {
       if (!silent) {
         store.setLoading(tableId, false);
