@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen bg-background p-6">
-    <div class="max-w-5xl mx-auto">
+    <div class="max-w-6xl mx-auto">
       <!-- Loading State -->
       <div v-if="workspaceStore.isDetailLoading" class="flex items-center justify-center py-20">
         <div class="text-center">
@@ -65,7 +65,7 @@
         <!-- Info Cards Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <!-- Owner Card -->
-          <Card>
+          <Card class="clamorphism border-border/70 shadow-lg">
             <CardHeader>
               <CardTitle class="text-lg flex items-center gap-2">
                 <User class="h-5 w-5 text-primary" />
@@ -89,7 +89,7 @@
           </Card>
 
           <!-- Metadata Card -->
-          <Card>
+          <Card class="clamorphism border-border/70 shadow-lg">
             <CardHeader>
               <CardTitle class="text-lg flex items-center gap-2">
                 <Info class="h-5 w-5 text-primary" />
@@ -127,7 +127,7 @@
         </Card>
 
         <!-- Activity Timeline -->
-        <Card>
+        <Card class="clamorphism border-border/70 shadow-lg">
           <CardHeader>
             <CardTitle class="text-lg flex items-center gap-2">
               <Clock class="h-5 w-5 text-primary" />

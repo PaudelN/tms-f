@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen bg-background p-6">
-    <div class="max-w-3xl mx-auto">
+    <div class="max-w-4xl mx-auto">
       <!-- Loading State -->
       <div v-if="loading" class="flex items-center justify-center py-20">
         <div class="text-center">
@@ -36,7 +36,7 @@
         </div>
 
         <!-- Form Card -->
-        <Card>
+        <Card class="clamorphism border-border/70 shadow-lg">
           <CardHeader>
             <CardTitle class="flex items-center gap-2">
               <Pencil class="h-5 w-5 text-primary" />

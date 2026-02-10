@@ -15,6 +15,8 @@ export const buttonVariants = cva(
           "border-2 border-border bg-card text-foreground shadow-sm hover:bg-accent hover:text-accent-foreground hover:border-accent-foreground/20",
         secondary:
           "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80 active:bg-secondary/70",
+        clamorphism:
+          "border border-white/30 bg-white/20 text-foreground backdrop-blur-md shadow-[inset_4px_4px_8px_rgba(255,255,255,0.45),inset_-6px_-6px_12px_rgba(0,0,0,0.08),0_8px_24px_rgba(31,38,135,0.16)] hover:bg-white/30",
         ghost:
           "hover:bg-accent hover:text-accent-foreground active:bg-accent/80",
         link: "text-primary underline-offset-4 hover:underline",
