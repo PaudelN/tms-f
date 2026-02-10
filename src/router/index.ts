@@ -38,19 +38,14 @@ const routes: RouteRecordRaw[] = [
         component: () => import("@/views/workspace/index.vue"),
       },
       {
-        path: "/workspace/add",
-        name: "workspace-add",
-        component: () => import("@/views/workspace/add.vue"),
+        path: "/clients",
+        name: "clients",
+        component: () => import("@/views/clients/index.vue"),
       },
       {
-        path: "/workspace/:id",
-        name: "workspace-detail",
-        component: () => import("@/views/workspace/detail.vue"),
-      },
-      {
-        path: "/workspace/:id/edit",
-        name: "workspace-edit",
-        component: () => import("@/views/workspace/edit.vue"),
+        path: "/reports",
+        name: "reports",
+        component: () => import("@/views/reports/index.vue"),
       },
     ],
   },
@@ -73,7 +68,7 @@ const router = createRouter({
   routes,
 });
 
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, _from, next) => {
   const authStore = useAuthStore();
 
   if (

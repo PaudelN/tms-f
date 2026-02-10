@@ -5,7 +5,7 @@
       <thead class="bg-card">
         <tr>
           <th
-            v-for="column in visibleColumns"
+            v-for="column in props.visibleColumns"
             :key="column.key"
             :style="{ width: column.width }"
             :class="[
@@ -22,7 +22,7 @@
                 <svg
                   :class="[
                     'h-3 w-3 transition-all',
-                    sort.column === column.key && sort.order === 'asc'
+                    props.sort.column === column.key && props.sort.order === 'asc'
                       ? 'text-primary dark:text-primary-foreground'
                       : 'text-muted-foreground dark:text-muted-foreground/70'
                   ]"
@@ -40,8 +40,8 @@
       <!-- Table Body -->
       <tbody class="divide-y divide-border bg-background text-foreground">
         <!-- Loading State -->
-        <tr v-if="loading">
-          <td :colspan="visibleColumns.length" class="px-4 py-12 text-center">
+        <tr v-if="props.loading">
+          <td :colspan="props.visibleColumns.length || 1" class="px-4 py-12 text-center">
             <div class="flex flex-col items-center gap-3">
               <svg class="animate-spin h-8 w-8 text-primary dark:text-primary-foreground" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -53,8 +53,8 @@
         </tr>
 
         <!-- Error State -->
-        <tr v-else-if="error">
-          <td :colspan="visibleColumns.length" class="px-4 py-12 text-center">
+        <tr v-else-if="props.error">
+          <td :colspan="props.visibleColumns.length || 1" class="px-4 py-12 text-center">
             <div class="flex flex-col items-center gap-3">
               <div class="h-12 w-12 rounded-full bg-destructive/20 flex items-center justify-center">
                 <svg class="h-6 w-6 text-destructive-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -63,7 +63,7 @@
               </div>
               <div>
                 <p class="text-sm font-medium text-card-foreground">Error loading data</p>
-                <p class="text-xs text-muted-foreground mt-1">{{ error }}</p>
+                <p class="text-xs text-muted-foreground mt-1">{{ props.error }}</p>
               </div>
               <button
                 @click="$emit('refresh')"
@@ -76,8 +76,8 @@
         </tr>
 
         <!-- Empty State -->
-        <tr v-else-if="data.length === 0">
-          <td :colspan="visibleColumns.length" class="px-4 py-12 text-center">
+        <tr v-else-if="props.data.length === 0">
+          <td :colspan="props.visibleColumns.length || 1" class="px-4 py-12 text-center">
             <div class="flex flex-col items-center gap-3">
               <div class="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
                 <svg class="h-6 w-6 text-muted-foreground dark:text-muted-foreground/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -95,12 +95,12 @@
         <!-- Data Rows -->
         <tr
           v-else
-          v-for="(row, index) in data"
+          v-for="(row, index) in props.data"
           :key="index"
           class="hover:bg-muted/50 dark:hover:bg-muted/70 transition-colors"
         >
           <td
-            v-for="column in visibleColumns"
+            v-for="column in props.visibleColumns"
             :key="column.key"
             :class="[
               'px-4 py-3 text-sm transition-colors',
@@ -128,14 +128,20 @@
 import type { TableColumn, SortState } from './types/table.types'
 
 interface Props {
-  data: any[]
-  visibleColumns: TableColumn[]
-  loading: boolean
-  error: string | null
-  sort: SortState
+  data?: any[]
+  visibleColumns?: TableColumn[]
+  loading?: boolean
+  error?: string | null
+  sort?: SortState
 }
 
-defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  data: () => [],
+  visibleColumns: () => [],
+  loading: false,
+  error: null,
+  sort: () => ({ column: null, order: null }),
+})
 
 defineEmits<{
   sort: [columnKey: string]
