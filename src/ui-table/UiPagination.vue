@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-1 py-2">
+  <div class="flex flex-col gap-3 rounded-xl border border-border/60 bg-background/70 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
     <div class="text-xs text-muted-foreground">
       <span v-if="total > 0">
         Showing {{ startItem }}-{{ endItem }} of {{ total }}
@@ -11,7 +11,7 @@
       <div class="flex items-center gap-2">
         <span class="text-xs text-muted-foreground">Per page:</span>
         <Select :model-value="String(perPage)" @update:model-value="handlePerPageChange">
-          <SelectTrigger class="h-8 w-[90px] text-xs">
+          <SelectTrigger class="h-8 w-[96px] text-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -84,6 +84,7 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
+import type { AcceptableValue } from "reka-ui";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -147,7 +148,8 @@ function emitPageChange(page: number) {
   }
 }
 
-function handlePerPageChange(value: string) {
-  emit("per-page-change", Number(value));
+function handlePerPageChange(value: AcceptableValue) {
+  const size = Number(value ?? props.perPage);
+  if (!Number.isNaN(size)) emit("per-page-change", size);
 }
 </script>

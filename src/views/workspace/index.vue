@@ -48,7 +48,7 @@
           @clear-all-filters="clearAllFilters"
         />
 
-        <div class="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
+        <div class="rounded-2xl border border-border/70 bg-card/70 p-4 shadow-sm">
           <UiTable
             v-if="currentView === 'table'"
             :columns="columns"
@@ -153,7 +153,7 @@
       </div>
 
       <div v-else-if="activeTab === 'notifications'" class="space-y-4">
-        <div class="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
+        <div class="rounded-2xl border border-border/70 bg-card/70 p-4 shadow-sm">
           <div class="p-5 border-b border-border flex items-center justify-between">
             <h3 class="text-sm font-semibold text-foreground">All Notifications</h3>
             <Button variant="link" class="h-auto p-0 text-sm" @click="markAllAsRead">

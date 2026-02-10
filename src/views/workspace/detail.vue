@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen bg-background p-6">
-    <div class="max-w-5xl mx-auto">
+    <div class="max-w-6xl mx-auto">
       <!-- Loading State -->
       <div v-if="workspaceStore.isDetailLoading" class="flex items-center justify-center py-20">
         <div class="text-center">
