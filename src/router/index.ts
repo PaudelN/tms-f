@@ -1,4 +1,5 @@
 import AppLayout from "@/components/layouts/AppLayout.vue";
+import WorkspaceLayout from "@/components/layouts/WorkspaceLayout.vue";
 import { useAuthStore } from "@/stores/auth";
 import {
   createRouter,
@@ -42,15 +43,69 @@ const routes: RouteRecordRaw[] = [
         name: "workspace-add",
         component: () => import("@/views/workspace/add.vue"),
       },
+
+      // Legacy detail route redirect -> new plural nested workspace route structure.
       {
         path: "/workspace/:id",
-        name: "workspace-detail",
-        component: () => import("@/views/workspace/detail.vue"),
+        redirect: (to) => ({ name: "workspace-overview", params: { id: to.params.id } }),
       },
       {
         path: "/workspace/:id/edit",
         name: "workspace-edit",
         component: () => import("@/views/workspace/edit.vue"),
+      },
+
+      // Workspace detail layout with nested section routes.
+      {
+        path: "/workspaces/:id",
+        name: "workspace-detail",
+        component: WorkspaceLayout,
+        children: [
+          {
+            path: "",
+            redirect: { name: "workspace-overview" },
+          },
+          {
+            path: "overview",
+            name: "workspace-overview",
+            component: () => import("@/views/workspace/sections/Overview.vue"),
+          },
+          {
+            path: "work",
+            name: "workspace-work",
+            component: () => import("@/views/workspace/sections/Work.vue"),
+          },
+          {
+            path: "activity",
+            name: "workspace-activity",
+            component: () => import("@/views/workspace/sections/Activity.vue"),
+          },
+          {
+            path: "files",
+            name: "workspace-files",
+            component: () => import("@/views/workspace/sections/Files.vue"),
+          },
+          {
+            path: "members",
+            name: "workspace-members",
+            component: () => import("@/views/workspace/sections/Members.vue"),
+          },
+          {
+            path: "analytics",
+            name: "workspace-analytics",
+            component: () => import("@/views/workspace/sections/Analytics.vue"),
+          },
+          {
+            path: "settings",
+            name: "workspace-settings",
+            component: () => import("@/views/workspace/sections/Settings.vue"),
+          },
+          {
+            path: "access",
+            name: "workspace-access",
+            component: () => import("@/views/workspace/sections/Access.vue"),
+          },
+        ],
       },
     ],
   },
@@ -73,7 +128,7 @@ const router = createRouter({
   routes,
 });
 
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, _from, next) => {
   const authStore = useAuthStore();
 
   if (
