@@ -1,11 +1,7 @@
-import { ref, computed, watch, onMounted, onUnmounted } from "vue";
-import { useUiTableStore } from "../stores/useUiTableStore";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useDebounceFn } from "@vueuse/core";
-import type {
-  TableColumn,
-  TableConfig,
-  TableFetchFn,
-} from "../types/table.types";
+import { useUiTableStore } from "../stores/useUiTableStore";
+import type { TableColumn, TableConfig, TableFetchFn } from "../types/table.types";
 
 export function useTableInteractions<T = any>(
   tableId: string,
@@ -15,57 +11,23 @@ export function useTableInteractions<T = any>(
 ) {
   const store = useUiTableStore();
   const fetchInProgress = ref(false);
-  const autoRefreshInterval = ref<number | null>(null);
 
   const {
     debounceMs = 300,
     persistState = true,
-    autoRefresh = false,
-    autoRefreshInterval: refreshInterval = 30000,
   } = config;
 
-  // Initialize table on mount
   onMounted(() => {
     if (!store.getTable(tableId)?.initialized) {
       store.initializeTable(tableId, columns, config);
     }
     fetchData();
-
-    // Setup auto-refresh if enabled
-    if (autoRefresh) {
-      setupAutoRefresh();
-    }
   });
 
-  // Cleanup on unmount
   onUnmounted(() => {
-    if (!persistState) {
-      store.destroyTable(tableId);
-    }
-    clearAutoRefresh();
+    if (!persistState) store.destroyTable(tableId);
   });
 
-  // Setup auto-refresh
-  function setupAutoRefresh() {
-    if (autoRefreshInterval.value) {
-      clearInterval(autoRefreshInterval.value);
-    }
-    autoRefreshInterval.value = window.setInterval(() => {
-      if (!fetchInProgress.value) {
-        fetchData(true); // silent refresh
-      }
-    }, refreshInterval);
-  }
-
-  // Clear auto-refresh
-  function clearAutoRefresh() {
-    if (autoRefreshInterval.value) {
-      clearInterval(autoRefreshInterval.value);
-      autoRefreshInterval.value = null;
-    }
-  }
-
-  // Computed getters
   const tableData = computed(() => store.getTableData(tableId));
   const loading = computed(() => store.isLoading(tableId));
   const error = computed(() => store.getError(tableId));
@@ -74,39 +36,20 @@ export function useTableInteractions<T = any>(
   const sort = computed(() => store.getSort(tableId));
   const visibleColumns = computed(() => store.getVisibleColumns(tableId));
   const allColumns = computed(() => store.getColumns(tableId));
-  const hasData = computed(() => store.hasData(tableId));
-  const isEmpty = computed(() => store.isEmpty(tableId));
-  const hasError = computed(() => store.hasError(tableId));
-  const canGoNext = computed(() => store.canGoNext(tableId));
-  const canGoPrevious = computed(() => store.canGoPrevious(tableId));
-  const searchQuery = computed(() => store.getSearchQuery(tableId));
+  const selectedRowIds = computed(() => store.getSelectedRowIds(tableId));
 
-  // Fetch data function
   async function fetchData(silent = false) {
     if (fetchInProgress.value) return;
 
-    // Ensure table is initialized
-    const table = store.getTable(tableId);
-    if (!table) {
-      console.warn(`Table ${tableId} not initialized`);
-      return;
-    }
+    const currentFilters = store.getFilters(tableId);
+    const currentSort = store.getSort(tableId);
+    const currentPagination = store.getPagination(tableId);
 
     fetchInProgress.value = true;
-    if (!silent) {
-      store.setLoading(tableId, true);
-    }
+    if (!silent) store.setLoading(tableId, true);
     store.setError(tableId, null);
 
     try {
-      const currentFilters = store.getFilters(tableId);
-      const currentSort = store.getSort(tableId);
-      const currentPagination = store.getPagination(tableId);
-
-      if (!currentFilters || !currentSort || !currentPagination) {
-        throw new Error("Table state not properly initialized");
-      }
-
       const response = await fetchFn({
         page: currentPagination.currentPage,
         perPage: currentPagination.perPage,
@@ -118,129 +61,43 @@ export function useTableInteractions<T = any>(
 
       store.updateTableData(tableId, response);
     } catch (err: any) {
-      const errorMessage = err.message || "Failed to fetch data";
-      store.setError(tableId, errorMessage);
-      console.error(`Table ${tableId} fetch error:`, err);
+      store.setError(tableId, err?.message ?? "Failed to fetch data");
     } finally {
-      if (!silent) {
-        store.setLoading(tableId, false);
-      }
+      if (!silent) store.setLoading(tableId, false);
       fetchInProgress.value = false;
     }
   }
 
-  // Debounced fetch for search
   const debouncedFetch = useDebounceFn(fetchData, debounceMs);
 
-  // Watch for search changes
-  watch(
-    () => store.getFilters(tableId)?.search,
-    (newSearch, oldSearch) => {
-      if (newSearch !== oldSearch) {
-        debouncedFetch();
-      }
-    },
-  );
-
-  // Watch for sort changes
-  watch(
-    () => store.getSort(tableId),
-    (newSort, oldSort) => {
-      if (
-        newSort?.column !== oldSort?.column ||
-        newSort?.order !== oldSort?.order
-      ) {
-        fetchData();
-      }
-    },
-    { deep: true },
-  );
-
-  // Watch for pagination changes
+  watch(() => store.getFilters(tableId)?.search, () => debouncedFetch());
+  watch(() => store.getSort(tableId), () => fetchData(), { deep: true });
   watch(
     () => store.getPagination(tableId),
     (newPagination, oldPagination) => {
       if (
-        newPagination?.currentPage !== oldPagination?.currentPage ||
-        newPagination?.perPage !== oldPagination?.perPage
-      ) {
-        fetchData();
-      }
+        newPagination.currentPage !== oldPagination?.currentPage ||
+        newPagination.perPage !== oldPagination?.perPage
+      ) fetchData();
     },
     { deep: true },
   );
 
-  // Actions
-  function handleSearch(value: string) {
-    store.setSearch(tableId, value);
-  }
-
-  function handleSort(columnKey: string) {
-    const column = allColumns.value.find((col) => col.key === columnKey);
-    if (column?.sortable !== false) {
+  const handleSearch = (value: string) => store.setSearch(tableId, value);
+  const handleSort = (columnKey: string) => {
+    if (allColumns.value.find((col) => col.key === columnKey)?.sortable !== false) {
       store.setSort(tableId, columnKey);
     }
-  }
-
-  function handlePageChange(page: number) {
-    store.setPage(tableId, page);
-  }
-
-  function handlePerPageChange(perPage: number) {
-    store.setPerPage(tableId, perPage);
-  }
-
-  function handleColumnToggle(columnKey: string) {
-    store.toggleColumnVisibility(tableId, columnKey);
-  }
-
-  function handleRefresh() {
-    fetchData();
-  }
-
-  function handleReset() {
-    store.resetTable(tableId);
-    fetchData();
-  }
-
-  function handleNextPage() {
-    store.nextPage(tableId);
-  }
-
-  function handlePreviousPage() {
-    store.previousPage(tableId);
-  }
-
-  function handleFirstPage() {
-    store.firstPage(tableId);
-  }
-
-  function handleLastPage() {
-    store.lastPage(tableId);
-  }
-
-  function clearError() {
-    store.setError(tableId, null);
-  }
-
-  function clearSearch() {
-    store.setSearch(tableId, "");
-  }
-
-  function setColumnVisibility(columnKey: string, visible: boolean) {
-    store.setColumnVisibility(tableId, columnKey, visible);
-  }
-
-  function showAllColumns() {
-    store.showAllColumns(tableId);
-  }
-
-  function hideAllColumns() {
-    store.hideAllColumns(tableId);
-  }
+  };
+  const handlePageChange = (page: number) => store.setPage(tableId, page);
+  const handlePerPageChange = (perPage: number) => store.setPerPage(tableId, perPage);
+  const handleColumnToggle = (columnKey: string) => store.toggleColumnVisibility(tableId, columnKey);
+  const handleRefresh = () => fetchData();
+  const handleRowSelection = (rowId: string) => store.toggleRowSelection(tableId, rowId);
+  const handleAllRows = (rowIds: string[]) => store.toggleAllRows(tableId, rowIds);
+  const clearSelection = () => store.clearSelection(tableId);
 
   return {
-    // State
     tableData,
     loading,
     error,
@@ -249,30 +106,15 @@ export function useTableInteractions<T = any>(
     sort,
     visibleColumns,
     allColumns,
-    hasData,
-    isEmpty,
-    hasError,
-    canGoNext,
-    canGoPrevious,
-    searchQuery,
-
-    // Actions
+    selectedRowIds,
     handleSearch,
     handleSort,
     handlePageChange,
     handlePerPageChange,
     handleColumnToggle,
     handleRefresh,
-    handleReset,
-    handleNextPage,
-    handlePreviousPage,
-    handleFirstPage,
-    handleLastPage,
-    fetchData,
-    clearError,
-    clearSearch,
-    setColumnVisibility,
-    showAllColumns,
-    hideAllColumns,
+    handleRowSelection,
+    handleAllRows,
+    clearSelection,
   };
 }

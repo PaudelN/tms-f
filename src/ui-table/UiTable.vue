@@ -1,36 +1,39 @@
 <template>
-  <div
-    class="bg-card text-muted-foreground rounded-lg shadow-sm border border-border overflow-hidden"
-  >
-    <!-- Table Header (Search, Refresh, Column Toggle) -->
+  <div class="overflow-hidden rounded-xl border border-border bg-card">
     <UiTableHeader
       :search-value="filters?.search || ''"
       :search-placeholder="searchPlaceholder"
       :columns="allColumns"
       :show-refresh="showRefresh"
       :loading="loading"
+      :selected-count="selectedRows.length"
+      :bulk-actions="bulkActions"
       @update:search="handleSearch"
       @refresh="handleRefresh"
       @toggle-column="handleColumnToggle"
+      @bulk-action="runBulkAction"
+      @clear-selection="clearSelection"
     />
 
-    <!-- Table Body -->
     <UiTableBody
       :data="tableData"
       :visible-columns="visibleColumns"
       :loading="loading"
       :error="error"
       :sort="sort || { column: null, order: null }"
+      :selected-row-ids="selectedRowIds"
+      :mobile-breakpoint="mobileBreakpoint"
+      :row-actions="rowActions"
       @sort="handleSort"
       @refresh="handleRefresh"
+      @toggle-row="handleRowSelection"
+      @toggle-all="handleAllRows"
     >
-      <!-- Pass through all scoped slots -->
       <template v-for="(_, name) in $slots" #[name]="slotData">
         <slot :name="name" v-bind="slotData" />
       </template>
     </UiTableBody>
 
-    <!-- Table Footer (Pagination) -->
     <UiTableFooter
       v-if="pagination"
       :pagination="pagination"
@@ -41,51 +44,61 @@
 </template>
 
 <script setup lang="ts">
-  import { useTableInteractions } from "./composables/useTableInteractions";
-  import type {
-    TableColumn,
-    TableConfig,
-    TableFetchFn,
-  } from "./types/table.types";
-  import UiTableBody from "./UiTableBody.vue";
-  import UiTableFooter from "./UiTableFooter.vue";
-  import UiTableHeader from "./UiTableHeader.vue";
+import { computed } from "vue";
+import { useTableInteractions } from "./composables/useTableInteractions";
+import type { BulkAction, TableAction, TableColumn, TableConfig, TableFetchFn } from "./types/table.types";
+import UiTableBody from "./UiTableBody.vue";
+import UiTableFooter from "./UiTableFooter.vue";
+import UiTableHeader from "./UiTableHeader.vue";
 
-  interface Props {
-    tableId: string;
-    columns: TableColumn[];
-    fetchFn: TableFetchFn;
-    config?: TableConfig;
-    searchPlaceholder?: string;
-    showRefresh?: boolean;
-  }
+interface Props {
+  tableId: string;
+  columns: TableColumn[];
+  fetchFn: TableFetchFn;
+  config?: TableConfig;
+  searchPlaceholder?: string;
+  showRefresh?: boolean;
+  rowActions?: TableAction[];
+  bulkActions?: BulkAction[];
+  mobileBreakpoint?: number;
+}
 
-  const props = withDefaults(defineProps<Props>(), {
-    config: () => ({}),
-    searchPlaceholder: "Search...",
-    showRefresh: true,
-  });
+const props = withDefaults(defineProps<Props>(), {
+  config: () => ({}),
+  searchPlaceholder: "Search...",
+  showRefresh: true,
+  rowActions: () => [],
+  bulkActions: () => [],
+  mobileBreakpoint: 768,
+});
 
-  // Use table interactions composable
-  const {
-    tableData,
-    loading,
-    error,
-    pagination,
-    filters,
-    sort,
-    visibleColumns,
-    allColumns,
-    handleSearch,
-    handleSort,
-    handlePageChange,
-    handlePerPageChange,
-    handleColumnToggle,
-    handleRefresh,
-  } = useTableInteractions(
-    props.tableId,
-    props.columns,
-    props.fetchFn,
-    props.config,
-  );
+const {
+  tableData,
+  loading,
+  error,
+  pagination,
+  filters,
+  sort,
+  visibleColumns,
+  allColumns,
+  selectedRowIds,
+  handleSearch,
+  handleSort,
+  handlePageChange,
+  handlePerPageChange,
+  handleColumnToggle,
+  handleRefresh,
+  handleRowSelection,
+  handleAllRows,
+  clearSelection,
+} = useTableInteractions(props.tableId, props.columns, props.fetchFn, props.config);
+
+const selectedRows = computed(() => {
+  const ids = new Set(selectedRowIds.value);
+  return tableData.value.filter((row: any) => ids.has(String(row?.id)));
+});
+
+function runBulkAction(action: BulkAction) {
+  action.onClick(selectedRows.value);
+}
 </script>
