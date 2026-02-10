@@ -414,7 +414,7 @@ import { useRouter } from "vue-router";
 const router = useRouter();
 const workspaceStore = useWorkspaceStore();
 
-const activeTab = ref<"overview" | "workspaces" | "notifications">("overview");
+const activeTab = ref<string>("overview");
 const tabs = computed(() => [
   {
     id: "overview" as const,
