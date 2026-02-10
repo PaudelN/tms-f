@@ -1,14 +1,14 @@
 <template>
-  <div class="bg-card rounded-xl shadow-sm border border-border p-4">
+  <div class="clamorphism rounded-xl border border-border/60 p-4">
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div>
         <label class="block text-xs font-medium text-muted-foreground mb-2">Filter by Owner</label>
-        <Select :model-value="filterOwner" @update:model-value="emit('update:filterOwner', $event)">
+        <Select :model-value="ownerSelectValue" @update:model-value="onOwnerChange">
           <SelectTrigger class="w-full">
             <SelectValue placeholder="All Owners" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Owners</SelectItem>
+            <SelectItem :value="ALL_OWNERS_VALUE">All Owners</SelectItem>
             <SelectItem v-for="owner in uniqueOwners" :key="owner.id" :value="String(owner.id)">
               {{ owner.name }}
             </SelectItem>
@@ -18,12 +18,12 @@
 
       <div>
         <label class="block text-xs font-medium text-muted-foreground mb-2">Filter by Status</label>
-        <Select :model-value="filterStatus" @update:model-value="emit('update:filterStatus', $event)">
+        <Select :model-value="statusSelectValue" @update:model-value="onStatusChange">
           <SelectTrigger class="w-full">
             <SelectValue placeholder="All Statuses" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Statuses</SelectItem>
+            <SelectItem :value="ALL_STATUSES_VALUE">All Statuses</SelectItem>
             <SelectItem value="active">Active</SelectItem>
             <SelectItem value="archived">Archived</SelectItem>
           </SelectContent>
@@ -117,6 +117,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { computed } from "vue";
+import type { AcceptableValue } from "reka-ui";
 import { X } from "lucide-vue-next";
 import type { ViewMode } from "@/ui-table/types/table.types";
 import UiViews from "@/ui-table/UiViews.vue";
@@ -126,7 +128,7 @@ type Owner = {
   name: string;
 };
 
-defineProps<{
+const props = defineProps<{
   filterOwner: string;
   filterStatus: string;
   currentView: ViewMode;
@@ -135,6 +137,22 @@ defineProps<{
   hasActiveFilters: boolean;
   getOwnerName: (ownerId: string) => string;
 }>();
+
+const ALL_OWNERS_VALUE = "all-owners";
+const ALL_STATUSES_VALUE = "all-statuses";
+
+const ownerSelectValue = computed(() => (props.filterOwner || ALL_OWNERS_VALUE));
+const statusSelectValue = computed(() => (props.filterStatus || ALL_STATUSES_VALUE));
+
+const onOwnerChange = (value: AcceptableValue) => {
+  const normalized = String(value ?? "");
+  emit("update:filterOwner", normalized === ALL_OWNERS_VALUE ? "" : normalized);
+};
+
+const onStatusChange = (value: AcceptableValue) => {
+  const normalized = String(value ?? "");
+  emit("update:filterStatus", normalized === ALL_STATUSES_VALUE ? "" : normalized);
+};
 
 const emit = defineEmits<{
   (e: "update:filterOwner", value: string): void;
