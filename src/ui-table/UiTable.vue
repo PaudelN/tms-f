@@ -284,6 +284,10 @@ function runBulkAction(action: BulkAction<any>) {
 function getRowActions(row: any) {
   return props.rowActions.filter((action) => (action.show ? action.show(row) : true));
 }
+
+function toggleColumnVisibility(column: any, checked: CheckboxCheckedState) {
+  column.toggleVisibility(checked === true);
+}
 </script>
 
 <template>
@@ -301,7 +305,7 @@ function getRowActions(row: any) {
         <DropdownMenuItem
           v-for="action in getRowActions(row)"
           :key="action.label"
-          @click="action.onClick(row)"
+          @select.prevent="action.onClick(row)"
         >
           <component v-if="action.icon" :is="action.icon" class="mr-2 h-4 w-4" />
           {{ action.label }}
@@ -352,21 +356,21 @@ function getRowActions(row: any) {
             Bulk actions <ChevronDown class="ml-2 h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
+        <DropdownMenuContent align="end" class="w-56">
           <DropdownMenuLabel>Apply to selection</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem
             v-for="action in bulkActions"
             :key="action.label"
             :disabled="action.disabled?.(table.getFilteredSelectedRowModel().rows.map((row) => row.original))"
-            @click="runBulkAction(action)"
+            @select.prevent="runBulkAction(action)"
           >
             <component v-if="action.icon" :is="action.icon" class="mr-2 h-4 w-4" />
             {{ action.label }}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-    </div>
+    </header>
 
     <div class="rounded-xl border border-border/70 bg-background/40">
       <Table>
@@ -384,22 +388,19 @@ function getRowActions(row: any) {
         <TableBody>
           <template v-if="loading">
             <TableRow>
-              <TableCell :colspan="resolvedColumns.length" class="h-24 text-center text-muted-foreground">
-                Loading...
-              </TableCell>
+              <TableCell :colspan="resolvedColumns.length" class="h-24 text-center text-muted-foreground">Loading...</TableCell>
             </TableRow>
           </template>
           <template v-else-if="error">
             <TableRow>
-              <TableCell :colspan="resolvedColumns.length" class="h-24 text-center text-destructive">
-                {{ error }}
-              </TableCell>
+              <TableCell :colspan="resolvedColumns.length" class="h-24 text-center text-destructive">{{ error }}</TableCell>
             </TableRow>
           </template>
           <template v-else-if="table.getRowModel().rows?.length">
             <TableRow
               v-for="row in table.getRowModel().rows"
               :key="row.id"
+              class="hover:bg-muted/30"
               :data-state="row.getIsSelected() && 'selected'"
             >
               <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id" class="py-3">
@@ -411,9 +412,7 @@ function getRowActions(row: any) {
             </TableRow>
           </template>
           <TableRow v-else>
-            <TableCell :colspan="resolvedColumns.length" class="h-24 text-center">
-              No results.
-            </TableCell>
+            <TableCell :colspan="resolvedColumns.length" class="h-24 text-center">No results.</TableCell>
           </TableRow>
         </TableBody>
       </Table>

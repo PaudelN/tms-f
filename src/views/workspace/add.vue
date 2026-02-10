@@ -26,7 +26,7 @@
       </div>
 
       <!-- Form Card -->
-      <Card>
+      <Card class="clamorphism border-border/70 shadow-lg">
         <CardHeader>
           <CardTitle class="flex items-center gap-2">
             <FileText class="h-5 w-5 text-primary" />
