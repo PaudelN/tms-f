@@ -258,3 +258,22 @@
     background: rgb(var(--color-muted-foreground) / 0.5);
   }
 }
+@layer utilities {
+  .shadow-clay-sm {
+    box-shadow: 0 1px 2px rgb(15 23 42 / 0.05), 0 8px 24px rgb(15 23 42 / 0.06);
+  }
+
+  .shadow-clay-md {
+    box-shadow: 0 2px 4px rgb(15 23 42 / 0.06), 0 10px 30px rgb(15 23 42 / 0.08);
+  }
+
+  .radius-clay {
+    border-radius: 14px;
+  }
+}
+
+@layer components {
+  [data-sonner-toaster] {
+    z-index: 9999;
+  }
+}
