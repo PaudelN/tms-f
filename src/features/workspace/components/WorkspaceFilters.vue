@@ -3,12 +3,15 @@
     <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
       <div>
         <label class="mb-2 block text-xs font-medium text-muted-foreground">Filter by Owner</label>
-        <Select :model-value="filterOwner" @update:model-value="emit('update:filterOwner', $event)">
+        <Select
+          :model-value="filterOwner || ALL_OWNERS_VALUE"
+          @update:model-value="handleFilterOwnerChange"
+        >
           <SelectTrigger class="w-full">
             <SelectValue placeholder="All Owners" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Owners</SelectItem>
+            <SelectItem :value="ALL_OWNERS_VALUE">All Owners</SelectItem>
             <SelectItem v-for="owner in uniqueOwners" :key="owner.id" :value="owner.id.toString()">
               {{ owner.name }}
             </SelectItem>
@@ -18,12 +21,15 @@
 
       <div>
         <label class="mb-2 block text-xs font-medium text-muted-foreground">Filter by Status</label>
-        <Select :model-value="filterStatus" @update:model-value="emit('update:filterStatus', $event)">
+        <Select
+          :model-value="filterStatus || ALL_STATUSES_VALUE"
+          @update:model-value="handleFilterStatusChange"
+        >
           <SelectTrigger class="w-full">
             <SelectValue placeholder="All Statuses" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Statuses</SelectItem>
+            <SelectItem :value="ALL_STATUSES_VALUE">All Statuses</SelectItem>
             <SelectItem value="active">Active</SelectItem>
             <SelectItem value="archived">Archived</SelectItem>
           </SelectContent>
@@ -138,4 +144,23 @@ const emit = defineEmits<{
   (e: "share"): void;
   (e: "clearAllFilters"): void;
 }>();
+
+const ALL_OWNERS_VALUE = "__all_owners__";
+const ALL_STATUSES_VALUE = "__all_statuses__";
+
+function normalizeSelectValue(value: unknown, resetValue: string) {
+  if (value === resetValue || value == null) {
+    return "";
+  }
+
+  return String(value);
+}
+
+function handleFilterOwnerChange(value: unknown) {
+  emit("update:filterOwner", normalizeSelectValue(value, ALL_OWNERS_VALUE));
+}
+
+function handleFilterStatusChange(value: unknown) {
+  emit("update:filterStatus", normalizeSelectValue(value, ALL_STATUSES_VALUE));
+}
 </script>
