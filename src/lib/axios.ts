@@ -1,20 +1,31 @@
 import { useAuthStore } from "@/stores/auth";
+import router from "@/router";
 import axios, {
   type AxiosError,
   type AxiosInstance,
   type AxiosResponse,
   type InternalAxiosRequestConfig,
 } from "axios";
-import router from "@/router"; 
 
 const getApiUrl = (): string => {
   return (import.meta as any).env?.VITE_API_URL || "http://localhost:8000/api";
 };
+
+const getSanctumUrl = (apiUrl: string): string => {
+  const explicitSanctumUrl = (import.meta as any).env?.VITE_SANCTUM_URL as string | undefined;
+
+  if (explicitSanctumUrl) {
+    return explicitSanctumUrl;
+  }
+
+  return new URL(apiUrl).origin;
+};
+
 const baseURL = getApiUrl();
-const sanctumUrl = "http://localhost:8000";
+const sanctumUrl = getSanctumUrl(baseURL);
 
 const api: AxiosInstance = axios.create({
-  baseURL: baseURL,
+  baseURL,
   withCredentials: true,
   withXSRFToken: true,
   headers: {
@@ -25,15 +36,44 @@ const api: AxiosInstance = axios.create({
 });
 
 let csrfTokenFetched = false;
+let csrfTokenRequest: Promise<void> | null = null;
+
+const shouldFetchCsrfToken = (config: InternalAxiosRequestConfig): boolean => {
+  const method = config.method?.toUpperCase();
+
+  if (!method) {
+    return false;
+  }
+
+  return ["POST", "PUT", "PATCH", "DELETE"].includes(method);
+};
+
+const fetchCsrfToken = async (): Promise<void> => {
+  if (csrfTokenFetched) {
+    return;
+  }
+
+  if (!csrfTokenRequest) {
+    csrfTokenRequest = axios
+      .get(`${sanctumUrl}/sanctum/csrf-cookie`, {
+        withCredentials: true,
+      })
+      .then(() => {
+        csrfTokenFetched = true;
+      })
+      .finally(() => {
+        csrfTokenRequest = null;
+      });
+  }
+
+  await csrfTokenRequest;
+};
 
 api.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
-    if (!csrfTokenFetched && !config.url?.includes("sanctum/csrf-cookie")) {
+    if (!config.url?.includes("sanctum/csrf-cookie") && shouldFetchCsrfToken(config)) {
       try {
-        await axios.get(`${sanctumUrl}/sanctum/csrf-cookie`, {
-          withCredentials: true,
-        });
-        csrfTokenFetched = true;
+        await fetchCsrfToken();
       } catch (error) {
         console.error("Failed to fetch CSRF token:", error);
       }
@@ -51,7 +91,7 @@ api.interceptors.response.use(
     return response;
   },
   async (error: AxiosError) => {
-const auth = useAuthStore();
+    const auth = useAuthStore();
 
     if (error.response?.status === 419) {
       csrfTokenFetched = false;
@@ -88,10 +128,7 @@ const auth = useAuthStore();
 
 export const refreshCsrfToken = async (): Promise<void> => {
   try {
-    await axios.get(`${sanctumUrl}/sanctum/csrf-cookie`, {
-      withCredentials: true,
-    });
-    csrfTokenFetched = true;
+    await fetchCsrfToken();
   } catch (error) {
     console.error("Failed to refresh CSRF token:", error);
     throw error;
@@ -100,6 +137,7 @@ export const refreshCsrfToken = async (): Promise<void> => {
 
 export const resetCsrfToken = (): void => {
   csrfTokenFetched = false;
+  csrfTokenRequest = null;
 };
 
 export default api;

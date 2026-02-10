@@ -1,5 +1,26 @@
-# Vue 3 + TypeScript + Vite
+# tms-f (Vue 3 + TypeScript + Vite)
 
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+## Environment
 
-Learn more about the recommended Project Setup and IDE Support in the [Vue Docs TypeScript Guide](https://vuejs.org/guide/typescript/overview.html#project-setup).
+Create a `.env` file for local development:
+
+```bash
+VITE_API_URL=http://localhost:8000/api
+# Optional. Defaults to the origin of VITE_API_URL.
+VITE_SANCTUM_URL=http://localhost:8000
+```
+
+`VITE_SANCTUM_URL` is used for the Sanctum CSRF endpoint (`/sanctum/csrf-cookie`).
+
+## Laravel Sanctum + CORS note
+
+If requests are sent with `withCredentials: true`, your backend CORS setup **cannot** use a wildcard origin (`*`).
+
+Your Laravel backend should include explicit origins, for example:
+
+```php
+'allowed_origins' => ['http://localhost:3000'],
+'supports_credentials' => true,
+```
+
+Also ensure `allowed_methods` contains HTTP methods (e.g. `['*']`), not origin URLs.
