@@ -15,7 +15,7 @@ import {
   useVueTable,
 } from "@tanstack/vue-table";
 import { createReusableTemplate, useDebounceFn } from "@vueuse/core";
-import { ChevronDown, MoreHorizontal, Search } from "lucide-vue-next";
+import { ChevronDown, MoreHorizontal, Search, Sparkles } from "lucide-vue-next";
 import { computed, h, ref, watch } from "vue";
 import type { AcceptableValue, CheckboxCheckedState } from "reka-ui";
 import { valueUpdater } from "@/lib/utils";
@@ -59,6 +59,14 @@ interface Props<T> {
   enableColumnVisibility?: boolean;
   rowActions?: TableAction<T>[];
   bulkActions?: BulkAction<T>[];
+  title?: string;
+  description?: string;
+  showToolbar?: boolean;
+  showSearch?: boolean;
+  showSelectionSummary?: boolean;
+  showPagination?: boolean;
+  emptyTitle?: string;
+  emptyDescription?: string;
 }
 
 const props = withDefaults(defineProps<Props<any>>(), {
@@ -69,6 +77,14 @@ const props = withDefaults(defineProps<Props<any>>(), {
   enableColumnVisibility: true,
   rowActions: () => [],
   bulkActions: () => [],
+  title: "Data table",
+  description: "Browse, filter and manage your records.",
+  showToolbar: true,
+  showSearch: true,
+  showSelectionSummary: true,
+  showPagination: true,
+  emptyTitle: "No results",
+  emptyDescription: "Try changing filters or search keyword.",
 });
 
 const tableData = ref<any[]>(props.data ?? []);
@@ -88,15 +104,16 @@ const pagination = ref<PaginationState>({
 
 const [DefineTemplate, ReuseTemplate] = createReusableTemplate<{ row: any }>();
 
+const hasRowActions = computed(() => props.rowActions.length > 0);
+const hidableColumns = computed(() => table.getAllColumns().filter((column) => column.getCanHide()));
+const selectedRows = computed(() => table.getFilteredSelectedRowModel().rows.map((row) => row.original));
+
 const actionColumn = computed<ColumnDef<any> | null>(() => {
-  if (!props.rowActions.length) return null;
+  if (!hasRowActions.value) return null;
   return {
     id: "actions",
     enableHiding: false,
-    cell: ({ row }) =>
-      h(ReuseTemplate, {
-        row: row.original,
-      }),
+    cell: ({ row }) => h(ReuseTemplate, { row: row.original }),
   } as ColumnDef<any>;
 });
 
@@ -127,12 +144,8 @@ const selectionColumn = computed<ColumnDef<any> | null>(() => {
 
 const resolvedColumns = computed<ColumnDef<any>[]>(() => {
   const cols = [...props.columns];
-  if (selectionColumn.value) {
-    cols.unshift(selectionColumn.value);
-  }
-  if (actionColumn.value) {
-    cols.push(actionColumn.value);
-  }
+  if (selectionColumn.value) cols.unshift(selectionColumn.value);
+  if (actionColumn.value) cols.push(actionColumn.value);
   return cols;
 });
 
@@ -237,7 +250,7 @@ const fetchRemote = async (reason: "search" | "state" = "state") => {
   }
 };
 
-const debouncedFetch = useDebounceFn(fetchRemote, 300);
+const debouncedFetch = useDebounceFn(fetchRemote, 250);
 
 watch(
   () => props.data,
@@ -269,16 +282,11 @@ watch(
   },
 );
 
-const selectedCount = computed(
-  () => table.getFilteredSelectedRowModel().rows.length,
-);
-
-const filteredCount = computed(
-  () => table.getFilteredRowModel().rows.length,
-);
+const selectedCount = computed(() => table.getFilteredSelectedRowModel().rows.length);
+const filteredCount = computed(() => table.getFilteredRowModel().rows.length);
 
 function runBulkAction(action: BulkAction<any>) {
-  action.onClick(table.getFilteredSelectedRowModel().rows.map((row) => row.original));
+  action.onClick(selectedRows.value);
 }
 
 function getRowActions(row: any) {
@@ -360,7 +368,7 @@ function toggleColumnVisibility(column: any, checked: CheckboxCheckedState) {
           <DropdownMenuLabel>Apply to selection</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            v-for="action in bulkActions"
+            v-for="action in getRowActions(row)"
             :key="action.label"
             :disabled="action.disabled?.(table.getFilteredSelectedRowModel().rows.map((row) => row.original))"
             @select.prevent="runBulkAction(action)"
@@ -422,35 +430,15 @@ function toggleColumnVisibility(column: any, checked: CheckboxCheckedState) {
       <div class="text-sm text-muted-foreground">
         {{ selectedCount }} of {{ filteredCount }} row(s) selected.
       </div>
-      <div class="flex items-center gap-3">
-        <UiPagination
-          :current-page="table.getState().pagination.pageIndex + 1"
-          :total-pages="table.getPageCount()"
-          :total="props.fetchFn ? totalItems : filteredCount"
-          :per-page="table.getState().pagination.pageSize"
-          :page-sizes="pageSizes"
-          @page-change="(page) => table.setPageIndex(page - 1)"
-          @per-page-change="(size) => table.setPageSize(size)"
-        />
-        <div class="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            :disabled="!table.getCanPreviousPage()"
-            @click="table.previousPage()"
-          >
-            Previous
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            :disabled="!table.getCanNextPage()"
-            @click="table.nextPage()"
-          >
-            Next
-          </Button>
-        </div>
-      </div>
-    </div>
-  </div>
+      <UiPagination
+        :current-page="table.getState().pagination.pageIndex + 1"
+        :total-pages="table.getPageCount()"
+        :total="props.fetchFn ? totalItems : filteredCount"
+        :per-page="table.getState().pagination.pageSize"
+        :page-sizes="pageSizes"
+        @page-change="(page) => table.setPageIndex(page - 1)"
+        @per-page-change="(size) => table.setPageSize(size)"
+      />
+    </footer>
+  </section>
 </template>

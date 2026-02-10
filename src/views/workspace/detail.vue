@@ -62,7 +62,48 @@
           </div>
         </div>
 
-        <!-- Info Cards Grid -->
+
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <Card class="clamorphism border-border/70 shadow-lg md:col-span-2">
+            <CardHeader>
+              <CardTitle class="text-base">Workspace health</CardTitle>
+            </CardHeader>
+            <CardContent class="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
+              <div>
+                <p class="text-xs text-muted-foreground">Status</p>
+                <p class="font-semibold text-foreground">Active</p>
+              </div>
+              <div>
+                <p class="text-xs text-muted-foreground">Owner</p>
+                <p class="font-semibold text-foreground">{{ workspace.user?.name ?? 'Unassigned' }}</p>
+              </div>
+              <div>
+                <p class="text-xs text-muted-foreground">Created</p>
+                <p class="font-semibold text-foreground">{{ formatDate(workspace.created_at) }}</p>
+              </div>
+              <div>
+                <p class="text-xs text-muted-foreground">Updated</p>
+                <p class="font-semibold text-foreground">{{ formatDate(workspace.updated_at) }}</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card class="clamorphism border-border/70 shadow-lg">
+            <CardHeader>
+              <CardTitle class="text-base">Quick actions</CardTitle>
+            </CardHeader>
+            <CardContent class="space-y-2">
+              <Button variant="outline" class="w-full justify-start" @click="handleEdit">
+                <Pencil class="mr-2 h-4 w-4" /> Edit workspace
+              </Button>
+              <Button variant="outline" class="w-full justify-start" @click="router.push({ name: 'workspace' })">
+                <ArrowLeft class="mr-2 h-4 w-4" /> Back to list
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+                <!-- Info Cards Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <!-- Owner Card -->
           <Card class="clamorphism border-border/70 shadow-lg">

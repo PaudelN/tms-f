@@ -57,6 +57,10 @@
             search-placeholder="Search workspaces..."
             :row-actions="rowActions"
             :bulk-actions="bulkActions"
+            title="Workspace management"
+            description="Filter, customize columns, and run actions quickly."
+            empty-title="No workspaces found"
+            empty-description="Try a different search or clear active filters."
           />
 
           <UiList v-else-if="currentView === 'list'" :items="filteredWorkspaces" :loading="workspaceStore.isLoading">
