@@ -1,342 +1,170 @@
-// stores/useUiTableStore.ts
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import type {
   ApiResponse,
   TableColumn,
   TableConfig,
-  TableFilters,
   TableState,
 } from "../types/table.types";
+
+const createDefaultState = (
+  columns: TableColumn[] = [],
+  config: TableConfig = {},
+): TableState => ({
+  data: [],
+  loading: false,
+  error: null,
+  filters: { search: "" },
+  sort: {
+    column: config.defaultSortBy ?? null,
+    order: config.defaultSortOrder ?? null,
+  },
+  pagination: {
+    currentPage: 1,
+    perPage: config.defaultPerPage ?? 10,
+    total: 0,
+    totalPages: 0,
+  },
+  columns: (columns ?? []).map((column) => ({
+    ...column,
+    visible: column.visible !== false,
+  })),
+  initialized: true,
+});
 
 export const useUiTableStore = defineStore(
   "ui-table",
   () => {
-    // ============================
-    // STATE
-    // ============================
     const tables = ref<Record<string, TableState>>({});
 
-    // ============================
-    // GETTERS
-    // ============================
+    const ensureTable = (tableId: string) => {
+      if (!tables.value[tableId]) {
+        tables.value[tableId] = createDefaultState();
+      }
+      return tables.value[tableId];
+    };
+
     const getTable = (tableId: string) => tables.value[tableId];
-
-    const getTableData = (tableId: string) => tables.value[tableId]?.data || [];
-
-    const isLoading = (tableId: string) =>
-      tables.value[tableId]?.loading || false;
-
-    const getError = (tableId: string) => tables.value[tableId]?.error || null;
-
-    const getFilters = (tableId: string) => tables.value[tableId]?.filters;
-
-    const getSort = (tableId: string) => tables.value[tableId]?.sort;
-
+    const getTableData = (tableId: string) => getTable(tableId)?.data ?? [];
+    const isLoading = (tableId: string) => getTable(tableId)?.loading ?? false;
+    const getError = (tableId: string) => getTable(tableId)?.error ?? null;
+    const getFilters = (tableId: string) => getTable(tableId)?.filters ?? { search: "" };
+    const getSort = (tableId: string) =>
+      getTable(tableId)?.sort ?? { column: null, order: null };
     const getPagination = (tableId: string) =>
-      tables.value[tableId]?.pagination;
-
-    const getColumns = (tableId: string) =>
-      tables.value[tableId]?.columns || [];
-
+      getTable(tableId)?.pagination ?? {
+        currentPage: 1,
+        perPage: 10,
+        total: 0,
+        totalPages: 0,
+      };
+    const getColumns = (tableId: string) => getTable(tableId)?.columns ?? [];
     const getVisibleColumns = (tableId: string) =>
-      tables.value[tableId]?.columns.filter((col) => col.visible !== false) ||
-      [];
-
-    const getColumnByKey = (tableId: string, columnKey: string) =>
-      tables.value[tableId]?.columns.find((col) => col.key === columnKey);
-
-    const isInitialized = (tableId: string) =>
-      tables.value[tableId]?.initialized || false;
-
-    // Advanced getters
-    const hasData = (tableId: string) =>
-      (tables.value[tableId]?.data?.length || 0) > 0;
-
-    const isEmpty = (tableId: string) =>
-      !isLoading(tableId) && !hasData(tableId);
-
-    const hasError = (tableId: string) => !!tables.value[tableId]?.error;
-
-    const canGoNext = (tableId: string) => {
-      const pagination = getPagination(tableId);
-      return pagination
-        ? pagination.currentPage < pagination.totalPages
-        : false;
-    };
-
-    const canGoPrevious = (tableId: string) => {
-      const pagination = getPagination(tableId);
-      return pagination ? pagination.currentPage > 1 : false;
-    };
-
-    const getSearchQuery = (tableId: string) =>
-      tables.value[tableId]?.filters?.search || "";
-
-    const isSortedBy = (tableId: string, columnKey: string) =>
-      tables.value[tableId]?.sort?.column === columnKey;
-
-    const getSortDirection = (tableId: string, columnKey: string) => {
-      const sort = getSort(tableId);
-      return sort?.column === columnKey ? sort.order : null;
-    };
-
-    // ============================
-    // ACTIONS
-    // ============================
+      (getTable(tableId)?.columns ?? []).filter((col) => col.visible !== false);
 
     const initializeTable = (
       tableId: string,
       columns: TableColumn[],
       config: TableConfig = {},
     ) => {
-      const {
-        defaultPerPage = 10,
-        defaultSortBy = null,
-        defaultSortOrder = null,
-      } = config;
-
-      const initializedColumns = columns.map((col) => ({
-        ...col,
-        visible: col.visible !== false,
-      }));
-
-      tables.value[tableId] = {
-        data: [],
-        loading: false,
-        error: null,
-        filters: { search: "" },
-        sort: { column: defaultSortBy, order: defaultSortOrder },
-        pagination: {
-          currentPage: 1,
-          perPage: defaultPerPage,
-          total: 0,
-          totalPages: 0,
-        },
-        columns: initializedColumns,
-        initialized: true,
-      };
+      tables.value[tableId] = createDefaultState(columns, config);
     };
 
     const setLoading = (tableId: string, loading: boolean) => {
-      if (tables.value[tableId]) {
-        tables.value[tableId].loading = loading;
-      }
+      ensureTable(tableId).loading = loading;
     };
 
     const setError = (tableId: string, error: string | null) => {
-      if (tables.value[tableId]) {
-        tables.value[tableId].error = error;
-      }
+      ensureTable(tableId).error = error;
     };
 
     const updateTableData = (tableId: string, response: ApiResponse) => {
-      const table = tables.value[tableId];
-      if (!table) return;
-
-      table.data = response.data;
+      const table = ensureTable(tableId);
+      table.data = response?.data ?? [];
       table.pagination = {
-        currentPage: response.meta.current_page,
-        perPage: response.meta.per_page,
-        total: response.meta.total,
-        totalPages: response.meta.last_page,
+        currentPage: response?.meta?.current_page ?? 1,
+        perPage: response?.meta?.per_page ?? table.pagination.perPage,
+        total: response?.meta?.total ?? 0,
+        totalPages: response?.meta?.last_page ?? 0,
       };
       table.error = null;
     };
 
     const setSearch = (tableId: string, search: string) => {
-      const table = tables.value[tableId];
-      if (!table) return;
-      table.filters.search = search;
-      table.pagination.currentPage = 1; // Reset to first page on search
+      const table = ensureTable(tableId);
+      table.filters = { ...table.filters, search };
+      table.pagination.currentPage = 1;
     };
 
     const setSort = (tableId: string, column: string) => {
-      const table = tables.value[tableId];
-      if (!table) return;
-
+      const table = ensureTable(tableId);
       const currentSort = table.sort;
-
-      // Toggle sort: asc -> desc -> null -> asc
       if (currentSort.column === column) {
-        if (currentSort.order === "asc") {
-          currentSort.order = "desc";
-        } else if (currentSort.order === "desc") {
+        currentSort.order = currentSort.order === "asc" ? "desc" : currentSort.order === "desc" ? null : "asc";
+        if (currentSort.order === null) {
           currentSort.column = null;
-          currentSort.order = null;
-        } else {
-          currentSort.order = "asc";
         }
       } else {
         table.sort = { column, order: "asc" };
       }
-
-      table.pagination.currentPage = 1; // Reset to first page on sort
+      table.pagination.currentPage = 1;
     };
-
 
     const setPage = (tableId: string, page: number) => {
-      const table = tables.value[tableId];
-      if (!table) return;
-
-      const validPage = Math.max(
-        1,
-        Math.min(page, table.pagination.totalPages || 1),
-      );
-
-      table.pagination = {
-        ...table.pagination,
-        currentPage: validPage,
-      };
-    };
-
-    const nextPage = (tableId: string) => {
-      const table = tables.value[tableId];
-      if (!table || !canGoNext(tableId)) return;
-      table.pagination.currentPage += 1;
-    };
-
-    const previousPage = (tableId: string) => {
-      const table = tables.value[tableId];
-      if (!table || !canGoPrevious(tableId)) return;
-      table.pagination.currentPage -= 1;
-    };
-
-    const firstPage = (tableId: string) => {
-      setPage(tableId, 1);
-    };
-
-    const lastPage = (tableId: string) => {
-      const table = tables.value[tableId];
-      if (!table) return;
-      setPage(tableId, table.pagination.totalPages);
+      const table = ensureTable(tableId);
+      const maxPage = Math.max(table.pagination.totalPages, 1);
+      table.pagination.currentPage = Math.min(Math.max(page, 1), maxPage);
     };
 
     const setPerPage = (tableId: string, perPage: number) => {
-      const table = tables.value[tableId];
-      if (!table) return;
-
-      table.pagination = {
-        ...table.pagination,
-        perPage,
-        currentPage: 1, 
-      };
+      const table = ensureTable(tableId);
+      table.pagination.perPage = perPage;
+      table.pagination.currentPage = 1;
     };
 
     const toggleColumnVisibility = (tableId: string, columnKey: string) => {
-      const table = tables.value[tableId];
-      if (!table) return;
+      const table = ensureTable(tableId);
       const column = table.columns.find((col) => col.key === columnKey);
       if (column) {
         column.visible = !column.visible;
       }
     };
 
-    const setColumnVisibility = (
-      tableId: string,
-      columnKey: string,
-      visible: boolean,
-    ) => {
-      const table = tables.value[tableId];
-      if (!table) return;
+    const setColumnVisibility = (tableId: string, columnKey: string, visible: boolean) => {
+      const table = ensureTable(tableId);
       const column = table.columns.find((col) => col.key === columnKey);
       if (column) {
         column.visible = visible;
       }
     };
-
     const showAllColumns = (tableId: string) => {
-      const table = tables.value[tableId];
-      if (!table) return;
-      table.columns.forEach((col) => (col.visible = true));
+      const table = ensureTable(tableId);
+      table.columns.forEach((column) => {
+        column.visible = true;
+      });
     };
 
     const hideAllColumns = (tableId: string) => {
-      const table = tables.value[tableId];
-      if (!table) return;
-      table.columns.forEach((col) => (col.visible = false));
-    };
-
-    const setFilters = (tableId: string, filters: Partial<TableFilters>) => {
-      const table = tables.value[tableId];
-      if (!table) return;
-      table.filters = { ...table.filters, ...filters };
-      table.pagination.currentPage = 1; // Reset to first page on filter change
-    };
-
-    const clearFilters = (tableId: string) => {
-      const table = tables.value[tableId];
-      if (!table) return;
-      table.filters = { search: "" };
-      table.pagination.currentPage = 1;
+      const table = ensureTable(tableId);
+      table.columns.forEach((column) => {
+        column.visible = false;
+      });
     };
 
     const resetTable = (tableId: string) => {
-      const table = tables.value[tableId];
-      if (!table) return;
+      const table = ensureTable(tableId);
       table.filters = { search: "" };
-      table.pagination.currentPage = 1;
+      table.error = null;
       table.sort = { column: null, order: null };
-      table.error = null;
-    };
-
-    const resetTableFull = (tableId: string, config: TableConfig = {}) => {
-      const table = tables.value[tableId];
-      if (!table) return;
-
-      const {
-        defaultPerPage = 10,
-        defaultSortBy = null,
-        defaultSortOrder = null,
-      } = config;
-
-      table.filters = { search: "" };
-      table.sort = { column: defaultSortBy, order: defaultSortOrder };
-      table.pagination = {
-        currentPage: 1,
-        perPage: defaultPerPage,
-        total: 0,
-        totalPages: 0,
-      };
-      table.error = null;
+      table.pagination.currentPage = 1;
     };
 
     const destroyTable = (tableId: string) => {
       delete tables.value[tableId];
     };
 
-    const clearData = (tableId: string) => {
-      const table = tables.value[tableId];
-      if (!table) return;
-      table.data = [];
-      table.pagination.total = 0;
-      table.pagination.totalPages = 0;
-    };
-
-    // Bulk operations
-    const updateMultipleColumns = (
-      tableId: string,
-      updates: Array<{ key: string; visible: boolean }>,
-    ) => {
-      const table = tables.value[tableId];
-      if (!table) return;
-
-      updates.forEach(({ key, visible }) => {
-        const column = table.columns.find((col) => col.key === key);
-        if (column) {
-          column.visible = visible;
-        }
-      });
-    };
-
-    // ============================
-    // RETURN
-    // ============================
     return {
-      // State
       tables,
-
-      // Getters
       getTable,
       getTableData,
       isLoading,
@@ -346,18 +174,6 @@ export const useUiTableStore = defineStore(
       getPagination,
       getColumns,
       getVisibleColumns,
-      getColumnByKey,
-      isInitialized,
-      hasData,
-      isEmpty,
-      hasError,
-      canGoNext,
-      canGoPrevious,
-      getSearchQuery,
-      isSortedBy,
-      getSortDirection,
-
-      // Actions
       initializeTable,
       setLoading,
       setError,
@@ -365,29 +181,19 @@ export const useUiTableStore = defineStore(
       setSearch,
       setSort,
       setPage,
-      nextPage,
-      previousPage,
-      firstPage,
-      lastPage,
       setPerPage,
       toggleColumnVisibility,
       setColumnVisibility,
       showAllColumns,
       hideAllColumns,
-      setFilters,
-      clearFilters,
       resetTable,
-      resetTableFull,
       destroyTable,
-      clearData,
-      updateMultipleColumns,
     };
   },
   {
     persist: {
       key: "ui-table-store",
       storage: localStorage,
-      // paths: ["tables"],
     },
   },
 );

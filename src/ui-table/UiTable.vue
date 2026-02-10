@@ -1,8 +1,5 @@
 <template>
-  <div
-    class="bg-card text-muted-foreground rounded-lg shadow-sm border border-border overflow-hidden"
-  >
-    <!-- Table Header (Search, Refresh, Column Toggle) -->
+  <div class="overflow-hidden rounded-lg border border-border bg-card text-muted-foreground">
     <UiTableHeader
       :search-value="filters?.search || ''"
       :search-placeholder="searchPlaceholder"
@@ -14,23 +11,30 @@
       @toggle-column="handleColumnToggle"
     />
 
-    <!-- Table Body -->
+    <div v-if="selectedRows.length" class="flex items-center justify-between border-b bg-muted/30 px-4 py-2">
+      <p class="text-xs text-muted-foreground">{{ selectedRows.length }} selected</p>
+      <slot name="bulk-actions" :rows="selectedData">
+        <Button size="sm" variant="outline" @click="selectedRows = []">Clear</Button>
+      </slot>
+    </div>
+
     <UiTableBody
       :data="tableData"
       :visible-columns="visibleColumns"
       :loading="loading"
       :error="error"
       :sort="sort || { column: null, order: null }"
+      :selected-rows="selectedRows"
       @sort="handleSort"
       @refresh="handleRefresh"
+      @toggle-row="toggleRow"
+      @toggle-all="toggleAllRows"
     >
-      <!-- Pass through all scoped slots -->
       <template v-for="(_, name) in $slots" #[name]="slotData">
         <slot :name="name" v-bind="slotData" />
       </template>
     </UiTableBody>
 
-    <!-- Table Footer (Pagination) -->
     <UiTableFooter
       v-if="pagination"
       :pagination="pagination"
@@ -41,51 +45,66 @@
 </template>
 
 <script setup lang="ts">
-  import { useTableInteractions } from "./composables/useTableInteractions";
-  import type {
-    TableColumn,
-    TableConfig,
-    TableFetchFn,
-  } from "./types/table.types";
-  import UiTableBody from "./UiTableBody.vue";
-  import UiTableFooter from "./UiTableFooter.vue";
-  import UiTableHeader from "./UiTableHeader.vue";
+import { Button } from "@/components/ui/button";
+import { computed, ref, watch } from "vue";
+import { useTableInteractions } from "./composables/useTableInteractions";
+import type { TableColumn, TableConfig, TableFetchFn } from "./types/table.types";
+import UiTableBody from "./UiTableBody.vue";
+import UiTableFooter from "./UiTableFooter.vue";
+import UiTableHeader from "./UiTableHeader.vue";
 
-  interface Props {
-    tableId: string;
-    columns: TableColumn[];
-    fetchFn: TableFetchFn;
-    config?: TableConfig;
-    searchPlaceholder?: string;
-    showRefresh?: boolean;
+interface Props {
+  tableId: string;
+  columns: TableColumn[];
+  fetchFn: TableFetchFn;
+  config?: TableConfig;
+  searchPlaceholder?: string;
+  showRefresh?: boolean;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  config: () => ({}),
+  searchPlaceholder: "Search...",
+  showRefresh: true,
+});
+
+const {
+  tableData,
+  loading,
+  error,
+  pagination,
+  filters,
+  sort,
+  visibleColumns,
+  allColumns,
+  handleSearch,
+  handleSort,
+  handlePageChange,
+  handlePerPageChange,
+  handleColumnToggle,
+  handleRefresh,
+} = useTableInteractions(props.tableId, props.columns, props.fetchFn, props.config);
+
+const selectedRows = ref<number[]>([]);
+const selectedData = computed(() => selectedRows.value.map((index) => tableData.value[index]).filter(Boolean));
+
+watch(tableData, () => {
+  selectedRows.value = [];
+});
+
+function toggleRow(index: number) {
+  if (selectedRows.value.includes(index)) {
+    selectedRows.value = selectedRows.value.filter((item) => item !== index);
+    return;
   }
+  selectedRows.value = [...selectedRows.value, index];
+}
 
-  const props = withDefaults(defineProps<Props>(), {
-    config: () => ({}),
-    searchPlaceholder: "Search...",
-    showRefresh: true,
-  });
-
-  // Use table interactions composable
-  const {
-    tableData,
-    loading,
-    error,
-    pagination,
-    filters,
-    sort,
-    visibleColumns,
-    allColumns,
-    handleSearch,
-    handleSort,
-    handlePageChange,
-    handlePerPageChange,
-    handleColumnToggle,
-    handleRefresh,
-  } = useTableInteractions(
-    props.tableId,
-    props.columns,
-    props.fetchFn,
-    props.config,
-  );
+function toggleAllRows() {
+  if (selectedRows.value.length === tableData.value.length) {
+    selectedRows.value = [];
+    return;
+  }
+  selectedRows.value = tableData.value.map((_, index) => index);
+}
 </script>

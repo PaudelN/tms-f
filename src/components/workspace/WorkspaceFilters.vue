@@ -1,126 +1,95 @@
 <template>
-  <div class="bg-card rounded-xl shadow-sm border border-border p-4">
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div>
-        <label class="block text-xs font-medium text-muted-foreground mb-2">Filter by Owner</label>
-        <select
-          :value="filterOwner"
-          class="w-full px-3 py-2 bg-background border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring text-foreground"
-          @change="updateOwner"
-        >
-          <option value="">All Owners</option>
-          <option v-for="owner in uniqueOwners" :key="owner.id" :value="owner.id">
-            {{ owner.name }}
-          </option>
-        </select>
+  <div class="rounded-xl border border-border bg-card p-4">
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <div class="space-y-2">
+        <label class="text-xs font-medium text-muted-foreground">Filter by Owner</label>
+        <AppSelect
+          :model-value="filterOwner"
+          placeholder="All Owners"
+          :options="ownerOptions"
+          class="w-full"
+          @update:model-value="emit('update:filterOwner', $event)"
+        />
       </div>
 
-      <div>
-        <label class="block text-xs font-medium text-muted-foreground mb-2">Filter by Status</label>
-        <select
-          :value="filterStatus"
-          class="w-full px-3 py-2 bg-background border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring text-foreground"
-          @change="updateStatus"
-        >
-          <option value="">All Statuses</option>
-          <option value="active">Active</option>
-          <option value="archived">Archived</option>
-        </select>
+      <div class="space-y-2">
+        <label class="text-xs font-medium text-muted-foreground">Filter by Status</label>
+        <AppSelect
+          :model-value="filterStatus"
+          placeholder="All Statuses"
+          :options="statusOptions"
+          class="w-full"
+          @update:model-value="emit('update:filterStatus', $event)"
+        />
       </div>
 
       <div class="flex items-end gap-2">
         <div class="flex-1">
-          <label class="block text-xs font-medium text-muted-foreground mb-2">View Mode</label>
+          <label class="mb-2 block text-xs font-medium text-muted-foreground">View Mode</label>
           <UiViews :model-value="currentView" @update:model-value="emit('update:currentView', $event)" />
         </div>
 
-        <div class="relative">
-          <button
-            type="button"
-            class="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/80 transition-all text-sm font-medium whitespace-nowrap"
-            @click="emit('toggleExportMenu')"
-          >
-            Export
-          </button>
-          <div
-            v-if="showExportMenu"
-            class="absolute right-0 mt-2 w-40 bg-popover border border-border rounded-lg shadow-lg py-2 z-50"
-          >
-            <button
-              type="button"
-              class="w-full px-4 py-2 text-left text-sm hover:bg-accent text-popover-foreground transition-colors"
-              @click="emit('export', 'csv')"
-            >
-              CSV
-            </button>
-            <button
-              type="button"
-              class="w-full px-4 py-2 text-left text-sm hover:bg-accent text-popover-foreground transition-colors"
-              @click="emit('export', 'json')"
-            >
-              JSON
-            </button>
-          </div>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger as-child>
+            <Button variant="outline">Export</Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem @click="emit('export', 'csv')">CSV</DropdownMenuItem>
+            <DropdownMenuItem @click="emit('export', 'json')">JSON</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
-        <button
-          type="button"
-          class="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/80 transition-all text-sm font-medium whitespace-nowrap"
-          @click="emit('share')"
-        >
-          Share
-        </button>
+        <Button variant="outline" @click="emit('share')">Share</Button>
       </div>
     </div>
 
-    <div v-if="hasActiveFilters" class="mt-4 flex items-center gap-2 flex-wrap">
+    <div v-if="hasActiveFilters" class="mt-4 flex flex-wrap items-center gap-2">
       <span class="text-xs text-muted-foreground">Active filters:</span>
-      <button
+      <Button
         v-if="quickSearchQuery"
-        type="button"
-        class="px-2.5 py-1 bg-primary/10 text-primary text-xs rounded-lg flex items-center gap-1.5 hover:bg-primary/20 transition-colors"
+        variant="secondary"
+        size="sm"
+        class="h-7 gap-1 px-2 text-xs"
         @click="emit('update:quickSearchQuery', '')"
       >
-        <span>"{{ quickSearchQuery }}"</span>
-        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
-      <button
+        "{{ quickSearchQuery }}"
+      </Button>
+      <Button
         v-if="filterOwner"
-        type="button"
-        class="px-2.5 py-1 bg-primary/10 text-primary text-xs rounded-lg flex items-center gap-1.5 hover:bg-primary/20 transition-colors"
+        variant="secondary"
+        size="sm"
+        class="h-7 gap-1 px-2 text-xs"
         @click="emit('update:filterOwner', '')"
       >
-        <span>{{ getOwnerName(filterOwner) }}</span>
-        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
-      <button
+        {{ getOwnerName(filterOwner) }}
+      </Button>
+      <Button
         v-if="filterStatus"
-        type="button"
-        class="px-2.5 py-1 bg-primary/10 text-primary text-xs rounded-lg flex items-center gap-1.5 hover:bg-primary/20 transition-colors"
+        variant="secondary"
+        size="sm"
+        class="h-7 gap-1 px-2 text-xs"
         @click="emit('update:filterStatus', '')"
       >
-        <span>{{ filterStatus }}</span>
-        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
-      <button
-        type="button"
-        class="px-2.5 py-1 bg-destructive/10 text-destructive text-xs rounded-lg hover:bg-destructive/20 transition-colors"
-        @click="emit('clearAllFilters')"
-      >
+        {{ filterStatus }}
+      </Button>
+      <Button variant="destructive" size="sm" class="h-7 px-2 text-xs" @click="emit('clearAllFilters')">
         Clear all
-      </button>
+      </Button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import AppSelect from "@/components/common/AppSelect.vue";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { ViewMode } from "@/ui-table/types/table.types";
+import { computed } from "vue";
 import UiViews from "@/ui-table/UiViews.vue";
 
 type Owner = {
@@ -150,11 +119,12 @@ const emit = defineEmits<{
   (e: "clearAllFilters"): void;
 }>();
 
-function updateOwner(event: Event) {
-  emit("update:filterOwner", (event.target as HTMLSelectElement).value);
-}
+const ownerOptions = computed(() =>
+  props.uniqueOwners.map((owner) => ({ label: owner.name, value: String(owner.id) })),
+);
 
-function updateStatus(event: Event) {
-  emit("update:filterStatus", (event.target as HTMLSelectElement).value);
-}
+const statusOptions = [
+  { label: "Active", value: "active" },
+  { label: "Archived", value: "archived" },
+];
 </script>

@@ -74,12 +74,12 @@ export function useTableInteractions<T = any>(
   const sort = computed(() => store.getSort(tableId));
   const visibleColumns = computed(() => store.getVisibleColumns(tableId));
   const allColumns = computed(() => store.getColumns(tableId));
-  const hasData = computed(() => store.hasData(tableId));
-  const isEmpty = computed(() => store.isEmpty(tableId));
-  const hasError = computed(() => store.hasError(tableId));
-  const canGoNext = computed(() => store.canGoNext(tableId));
-  const canGoPrevious = computed(() => store.canGoPrevious(tableId));
-  const searchQuery = computed(() => store.getSearchQuery(tableId));
+  const hasData = computed(() => tableData.value.length > 0);
+  const isEmpty = computed(() => !loading.value && !hasData.value);
+  const hasError = computed(() => !!error.value);
+  const canGoNext = computed(() => pagination.value.currentPage < pagination.value.totalPages);
+  const canGoPrevious = computed(() => pagination.value.currentPage > 1);
+  const searchQuery = computed(() => filters.value.search ?? "");
 
   // Fetch data function
   async function fetchData(silent = false) {
@@ -204,19 +204,19 @@ export function useTableInteractions<T = any>(
   }
 
   function handleNextPage() {
-    store.nextPage(tableId);
+    store.setPage(tableId, pagination.value.currentPage + 1);
   }
 
   function handlePreviousPage() {
-    store.previousPage(tableId);
+    store.setPage(tableId, pagination.value.currentPage - 1);
   }
 
   function handleFirstPage() {
-    store.firstPage(tableId);
+    store.setPage(tableId, 1);
   }
 
   function handleLastPage() {
-    store.lastPage(tableId);
+    store.setPage(tableId, pagination.value.totalPages);
   }
 
   function clearError() {
