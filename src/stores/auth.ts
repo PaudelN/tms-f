@@ -1,4 +1,4 @@
-import api from "@/lib/axios";
+import api, { resetCsrfToken } from "@/lib/axios";
 import router from "@/router";
 import type { LoginForm } from "@/types/loginForm";
 import type { Errors, RegisterForm } from "@/types/registerForm";
@@ -9,6 +9,28 @@ import { ref } from "vue";
 export const useAuthStore = defineStore(
   "auth",
   () => {
+    const persistedStoreKeys = ["auth", "workspace-store", "ui-table-store"];
+
+    const clearCookie = (name: string) => {
+      const host = window.location.hostname;
+      const cookieVariants = [
+        `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`,
+        `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=${host}`,
+        `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.${host}`,
+      ];
+
+      cookieVariants.forEach((cookie) => {
+        document.cookie = cookie;
+      });
+    };
+
+    const clearPersistedState = () => {
+      persistedStoreKeys.forEach((key) => {
+        localStorage.removeItem(key);
+        sessionStorage.removeItem(key);
+      });
+    };
+
     // State
     const user = ref<User | null>(null);
     const users = ref<User[]>([]);
@@ -124,13 +146,10 @@ export const useAuthStore = defineStore(
     const logout = async () => {
       try {
         await api.post("/logout");
-        isLoggedIn.value = false;
       } catch (error) {
         console.error("Logout request failed:", error);
       } finally {
-        user.value = null;
-        users.value = [];
-        isLoggedIn.value = false;
+        cleanAuthState(true);
 
         router.push({ name: "login" });
       }
@@ -152,10 +171,19 @@ export const useAuthStore = defineStore(
       successMessage.value = "";
     };
 
-    const cleanAuthState = ()=>{
+    const cleanAuthState = (clearPersistedData = false) => {
       user.value = null;
+      users.value = [];
       isLoggedIn.value = false;
-    }
+      resetCsrfToken();
+
+      if (clearPersistedData) {
+        clearPersistedState();
+      }
+
+      clearCookie("XSRF-TOKEN");
+      clearCookie("laravel_session");
+    };
 
     return {
       user,
