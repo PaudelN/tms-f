@@ -9,12 +9,12 @@ defineOptions({
 
 const props = defineProps<WithClassAsProps>()
 
-const { carouselRef, orientation } = useCarousel()
+const carouselState = useCarousel()
 </script>
 
 <template>
   <div
-    ref="carouselRef"
+    ref="carouselState.carouselRef"
     data-slot="carousel-content"
     class="overflow-hidden"
   >
@@ -22,7 +22,7 @@ const { carouselRef, orientation } = useCarousel()
       :class="
         cn(
           'flex',
-          orientation === 'horizontal' ? '-ml-4' : '-mt-4 flex-col',
+          carouselState.orientation === 'horizontal' ? '-ml-4' : '-mt-4 flex-col',
           props.class,
         )"
       v-bind="$attrs"

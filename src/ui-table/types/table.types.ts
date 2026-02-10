@@ -6,7 +6,7 @@ export interface TableColumn<T = any> {
   visible?: boolean;
   width?: string;
   align?: "left" | "center" | "right";
-  formatter?: (value: any, row: T) => string;
+  formatter?: (value: unknown, row: T) => string;
   cellClass?: string | ((row: T) => string);
   headerClass?: string;
 }
@@ -28,7 +28,7 @@ export interface PaginationState {
 // Table filters
 export interface TableFilters {
   search: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 // API response structure
@@ -78,7 +78,7 @@ export type TableFetchFn<T = any> = (params: {
   search: string;
   sortBy: string | null;
   sortOrder: "asc" | "desc" | null;
-  filters?: Record<string, any>;
+  filters?: Record<string, unknown>;
 }) => Promise<ApiResponse<T>>;
 
 // View mode type for navigation
@@ -95,7 +95,7 @@ export interface KanbanColumn<T = any> {
 
 // List item type
 export interface ListItem {
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 // Export utility types

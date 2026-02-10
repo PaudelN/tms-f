@@ -1,26 +1,85 @@
-# tms-f (Vue 3 + TypeScript + Vite)
+# TMS-F SPA Reset
 
-## Environment
-
-Create a `.env` file for local development:
+## Setup
 
 ```bash
-VITE_API_URL=http://localhost:8000/api
-# Optional. Defaults to the origin of VITE_API_URL.
-VITE_SANCTUM_URL=http://localhost:8000
+npm install
+npm run dev
 ```
 
-`VITE_SANCTUM_URL` is used for the Sanctum CSRF endpoint (`/sanctum/csrf-cookie`).
+## Architecture Overview
 
-## Laravel Sanctum + CORS note
+- `src/components/ui`: shadcn-vue primitives.
+- `src/components/shared`: reusable enterprise wrappers (20+ UI pieces).
+- `src/views/workspace`: dialog/sheet CRUD orchestration.
+- `src/services/workspace.mock.ts`: fake API used for SPA workflows and demo routes.
+- `src/utils/toast.ts`: centralized toast helper built on `vue-sonner`.
 
-If requests are sent with `withCredentials: true`, your backend CORS setup **cannot** use a wildcard origin (`*`).
+## Folder Structure
 
-Your Laravel backend should include explicit origins, for example:
-
-```php
-'allowed_origins' => ['http://localhost:3000'],
-'supports_credentials' => true,
+```text
+src/
+├─ components/
+│  ├─ ui/
+│  └─ shared/
+├─ composables/
+├─ services/
+├─ types/
+├─ views/
+│  ├─ dashboard/
+│  ├─ workspace/
+│  ├─ projects/
+│  └─ teams/
+├─ router/
+├─ utils/
+├─ App.vue
+└─ main.ts
 ```
 
-Also ensure `allowed_methods` contains HTTP methods (e.g. `['*']`), not origin URLs.
+## UiTable Usage
+
+```vue
+<UiTable
+  :data="items"
+  :columns="columns"
+  :loading="loading"
+  :pagination="{ page, pageSize, total }"
+  @sort="handleSort"
+  @select="handleSelect"
+  @action="handleAction"
+/>
+```
+
+## Migration Guide (old table -> new table)
+
+1. Replace `src/ui-table/UiTable.vue` import with `@/components/shared/UiTable.vue`.
+2. Pass plain `data` array instead of `fetchFn`.
+3. Convert old table column schema to `{ key, label, sortable }`.
+4. Use `@action` for row actions and dialog orchestration.
+5. Use `@update:pagination` to keep page state in parent.
+
+## Toast Standard
+
+Always import from:
+
+```ts
+import { toast } from '@/utils/toast'
+```
+
+## Patterns and Anti-Patterns
+
+### Do
+- Keep route views thin.
+- Move data logic to composables/stores/services.
+- Use dialog/sheet CRUD flows for context preservation.
+
+### Avoid
+- Empty string values in `<SelectItem>`.
+- Full-page add/edit/detail navigations for quick CRUD.
+- Mixed icon libraries in the same view.
+
+## Troubleshooting
+
+- **Toasts not visible:** verify `Toaster` is mounted in `App.vue`.
+- **Select errors:** ensure model uses `undefined` default (use `UiSelect`).
+- **Table empty on load:** pass `undefined`-safe arrays (`UiTable` already guards).

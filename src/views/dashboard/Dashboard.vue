@@ -1,38 +1,23 @@
-<template>
-  <div>
-    <h1>Welcome back, {{ user?.name }}</h1>
-    <p>{{ user?.email }}</p>
-
-    <hr />
-
-    <h2>Users List</h2>
-    <ul>
-      <li v-for="u in users" :key="u.id">
-        {{ u.name }} - {{ u.email }}
-      </li>
-    </ul>
-  </div>
-</template>
-
 <script setup lang="ts">
-import { onMounted } from "vue";
-import { useAuthStore } from "@/stores/auth";
-import { storeToRefs } from "pinia";
-
-const authStore = useAuthStore();
-const { user, users } = storeToRefs(authStore); 
-
-onMounted(async () => {
-  if (!authStore.isLoggedIn) {
-    await authStore.getUser();
-    await authStore.fetchUsers();
-  }
-});
+import UiPageHeader from '@/components/shared/UiPageHeader.vue'
+import UiKpiGrid from '@/components/shared/UiKpiGrid.vue'
+import UiStatCard from '@/components/shared/UiStatCard.vue'
+import UiSurface from '@/components/shared/UiSurface.vue'
 </script>
 
-<style scoped>
-ul {
-  list-style-type: disc;
-  padding-left: 1.5rem;
-}
-</style>
+<template>
+  <div class="space-y-6">
+    <UiPageHeader title="Executive Dashboard" description="A calm snapshot of system health and delivery velocity." />
+    <UiKpiGrid>
+      <UiStatCard label="Delivery health" value="96%" hint="Last 30 days" />
+      <UiStatCard label="Throughput" value="182 tasks" hint="This sprint" />
+      <UiStatCard label="Incidents" value="2" hint="Both resolved" />
+      <UiStatCard label="Automation" value="73%" hint="Coverage" />
+    </UiKpiGrid>
+    <UiSurface>
+      <p class="text-sm text-muted-foreground">
+        This dashboard now uses reusable shadcn-powered shared components and claymorphic surfaces to keep the UI serious and consistent.
+      </p>
+    </UiSurface>
+  </div>
+</template>
