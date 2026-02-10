@@ -1,19 +1,36 @@
 <template>
-  <div class="flex flex-col gap-3 rounded-xl border border-border/60 bg-background/70 p-3 md:flex-row md:items-center md:justify-between">
+  <div class="flex flex-col gap-3 rounded-xl border border-border/60 bg-background/70 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
     <div class="text-xs text-muted-foreground">
       <span v-if="total > 0">Showing {{ startItem }}-{{ endItem }} of {{ total }}</span>
       <span v-else>No items</span>
     </div>
 
-    <div class="flex flex-wrap items-center gap-2">
-      <Select :model-value="String(perPage)" @update:model-value="handlePerPageChange">
-        <SelectTrigger class="h-9 w-[104px] text-xs">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem v-for="size in pageSizes" :key="size" :value="String(size)">{{ size }} / page</SelectItem>
-        </SelectContent>
-      </Select>
+    <div class="flex flex-wrap items-center gap-3">
+      <div class="flex items-center gap-2">
+        <span class="text-xs text-muted-foreground">Per page:</span>
+        <Select :model-value="String(perPage)" @update:model-value="handlePerPageChange">
+          <SelectTrigger class="h-8 w-[96px] text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem v-for="size in pageSizes" :key="size" :value="String(size)">
+              {{ size }}
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div class="flex items-center gap-1">
+        <Button
+          variant="outline"
+          size="icon"
+          class="h-8 w-8"
+          :disabled="currentPage === 1"
+          title="First page"
+          @click="emitPageChange(1)"
+        >
+          <ChevronsLeft class="h-4 w-4" />
+        </Button>
 
       <div class="mx-1 h-6 w-px bg-border" />
 

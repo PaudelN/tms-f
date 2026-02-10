@@ -299,8 +299,8 @@ function toggleColumnVisibility(column: any, checked: CheckboxCheckedState) {
           <MoreHorizontal class="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" class="w-52">
-        <DropdownMenuLabel>Row actions</DropdownMenuLabel>
+      <DropdownMenuContent align="end" class="w-64 max-h-72 overflow-y-auto">
+        <DropdownMenuLabel>Actions</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem
           v-for="action in getRowActions(row)"
@@ -314,35 +314,37 @@ function toggleColumnVisibility(column: any, checked: CheckboxCheckedState) {
     </DropdownMenu>
   </DefineTemplate>
 
-  <section class="w-full rounded-2xl border border-border/70 bg-card shadow-sm">
-    <header class="flex flex-wrap items-center gap-3 border-b border-border/60 bg-muted/30 p-3">
-      <div class="relative w-full max-w-md">
+  <div class="w-full space-y-4 rounded-2xl border border-border/70 bg-card/70 p-4 shadow-sm">
+    <div class="flex flex-wrap items-center gap-3 rounded-xl border border-border/60 bg-background/70 p-3">
+      <div class="relative w-full max-w-sm">
         <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
-          class="w-full rounded-lg bg-background pl-9"
-          :placeholder="searchPlaceholder"
-          :model-value="searchValue"
-          @update:model-value="updateSearch"
-        />
+          class="w-full pl-9"
+        :placeholder="searchPlaceholder"
+        :model-value="searchValue"
+        @update:model-value="updateSearch"
+      />
       </div>
 
       <DropdownMenu v-if="enableColumnVisibility">
         <DropdownMenuTrigger as-child>
-          <Button variant="outline" class="sm:ml-auto">Columns <ChevronDown class="ml-2 h-4 w-4" /></Button>
+          <Button variant="outline" class="sm:ml-auto">
+            Columns <ChevronDown class="ml-2 h-4 w-4" />
+          </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" class="w-72 max-h-80 overflow-y-auto">
-          <DropdownMenuLabel>Visible columns</DropdownMenuLabel>
-          <DropdownMenuSeparator />
+        <DropdownMenuContent align="end" class="w-64 max-h-72 overflow-y-auto">
           <template v-if="table.getAllColumns().filter((column) => column.getCanHide()).length">
-            <DropdownMenuCheckboxItem
-              v-for="column in table.getAllColumns().filter((column) => column.getCanHide())"
-              :key="column.id"
-              class="capitalize"
-              :checked="column.getIsVisible()"
-              @update:checked="toggleColumnVisibility(column, $event)"
-            >
-              {{ column.columnDef.header && typeof column.columnDef.header === 'string' ? column.columnDef.header : column.id }}
-            </DropdownMenuCheckboxItem>
+          <DropdownMenuCheckboxItem
+            v-for="column in table
+              .getAllColumns()
+              .filter((column) => column.getCanHide())"
+            :key="column.id"
+            class="capitalize"
+            :model-value="column.getIsVisible()"
+            @update:model-value="(value) => column.toggleVisibility(value === true)"
+          >
+            {{ column.columnDef.header && typeof column.columnDef.header === "string" ? column.columnDef.header : column.id }}
+          </DropdownMenuCheckboxItem>
           </template>
           <DropdownMenuItem v-else disabled>No configurable columns</DropdownMenuItem>
         </DropdownMenuContent>
@@ -350,7 +352,9 @@ function toggleColumnVisibility(column: any, checked: CheckboxCheckedState) {
 
       <DropdownMenu v-if="bulkActions.length && selectedCount">
         <DropdownMenuTrigger as-child>
-          <Button variant="outline">Bulk actions <ChevronDown class="ml-2 h-4 w-4" /></Button>
+          <Button variant="outline" class="">
+            Bulk actions <ChevronDown class="ml-2 h-4 w-4" />
+          </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" class="w-56">
           <DropdownMenuLabel>Apply to selection</DropdownMenuLabel>
@@ -368,16 +372,16 @@ function toggleColumnVisibility(column: any, checked: CheckboxCheckedState) {
       </DropdownMenu>
     </header>
 
-    <div class="overflow-x-auto">
+    <div class="rounded-xl border border-border/70 bg-background/40">
       <Table>
         <TableHeader>
-          <TableRow v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id" class="bg-muted/40">
-            <TableHead
-              v-for="header in headerGroup.headers"
-              :key="header.id"
-              class="h-11 whitespace-nowrap text-xs font-semibold uppercase tracking-wide text-muted-foreground"
-            >
-              <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.header" :props="header.getContext()" />
+          <TableRow v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
+            <TableHead v-for="header in headerGroup.headers" :key="header.id" class="h-12 bg-muted/40 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <FlexRender
+                v-if="!header.isPlaceholder"
+                :render="header.column.columnDef.header"
+                :props="header.getContext()"
+              />
             </TableHead>
           </TableRow>
         </TableHeader>
@@ -399,8 +403,11 @@ function toggleColumnVisibility(column: any, checked: CheckboxCheckedState) {
               class="hover:bg-muted/30"
               :data-state="row.getIsSelected() && 'selected'"
             >
-              <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id" class="py-3 align-middle">
-                <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
+              <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id" class="py-3">
+                <FlexRender
+                  :render="cell.column.columnDef.cell"
+                  :props="cell.getContext()"
+                />
               </TableCell>
             </TableRow>
           </template>
@@ -411,17 +418,39 @@ function toggleColumnVisibility(column: any, checked: CheckboxCheckedState) {
       </Table>
     </div>
 
-    <footer class="border-t border-border/60 p-3">
-      <div class="mb-2 text-sm text-muted-foreground">{{ selectedCount }} of {{ filteredCount }} row(s) selected.</div>
-      <UiPagination
-        :current-page="table.getState().pagination.pageIndex + 1"
-        :total-pages="table.getPageCount()"
-        :total="props.fetchFn ? totalItems : filteredCount"
-        :per-page="table.getState().pagination.pageSize"
-        :page-sizes="pageSizes"
-        @page-change="(page) => table.setPageIndex(page - 1)"
-        @per-page-change="(size) => table.setPageSize(size)"
-      />
-    </footer>
-  </section>
+    <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/60 bg-background/60 px-3 py-2">
+      <div class="text-sm text-muted-foreground">
+        {{ selectedCount }} of {{ filteredCount }} row(s) selected.
+      </div>
+      <div class="flex items-center gap-3">
+        <UiPagination
+          :current-page="table.getState().pagination.pageIndex + 1"
+          :total-pages="table.getPageCount()"
+          :total="props.fetchFn ? totalItems : filteredCount"
+          :per-page="table.getState().pagination.pageSize"
+          :page-sizes="pageSizes"
+          @page-change="(page) => table.setPageIndex(page - 1)"
+          @per-page-change="(size) => table.setPageSize(size)"
+        />
+        <div class="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            :disabled="!table.getCanPreviousPage()"
+            @click="table.previousPage()"
+          >
+            Previous
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            :disabled="!table.getCanNextPage()"
+            @click="table.nextPage()"
+          >
+            Next
+          </Button>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
