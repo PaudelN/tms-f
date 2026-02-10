@@ -1,7 +1,7 @@
 <template>
   <div
     ref="menuRef"
-    class="border-t border-border/60 bg-card/70 backdrop-blur"
+    class="border-t border-border/60 bg-card/70 backdrop-blur pt-2"
   >
     <div class="relative">
       <Button
