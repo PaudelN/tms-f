@@ -363,6 +363,16 @@
     box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.05), 0 1px 2px -1px rgb(0 0 0 / 0.05);
   }
 
+  .clamorphism {
+    background: linear-gradient(135deg, rgb(var(--color-card) / 0.65), rgb(var(--color-background) / 0.45));
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow:
+      inset 4px 4px 8px rgb(255 255 255 / 0.35),
+      inset -8px -8px 14px rgb(15 23 42 / 0.08),
+      0 10px 30px rgb(15 23 42 / 0.1);
+  }
+
   /* Refined scrollbar for webkit browsers */
   ::-webkit-scrollbar {
     width: 8px;
