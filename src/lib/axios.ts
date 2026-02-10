@@ -14,11 +14,20 @@ const getApiUrl = (): string => {
 const getSanctumUrl = (apiUrl: string): string => {
   const explicitSanctumUrl = (import.meta as any).env?.VITE_SANCTUM_URL as string | undefined;
 
+  const toSanctumOrigin = (url: string): string => {
+    try {
+      const parsedUrl = new URL(url);
+      return parsedUrl.origin;
+    } catch {
+      return url.replace(/\/+$/, "");
+    }
+  };
+
   if (explicitSanctumUrl) {
-    return explicitSanctumUrl;
+    return toSanctumOrigin(explicitSanctumUrl);
   }
 
-  return new URL(apiUrl).origin;
+  return toSanctumOrigin(apiUrl);
 };
 
 const baseURL = getApiUrl();
