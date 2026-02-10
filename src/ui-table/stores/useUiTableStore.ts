@@ -29,12 +29,12 @@ export const useUiTableStore = defineStore(
 
     const getError = (tableId: string) => tables.value[tableId]?.error || null;
 
-    const getFilters = (tableId: string) => tables.value[tableId]?.filters;
+    const getFilters = (tableId: string) => tables.value[tableId]?.filters || { search: "" };
 
-    const getSort = (tableId: string) => tables.value[tableId]?.sort;
+    const getSort = (tableId: string) => tables.value[tableId]?.sort || { column: null, order: null };
 
     const getPagination = (tableId: string) =>
-      tables.value[tableId]?.pagination;
+      tables.value[tableId]?.pagination || { currentPage: 1, perPage: 10, total: 0, totalPages: 1 };
 
     const getColumns = (tableId: string) =>
       tables.value[tableId]?.columns || [];
