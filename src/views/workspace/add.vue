@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen bg-background p-6">
-    <div class="max-w-3xl mx-auto">
+    <div class="max-w-4xl mx-auto">
       <!-- Header -->
       <div class="mb-8">
         <div class="flex items-center gap-4 mb-4">
@@ -107,7 +107,7 @@
       </Card>
 
       <!-- Tips Card -->
-      <Card class="mt-6">
+      <Card class="mt-6 clamorphism border-border/70">
         <CardHeader>
           <CardTitle class="text-base flex items-center gap-2">
             <Info class="h-4 w-4 text-primary" />
