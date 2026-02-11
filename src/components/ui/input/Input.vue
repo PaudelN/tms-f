@@ -2,7 +2,7 @@
   import { cn } from "@/lib/utils";
   import { useVModel } from "@vueuse/core";
   import { X } from "lucide-vue-next";
-  import { computed, type HTMLAttributes } from "vue";
+  import { computed, type HTMLAttributes, useAttrs } from "vue";
 
   const props = defineProps<{
     defaultValue?: string | number;
@@ -13,6 +13,8 @@
   const emits = defineEmits<{
     "update:modelValue": [value: string | number];
   }>();
+
+  const attrs = useAttrs();
 
   const modelValue = useVModel(props, "modelValue", emits, {
     passive: true,
@@ -30,6 +32,10 @@
       modelValue.value !== ""
     );
   });
+
+  const showClearButton = computed(() => {
+    return hasValue.value && attrs.type !== "password";
+  });
 </script>
 
 <template>
@@ -41,13 +47,13 @@
         cn(
           'flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 disabled:cursor-not-allowed disabled:opacity-50 file:border-0 file:bg-transparent file:text-sm file:font-medium',
           'bg-input text-foreground border-border placeholder:text-gray-500 focus-visible:ring-ring',
-          hasValue && 'pr-10',
+          showClearButton && 'pr-10',
           props.class,
         )
       "
     />
     <button
-      v-if="hasValue"
+      v-if="showClearButton"
       type="button"
       @click="clearInput"
       class="absolute cursor-pointer right-2 top-1/2 -translate-y-1/2 flex items-center justify-center w-5 h-5 rounded-full bg-purple-900/70 text-white dark:hover:text-white transition-colors duration-200"
