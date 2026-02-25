@@ -65,13 +65,13 @@
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuCheckboxItem
-              v-for="column in toggleableColumns"
-              :key="column.key"
+              v-for="column in hideableColumns"
+              :key="column.id"
               class="capitalize"
-              :checked="table.getColumn(column.key)?.getIsVisible()"
-              @update:checked="toggleColumnVisibility(column.key, $event)"
+              :checked="column.getIsVisible()"
+              @update:checked="toggleColumnVisibility(column.id, $event)"
             >
-              {{ column.label }}
+              {{ getColumnLabel(column.id) }}
             </DropdownMenuCheckboxItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -230,8 +230,13 @@ const slots = useSlots();
 
 const showSearch = computed(() => props.config?.showSearch !== false);
 const showColumnToggle = computed(() => props.config?.showColumnToggle !== false);
-const toggleableColumns = computed(() =>
-  props.columns.filter((column) => column.key !== "select" && column.key !== "actions"),
+const columnLabelMap = computed(() =>
+  new Map(props.columns.map((column) => [column.key, column.label])),
+);
+const hideableColumns = computed(() =>
+  table
+    .getAllLeafColumns()
+    .filter((column) => column.getCanHide() && column.id !== "select" && column.id !== "actions"),
 );
 
 const {
@@ -491,6 +496,11 @@ const table = useVueTable({
 const selectedRows = computed(() =>
   table.getFilteredSelectedRowModel().rows.map((row) => row.original),
 );
+
+
+function getColumnLabel(columnId: string) {
+  return columnLabelMap.value.get(columnId) ?? columnId;
+}
 
 
 function toggleColumnVisibility(columnKey: string, value: boolean | "indeterminate") {
