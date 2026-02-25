@@ -171,7 +171,7 @@ export function useTableInteractions<T = any>(
   );
 
   // Actions
-  function handleSearch(value: string) {
+  function handleSearch(value: any) {
     store.setSearch(tableId, value);
   }
 

@@ -31,7 +31,7 @@
 </template>
 
 <script setup lang="ts">
-export type WorkspaceTab = {
+export type Tab = {
   id: string;
   label: string;
   icon: string;
@@ -39,7 +39,7 @@ export type WorkspaceTab = {
 };
 
 defineProps<{
-  tabs: WorkspaceTab[];
+  tabs: Tab[];
   activeTab: string;
 }>();
 

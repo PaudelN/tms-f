@@ -1,10 +1,8 @@
 <script setup lang="ts">
   import ExpandableSearch from "@/components/common/ExpandableSearch.vue";
-import ModeToggle from "@/components/common/ModeToggle.vue";
+  import ModeToggle from "@/components/common/ModeToggle.vue";
   import UserProfileMenu from "@/components/common/UserProfileMenu.vue";
   import { Button } from "@/components/ui/button";
-  import { Input } from "@/components/ui/input";
-import Kbd from "@/components/ui/kbd/Kbd.vue";
   import {
     Sidebar,
     SidebarContent,
@@ -31,7 +29,6 @@ import Kbd from "@/components/ui/kbd/Kbd.vue";
     GalleryHorizontalEnd,
     GalleryVerticalEnd,
     LayoutDashboard,
-    Search,
     Wrench,
   } from "lucide-vue-next";
   import { computed } from "vue";
@@ -149,15 +146,9 @@ import Kbd from "@/components/ui/kbd/Kbd.vue";
         >
           <SidebarTrigger />
 
-          <div class="flex items-center gap-3">
-            <h1 class="text-lg font-semibold text-foreground tracking-tight">
-              {{ currentNavTitle }}
-            </h1>
-          </div>
-
           <div class="flex-1" />
 
-           <ExpandableSearch/>
+          <ExpandableSearch />
 
           <div class="flex items-center gap-2">
             <ModeToggle />
