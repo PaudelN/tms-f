@@ -9,7 +9,7 @@
             :model-value="filters?.search || ''"
             :placeholder="searchPlaceholder"
             class="w-full pl-10"
-            @update:model-value="handleSearch"
+            @update:model-value="(value) => handleSearch(String(value ?? ""))"
           />
         </div>
       </div>
@@ -65,13 +65,13 @@
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuCheckboxItem
-              v-for="column in table.getAllColumns().filter((column) => column.getCanHide())"
-              :key="column.id"
+              v-for="column in toggleableColumns"
+              :key="column.key"
               class="capitalize"
-              :model-value="column.getIsVisible()"
-              @update:model-value="(value) => column.toggleVisibility(!!value)"
+              :checked="table.getColumn(column.key)?.getIsVisible()"
+              @update:checked="toggleColumnVisibility(column.key, $event)"
             >
-              {{ column.id }}
+              {{ column.label }}
             </DropdownMenuCheckboxItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -230,6 +230,9 @@ const slots = useSlots();
 
 const showSearch = computed(() => props.config?.showSearch !== false);
 const showColumnToggle = computed(() => props.config?.showColumnToggle !== false);
+const toggleableColumns = computed(() =>
+  props.columns.filter((column) => column.key !== "select" && column.key !== "actions"),
+);
 
 const {
   tableData,
@@ -329,7 +332,7 @@ const baseColumns = computed<ColumnDef<any>[]>(() => {
       return getValue() ?? "-";
     },
     enableSorting: column.sortable !== false,
-    enableHiding: column.visible !== false,
+    enableHiding: true,
   }));
 });
 
@@ -489,6 +492,10 @@ const selectedRows = computed(() =>
   table.getFilteredSelectedRowModel().rows.map((row) => row.original),
 );
 
+
+function toggleColumnVisibility(columnKey: string, value: boolean | "indeterminate") {
+  table.getColumn(columnKey)?.toggleVisibility(value === true);
+}
 function applyUpdater<T>(
   updaterOrValue: ((prev: T) => T) | T,
   state: T,
