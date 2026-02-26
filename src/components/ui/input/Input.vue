@@ -2,7 +2,12 @@
   import { cn } from "@/lib/utils";
   import { useVModel } from "@vueuse/core";
   import { X } from "lucide-vue-next";
-  import { computed, type HTMLAttributes, useAttrs } from "vue";
+  import {
+    computed,
+    type HTMLAttributes,
+    ref,
+    useAttrs,
+  } from "vue";
 
   const props = defineProps<{
     defaultValue?: string | number;
@@ -19,6 +24,14 @@
   const modelValue = useVModel(props, "modelValue", emits, {
     passive: true,
     defaultValue: props.defaultValue,
+  });
+
+  const inputEl = ref<HTMLInputElement | null>(null);
+
+  defineExpose({
+    focus: () => inputEl.value?.focus(),
+    blur: () => inputEl.value?.blur(),
+    select: () => inputEl.value?.select(),
   });
 
   const clearInput = () => {
@@ -41,6 +54,7 @@
 <template>
   <div class="relative">
     <input
+      ref="inputEl"
       v-model="modelValue"
       v-bind="$attrs"
       :class="

@@ -7,10 +7,23 @@
         :show-views="true"
         :show-refresh="true"
         :current-view="currentView"
+        :loading="isLoading"
         create-label="Add Workspace"
+        show-search
+        :search-value="searchQuery"
+        search-placeholder="Search workspaces..."
+        show-filter
+        :active-filter-count="activeFilterCount"
+        show-sort
+        :is-sort-active="isSortActive"
+        :show-export="true"
         @create="handleCreate"
         @update:current-view="handleViewChange"
+        @update:search-value="handleSearch"
         @refresh="onRefresh"
+        @filter="showFilterPanel = true"
+        @sort="showSortPanel = true"
+        @export="handleExport"
       />
 
       <div>
@@ -20,6 +33,7 @@
           table-id="workspaces-table"
           :columns="columns"
           :fetch-fn="fetchWorkspaces"
+          :external-search="searchQuery"
           :config="{
             defaultPerPage: 10,
             defaultSortBy: 'created_at',
@@ -28,10 +42,9 @@
             persistState: true,
           }"
           search-placeholder="Search workspaces..."
-          :show-refresh="true"
-          :loading="isLoading"
+          :show-refresh="false"
         >
-          <!-- <template #cell-name="{ row }">
+          <template #cell-name="{ row }">
             <div class="flex items-center gap-3">
               <div
                 class="h-10 w-10 rounded-xl bg-primary/20 flex items-center justify-center relative"
@@ -120,6 +133,7 @@
                 size="icon"
                 class="text-primary"
                 title="View"
+                @click="handleView(row.id)"
               >
                 <Eye class="h-4 w-4" />
               </Button>
@@ -153,12 +167,12 @@
                 <Trash2 class="h-4 w-4" />
               </Button>
             </div>
-          </template> -->
+          </template>
         </UiTable>
 
         <UiList
           v-else-if="currentView === 'list'"
-          :items="workspaceStore.workspaces"
+          :items="filteredWorkspaces"
           :loading="isLoading"
         >
           <template #item="{ item }">
@@ -309,7 +323,7 @@
       </div>
     </div>
 
-    <!-- Delete dialog -->
+    <!-- Delete dialog (unchanged) -->
     <Dialog v-model:open="deleteModalOpen">
       <DialogContent class="sm:max-w-md">
         <DialogHeader>
@@ -339,7 +353,7 @@
       </DialogContent>
     </Dialog>
 
-    <!-- Share dialog -->
+    <!-- Share dialog (unchanged) -->
     <Dialog v-model:open="showShareModal">
       <DialogContent class="sm:max-w-md">
         <DialogHeader>
@@ -374,35 +388,44 @@
 
 <script setup lang="ts">
   import UiHeader from "@/components/common/UiHeader.vue";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import Spinner from "@/components/ui/spinner/Spinner.vue";
-import { notify } from "@/helpers/toast";
-import type { Workspace } from "@/stores/workspace";
-import { useWorkspaceStore } from "@/stores/workspace";
-import type {
-  ApiResponse,
-  TableColumn,
-  ViewMode,
-} from "@/ui-table/types/table.types";
-import UiKanban from "@/ui-table/UiKanban.vue";
-import UiList from "@/ui-table/UiList.vue";
-import UiTable from "@/ui-table/UiTable.vue";
-import { Archive, ChevronRight, Pencil, Star } from "lucide-vue-next";
-import { computed, ref, watch } from "vue";
-import { useRouter } from "vue-router";
+  import { Button } from "@/components/ui/button";
+  import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+  } from "@/components/ui/dialog";
+  import { Input } from "@/components/ui/input";
+  import Spinner from "@/components/ui/spinner/Spinner.vue";
+  import { notify } from "@/helpers/toast";
+  import type { Workspace } from "@/stores/workspace";
+  import { useWorkspaceStore } from "@/stores/workspace";
+  import { useUniversalInteractions } from "@/ui-table/composables/useUniversalInteractions";
+  import type {
+    ApiResponse,
+    TableColumn,
+    ViewMode,
+  } from "@/ui-table/types/table.types";
+  import UiKanban from "@/ui-table/UiKanban.vue";
+  import UiList from "@/ui-table/UiList.vue";
+  import UiTable from "@/ui-table/UiTable.vue";
+  import {
+    Archive,
+    ChevronRight,
+    Eye,
+    Pencil,
+    Star,
+    Trash2,
+  } from "lucide-vue-next";
+  import { computed, ref, watch } from "vue";
+  import { useRouter } from "vue-router";
 
   const router = useRouter();
   const workspaceStore = useWorkspaceStore();
 
+  // ── View state (unchanged) ──────────────────────────────────────────────────
   const currentView = ref<ViewMode>("table");
   const deleteModalOpen = ref(false);
   const deleteLoading = ref(false);
@@ -413,6 +436,29 @@ import { useRouter } from "vue-router";
   const isLoading = ref(false);
   const tableRef = ref();
 
+  // ── Filter/sort panel visibility ────────────────────────────────────────────
+  const showFilterPanel = ref(false);
+  const showSortPanel = ref(false);
+
+  // ── Universal interactions (search/filter/sort — shared across all views) ───
+  const {
+    searchQuery,
+    sort,
+    activeFilterCount,
+    handleSearch,
+    handleSort,
+    filterItems,
+  } = useUniversalInteractions({
+    debounceMs: 400,
+    // For table view: search is forwarded via externalSearch prop (watched in UiTable)
+    // For list/kanban: filterItems() is used client-side below
+  });
+
+  const isSortActive = computed(
+    () => sort.value.column != null && sort.value.order != null,
+  );
+
+  // ── Stats (unchanged) ───────────────────────────────────────────────────────
   const activeWorkspacesCount = computed(
     () => workspaceStore.workspaces.filter((w) => !w.isArchived).length || 8,
   );
@@ -439,8 +485,14 @@ import { useRouter } from "vue-router";
     },
   ]);
 
+  // ── Filtered workspaces for list/kanban (client-side via universal search) ──
+  const filteredWorkspaces = computed(() =>
+    filterItems(workspaceStore.workspaces, ["name", "description"]),
+  );
+
+  // ── Kanban columns using filteredWorkspaces so search applies there too ──────
   const kanbanColumns = computed(() => {
-    const workspaces = workspaceStore.workspaces;
+    const workspaces = filteredWorkspaces.value;
     const active = workspaces.filter((w) => !w.isArchived);
     const archived = workspaces.filter((w) => w.isArchived);
     const recent = active.slice(0, Math.ceil(active.length / 2));
@@ -451,6 +503,7 @@ import { useRouter } from "vue-router";
     ];
   });
 
+  // ── Table columns (unchanged) ───────────────────────────────────────────────
   const columns: TableColumn<Workspace>[] = [
     { key: "name", label: "Workspace", sortable: true, width: "35%" },
     { key: "user", label: "Owner", sortable: false, width: "25%" },
@@ -464,6 +517,7 @@ import { useRouter } from "vue-router";
     },
   ];
 
+  // ── Data loading (unchanged) ────────────────────────────────────────────────
   watch(currentView, (v) => {
     if (
       (v === "list" || v === "kanban") &&
@@ -489,12 +543,12 @@ import { useRouter } from "vue-router";
     }
   }
 
-  // 3. Load data when switching to list/kanban (table fetches via its own fetchFn)
   function handleViewChange(view: ViewMode) {
     currentView.value = view;
     if (view !== "table") fetchData();
   }
 
+  // ── fetchWorkspaces passed to UiTable (unchanged signature) ─────────────────
   async function fetchWorkspaces(params: {
     page: number;
     perPage: number;
@@ -512,6 +566,57 @@ import { useRouter } from "vue-router";
     return { data: response.data, meta: response.meta };
   }
 
+  // ── Export handler ───────────────────────────────────────────────────────────
+  function handleExport(format: "csv" | "json" | "pdf") {
+    const data = filteredWorkspaces.value;
+
+    if (!data.length) {
+      notify.error("Nothing to export", "There is no data available.");
+      return;
+    }
+
+    if (format === "json") {
+      const blob = new Blob([JSON.stringify(data, null, 2)], {
+        type: "application/json",
+      });
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "workspaces.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    if (format === "csv") {
+      const keys = Object.keys(data[0]);
+
+      const csv =
+        keys.join(",") +
+        "\n" +
+        data
+          .map((row) =>
+            keys.map((k) => `"${String((row as any)[k] ?? "")}"`).join(","),
+          )
+          .join("\n");
+
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "workspaces.csv";
+      a.click();
+
+      URL.revokeObjectURL(url);
+    }
+
+    if (format === "pdf") {
+      notify.info("PDF export", "Hook your PDF generator here.");
+    }
+  }
+
+  // ── CRUD handlers (unchanged) ───────────────────────────────────────────────
   function handleCreate() {
     router.push({ name: "workspace-add" });
   }

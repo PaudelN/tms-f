@@ -142,8 +142,6 @@
 
           <div class="flex-1" />
 
-          <ExpandableSearch />
-
           <div class="flex items-center gap-2">
 
             <ModeToggle />
