@@ -1,37 +1,50 @@
 <template>
   <div class="mb-8">
     <div class="flex items-center justify-between gap-4">
-      <div class="space-y-1.5">
-        <div class="flex items-center gap-2">
+      <div class="space-y-2">
+        <!-- Title row -->
+        <div class="flex items-center gap-2.5">
+          <!-- Accent bar -->
+          <span
+            class="inline-block w-1 h-6 rounded-full bg-primary flex-shrink-0"
+            style="box-shadow: 0 0 8px rgb(var(--color-primary) / 0.6)"
+          />
           <h1
-            class="text-2xl font-bold tracking-tight text-primary leading-none"
+            class="text-xl font-black tracking-tight text-foreground leading-none font-mono"
           >
             {{ title }}
           </h1>
         </div>
 
-        <div v-if="stats && stats.length" class="flex items-center gap-1">
-          <span
-            v-for="(stat, i) in stats"
-            :key="stat.label"
-            class="flex items-center gap-1.5 text-xs text-muted-foreground"
-          >
-            <span v-if="i > 0" class="text-border mx-1">·</span>
-
+        <!-- Stats chips -->
+        <div
+          v-if="stats && stats.length"
+          class="flex items-center gap-1.5 pl-3.5"
+        >
+          <template v-for="(stat, i) in stats" :key="stat.label">
             <span
-              class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-medium"
+              v-if="i > 0"
+              class="text-border/40 text-[10px] font-mono select-none"
+              >·</span
+            >
+            <span
+              class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wider uppercase font-mono border border-transparent transition-all duration-200"
               :style="{
-                backgroundColor: `color-mix(in srgb, ${stat.color} 12%, transparent)`,
+                backgroundColor: `color-mix(in srgb, ${stat.color} 10%, transparent)`,
                 color: stat.color,
+                borderColor: `color-mix(in srgb, ${stat.color} 20%, transparent)`,
               }"
             >
               <span
-                class="w-1.5 h-1.5 rounded-full"
-                :style="{ backgroundColor: stat.color }"
+                class="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                :style="{
+                  backgroundColor: stat.color,
+                  boxShadow: `0 0 5px ${stat.color}`,
+                }"
               />
               {{ stat.value }} {{ stat.label }}
             </span>
-          </span>
+          </template>
         </div>
       </div>
 
