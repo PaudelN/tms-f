@@ -2,25 +2,81 @@
   <div
     class="bg-card text-muted-foreground rounded-lg shadow-sm border border-border overflow-hidden"
   >
-    <div
-      class="flex flex-wrap items-center gap-3 px-5 py-3 border-b border-border"
-    >
-      <div v-if="showSearch">
-        <div class="relative">
-          <Search
-            class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
-          />
-          <Input
-            type="text"
-            :model-value="filters?.search || ''"
-            :placeholder="searchPlaceholder"
-            class="w-full pl-10"
-            @update:model-value="handleSearch"
-          />
+    <div class="border-b border-border px-5 py-3">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-2">
+          <h2 class="text-sm font-medium text-foreground">{{ headerTitle }}</h2>
+          <Info class="h-3.5 w-3.5 text-muted-foreground" />
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <div v-if="showSearch" class="w-full min-w-[220px] sm:w-[240px]">
+            <div class="relative">
+              <Search
+                class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
+              />
+              <Input
+                type="text"
+                :model-value="filters?.search || ''"
+                :placeholder="searchPlaceholder"
+                class="w-full pl-9"
+                @update:model-value="handleSearch"
+              />
+            </div>
+          </div>
+
+          <Button variant="ghost" size="sm" class="gap-1.5" @click="$emit('export')">
+            <Download class="h-4 w-4" />
+            Export
+            <ChevronDown class="h-4 w-4" />
+          </Button>
+
+          <Button size="sm" class="gap-1.5" @click="$emit('add-item')">
+            <Plus class="h-4 w-4" />
+            Add item
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            class="h-8 w-8"
+            title="Filters"
+            @click="$emit('filter')"
+          >
+            <Filter class="h-4 w-4" />
+          </Button>
+
+          <Popover v-if="showColumnToggle">
+            <PopoverTrigger as-child>
+              <Button variant="ghost" size="icon" class="h-8 w-8" title="Columns">
+                <Columns3 class="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" class="w-52 p-3">
+              <p class="mb-2 text-sm font-medium text-foreground">Columns</p>
+              <div class="space-y-2">
+                <label
+                  v-for="column in toggleableColumns"
+                  :key="column.id"
+                  class="flex cursor-pointer items-center gap-2 text-sm"
+                >
+                  <Checkbox
+                    :model-value="column.getIsVisible()"
+                    @update:model-value="(value) => column.toggleVisibility(!!value)"
+                  />
+                  <span>{{ getColumnLabel(column.id) }}</span>
+                </label>
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          <Button variant="ghost" size="icon" class="h-8 w-8" title="More options">
+            <MoreVertical class="h-4 w-4" />
+          </Button>
         </div>
       </div>
 
-      <div class="flex flex-wrap items-center gap-2">
+      <div class="mt-3 flex flex-wrap items-center gap-2">
         <div v-if="selectedRows.length" class="flex items-center gap-2">
           <Badge variant="secondary" class="text-xs">
             {{ selectedRows.length }} selected
@@ -72,26 +128,6 @@
           Refresh
         </Button> -->
 
-        <DropdownMenu v-if="showColumnToggle">
-          <DropdownMenuTrigger as-child>
-            <Button variant="outline" size="sm" class="gap-2">
-              Columns <ChevronDown class="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuCheckboxItem
-              v-for="column in table
-                .getAllColumns()
-                .filter((column) => column.getCanHide())"
-              :key="column.id"
-              class="capitalize"
-              :model-value="column.getIsVisible()"
-              @update:model-value="(value) => column.toggleVisibility(!!value)"
-            >
-              {{ column.id }}
-            </DropdownMenuCheckboxItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
       </div>
     </div>
 
@@ -199,7 +235,6 @@
   import { Checkbox } from "@/components/ui/checkbox";
   import {
     DropdownMenu,
-    DropdownMenuCheckboxItem,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuLabel,
@@ -207,6 +242,7 @@
     DropdownMenuTrigger,
   } from "@/components/ui/dropdown-menu";
   import { Input } from "@/components/ui/input";
+  import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
   import Spinner from "@/components/ui/spinner/Spinner.vue";
   import {
     Table,
@@ -235,9 +271,15 @@
   } from "@tanstack/vue-table";
   import {
     ArrowUpDown,
+    Columns3,
     ChevronDown,
+    Download,
+    Filter,
+    Info,
     Layers,
     MoreHorizontal,
+    MoreVertical,
+    Plus,
     Search,
   } from "lucide-vue-next";
   import { computed, h, ref, useSlots, watch } from "vue";
@@ -265,9 +307,16 @@
     showRefresh: true,
   });
 
+  defineEmits<{
+    export: [];
+    "add-item": [];
+    filter: [];
+  }>();
+
   const slots = useSlots();
 
   const showSearch = computed(() => props.config?.showSearch !== false);
+  const headerTitle = computed(() => props.config?.title ?? "Table Header");
   const showColumnToggle = computed(
     () => props.config?.showColumnToggle !== false,
   );
@@ -368,9 +417,17 @@
         return getValue() ?? "-";
       },
       enableSorting: column.sortable !== false,
-      enableHiding: column.visible !== false,
+      enableHiding: true,
     }));
   });
+
+  const toggleableColumns = computed(() =>
+    table.getAllColumns().filter((column) => column.getCanHide()),
+  );
+
+  function getColumnLabel(columnId: string) {
+    return props.columns.find((column) => column.key === columnId)?.label ?? columnId;
+  }
 
   const selectionEnabled = computed(() =>
     Boolean(props.features?.selection?.enabled),
@@ -492,6 +549,7 @@
     manualSorting: true,
     manualPagination: true,
     manualFiltering: true,
+    enableHiding: true,
     onSortingChange: (updater) => {
       const next = applyUpdater(updater, sorting.value);
       sorting.value = next;
