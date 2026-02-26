@@ -3,7 +3,7 @@
     class="bg-card text-muted-foreground rounded-lg shadow-sm border border-border overflow-hidden"
   >
     <div
-      class="flex flex-wrap items-center gap-3 px-5 py-4 border-b border-border"
+      class="flex flex-wrap items-center gap-3 px-5 py-3 border-b border-border"
     >
       <div v-if="showSearch">
         <div class="relative">

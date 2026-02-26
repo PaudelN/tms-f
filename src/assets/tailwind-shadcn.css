@@ -118,15 +118,9 @@
     transition: background-color 0.2s ease-in-out;
   }
 
-  .active-no-hover {
-    background-color: rgb(var(--color-primary));
-    color: rgb(var(--color-primary-foreground));
-    pointer-events: auto;
-  }
 
   .active-no-hover:hover {
     background-color: rgb(var(--color-primary));
-    color: rgb(var(--color-primary-foreground));
     pointer-events: auto;
   }
 
