@@ -190,7 +190,7 @@
     </div>
 
     <!-- ── Table (100% unchanged) ── -->
-    <div class="">
+    <div>
       <Table>
         <TableHeader>
           <TableRow
@@ -274,9 +274,15 @@
       </Table>
     </div>
 
-    <!-- ── Footer (100% unchanged) ── -->
-    <div class="flex flex-wrap items-center justify-between gap-2 px-5 py-4">
-      <div class="text-sm text-muted-foreground">
+    <div
+      class="flex flex-wrap items-center justify-between gap-2 px-5 py-4 border-t border-border"
+    >
+      <div
+        v-if="
+          features?.selection &&
+          table.getFilteredSelectedRowModel().rows.length > 0"
+        class="text-xs leading-snug tracking-tight font-medium text-foreground"
+      >
         {{ table.getFilteredSelectedRowModel().rows.length }} of
         {{ table.getFilteredRowModel().rows.length }} row(s) selected.
       </div>

@@ -23,6 +23,8 @@ import {
   ClipboardList,
   Clock,
   Columns3,
+  Component,
+  Earth,
   FileText,
   FolderTree,
   GalleryHorizontalEnd,
@@ -31,6 +33,7 @@ import {
   Sprout,
   Wrench
 } from "lucide-vue-next";
+import { ComboboxArrow } from "reka-ui";
 import { useRoute } from "vue-router";
 
   const route = useRoute();
@@ -68,7 +71,7 @@ import { useRoute } from "vue-router";
               <div
                 class="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground"
               >
-                <Sprout class="size-4" />
+                <Component class="size-4" />
               </div>
               <div class="grid flex-1 text-left text-sm leading-tight">
                 <span class="truncate font-semibold">Taskification</span>
