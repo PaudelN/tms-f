@@ -304,12 +304,14 @@
             <template v-for="row in table.getRowModel().rows" :key="row.id">
               <TableRow
                 :data-state="row.getIsSelected() && 'selected'"
+                class="cursor-pointer"
                 :class="{
                   'h-8  [&_td]:py-1   [&_td]:text-xs': density === 'compact',
                   'h-16 [&_td]:py-5': density === 'comfortable',
                   'h-12 [&_td]:py-2.5': density === 'default',
                   'border-l-3 border-l-purple-800': row.getIsSelected(),
                 }"
+                @click="emit('row-click', row.original)"
               >
                 <TableCell
                   v-for="cell in row.getVisibleCells()"
@@ -487,7 +489,14 @@
     searchPlaceholder: "Search...",
     showRefresh: true,
   });
-  defineEmits<{ export: []; "add-item": []; filter: [] }>();
+  
+  const emit = defineEmits<{
+    export: [];
+    "add-item": [];
+    filter: [];
+    "row-click": [row: any];
+  }>();
+
   const slots = useSlots();
 
   // ─── Internals ───────────────────────────────────────────────────────────────

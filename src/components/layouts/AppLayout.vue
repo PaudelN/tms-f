@@ -29,8 +29,11 @@ import {
   FolderTree,
   GalleryHorizontalEnd,
   GalleryVerticalEnd,
+  Grab,
   LayoutDashboard,
+  PhilippinePeso,
   Sprout,
+  Subscript,
   Wrench
 } from "lucide-vue-next";
 import { ComboboxArrow } from "reka-ui";
@@ -71,7 +74,7 @@ import { useRoute } from "vue-router";
               <div
                 class="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground"
               >
-                <Component class="size-4" />
+                <PhilippinePeso class="size-4" />
               </div>
               <div class="grid flex-1 text-left text-sm leading-tight">
                 <span class="truncate font-semibold">Taskification</span>
