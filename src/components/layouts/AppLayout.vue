@@ -27,11 +27,11 @@
     FileText,
     FolderTree,
     GalleryHorizontalEnd,
+    GalleryThumbnailsIcon,
     GalleryVerticalEnd,
     LayoutDashboard,
     Wrench,
   } from "lucide-vue-next";
-  import { computed } from "vue";
   import { useRoute } from "vue-router";
 
   const route = useRoute();
@@ -56,12 +56,6 @@
     { name: "Settings", icon: Wrench, href: "/settings" },
   ];
 
-  const currentNavTitle = computed(() => {
-    const allItems = [...navigation, ...analytics];
-    const current = allItems.find((item) => item.href === route.path);
-    return current ? current.name : "Dashboard";
-  });
-
   const isActive = (href: string) => route.path === href;
 </script>
 
@@ -75,7 +69,7 @@
               <div
                 class="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground"
               >
-                <GalleryVerticalEnd class="size-4" />
+                <GalleryThumbnailsIcon class="size-4" />
               </div>
               <div class="grid flex-1 text-left text-sm leading-tight">
                 <span class="truncate font-semibold">Taskification</span>
@@ -151,6 +145,7 @@
           <ExpandableSearch />
 
           <div class="flex items-center gap-2">
+
             <ModeToggle />
 
             <Button variant="ghost" size="icon" class="relative">

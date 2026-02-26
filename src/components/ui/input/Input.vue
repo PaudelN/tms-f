@@ -56,10 +56,10 @@
       v-if="showClearButton"
       type="button"
       @click="clearInput"
-      class="absolute cursor-pointer right-2 top-1/2 -translate-y-1/2 flex items-center justify-center w-5 h-5 rounded-full bg-purple-900/70 text-white dark:hover:text-white transition-colors duration-200"
+      class="absolute cursor-pointer right-2 top-1/2 -translate-y-1/2 flex items-center justify-center w-5 h-5 rounded-full bg-primary text-white dark:hover:text-white transition-colors duration-200"
       aria-label="Clear input"
     >
-      <X :size="13" />
+      <X :size="12" />
     </button>
   </div>
 </template>
