@@ -57,6 +57,7 @@ export interface TableConfig {
   showSearch?: boolean;
   showColumnToggle?: boolean;
   showRefresh?: boolean;
+  title?: string;
   mobileView?: "table" | "list";
   emptyMessage?: string;
   errorMessage?: string;
