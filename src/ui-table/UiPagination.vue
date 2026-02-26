@@ -224,9 +224,8 @@
       >
         <span
           class="text-[9px] tracking-wide uppercase text-muted-foreground/40 font-bold"
-          >GO</span
+          >GO-TO:</span
         >
-        <span class="text-[11px]">|</span>
         <input
           type="number"
           min="1"

@@ -10,7 +10,7 @@
             style="box-shadow: 0 0 8px rgb(var(--color-primary) / 0.6)"
           />
           <h1
-            class="text-xl font-black tracking-tight text-foreground leading-none font-mono"
+            class="text-xl text-primary font-bold tracking-tight text-foreground leading-none "
           >
             {{ title }}
           </h1>
