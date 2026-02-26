@@ -38,7 +38,7 @@
               <TooltipTrigger as-child>
                 <button
                   type="button"
-                  class="relative cursor-pointer flex items-center justify-center w-10 h-10 rounded-[4px] transition-all duration-200 bg-primary-20"
+                  class="relative cursor-pointer flex items-center justify-center w-10 h-10 rounded-sm transition-all duration-200 bg-primary-20"
                   :class="
                     currentView === view.id
                       ? [view.activeClass, ' scale-[1.02]']
@@ -103,20 +103,20 @@
 
 <script setup lang="ts">
   import Button from "@/components/ui/button/Button.vue";
-  import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-  } from "@/components/ui/tooltip";
-  import type { ViewMode } from "@/ui-table/types/table.types";
-  import {
-    Plus,
-    RefreshCcw,
-    SquareKanban,
-    Table,
-    TableOfContents,
-  } from "lucide-vue-next";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import type { ViewMode } from "@/ui-table/types/table.types";
+import {
+  Plus,
+  RefreshCcw,
+  SquareKanban,
+  Table,
+  TableOfContents,
+} from "lucide-vue-next";
 
   export type UiHeaderStat = {
     label: string;
@@ -129,19 +129,20 @@
       id: "table" as ViewMode,
       label: "Table",
       icon: Table,
-      activeClass: "bg-primary border border-gray-500 text-white",
+      activeClass:
+        "bg-primary border border-gray-500 text-white active-no-hover",
     },
     {
       id: "list" as ViewMode,
       label: "List",
       icon: TableOfContents,
-      activeClass: "bg-primary border border-gray-500 text-white",
+      activeClass: "bg-primary border border-gray-500 text-white active-no-hover",
     },
     {
       id: "kanban" as ViewMode,
       label: "Kanban",
       icon: SquareKanban,
-      activeClass: "bg-primary border border-gray-500 text-white",
+      activeClass: "bg-primary border border-gray-500 text-white active-no-hover",
     },
   ];
 

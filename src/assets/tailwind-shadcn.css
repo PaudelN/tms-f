@@ -30,7 +30,7 @@
     --color-accent: 243 244 246;
     --color-accent-foreground: 17 24 39;
 
-    --color-border: 215 217 220;
+    --color-border: 220 222 227;
     --color-input: 209 213 219;
     --color-ring: 139 92 246;
 
@@ -111,6 +111,23 @@
 
   .bg-primary-20 {
     background-color: rgb(var(--color-primary) / 0.2);
+  }
+
+  .bg-primary-20:hover {
+    background-color: rgb(var(--color-primary) / 0.3);
+    transition: background-color 0.2s ease-in-out;
+  }
+
+  .active-no-hover {
+    background-color: rgb(var(--color-primary));
+    color: rgb(var(--color-primary-foreground));
+    pointer-events: auto;
+  }
+
+  .active-no-hover:hover {
+    background-color: rgb(var(--color-primary));
+    color: rgb(var(--color-primary-foreground));
+    pointer-events: auto;
   }
 
   .bg-card {
