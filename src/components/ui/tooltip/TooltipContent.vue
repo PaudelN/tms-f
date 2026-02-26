@@ -1,32 +1,66 @@
 <script setup lang="ts">
-import type { TooltipContentEmits, TooltipContentProps } from "reka-ui"
-import type { HTMLAttributes } from "vue"
-import { reactiveOmit } from "@vueuse/core"
-import { TooltipArrow, TooltipContent, TooltipPortal, useForwardPropsEmits } from "reka-ui"
-import { cn } from "@/lib/utils"
+import { TooltipContent, useForwardProps } from "reka-ui";
+import type { TooltipContentProps } from "reka-ui";
+import type { HTMLAttributes } from "vue";
+import { cn } from "@/lib/utils";
 
-defineOptions({
-  inheritAttrs: false,
-})
+interface Props extends TooltipContentProps {
+  class?: HTMLAttributes["class"];
+}
 
-const props = withDefaults(defineProps<TooltipContentProps & { class?: HTMLAttributes["class"] }>(), {
-  sideOffset: 4,
-})
+const props = withDefaults(defineProps<Props>(), {
+  sideOffset: 6,
+});
 
-const emits = defineEmits<TooltipContentEmits>()
-
-const delegatedProps = reactiveOmit(props, "class")
-const forwarded = useForwardPropsEmits(delegatedProps, emits)
+const forwarded = useForwardProps(props);
 </script>
 
 <template>
-  <TooltipPortal>
-    <TooltipContent
-      data-slot="tooltip-content"
-      v-bind="{ ...forwarded, ...$attrs }"
-      :class="cn('bg-foreground text-background animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 w-fit rounded-md px-3 py-1.5 text-xs text-balance', props.class)"
-    >
-      <slot />
-    </TooltipContent>
-  </TooltipPortal>
+  <TooltipContent
+    v-bind="forwarded"
+    :class="cn(
+      // ── Layout ──────────────────────────────────────────────────────────
+      'z-50 w-fit max-w-50 px-1 py-0.5',
+      'text-xs font-medium tracking-tight leading-snug',
+
+      // ── Cloud shape ──────────────────────────────────────────────────────
+      'rounded-sm',
+
+      // ── Frosted glass ────────────────────────────────────────────────────
+      'bg-primary dark:bg-primary',
+      'backdrop-blur-md backdrop-saturate-150',
+
+      // ── Border + inner ring ───────────────────────────────────────────────
+      'border border-white/20 dark:border-white/10',
+      'ring-1 ring-inset ring-white/10',
+
+      // ── Text ─────────────────────────────────────────────────────────────
+      'text-foreground/90 dark:text-white/85',
+
+      // ── Floating shadow ───────────────────────────────────────────────────
+      'shadow-[0_4px_24px_-4px_rgba(0,0,0,0.18),0_1.5px_6px_-1px_rgba(0,0,0,0.10)]',
+      'dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.55),0_1.5px_6px_-1px_rgba(0,0,0,0.35)]',
+
+      // ── Enter ─────────────────────────────────────────────────────────────
+      'animate-in fade-in-0 zoom-in-95',
+
+      // ── Exit ──────────────────────────────────────────────────────────────
+      'data-[state=closed]:animate-out',
+      'data-[state=closed]:fade-out-0',
+      'data-[state=closed]:zoom-out-95',
+
+      // ── Directional slide ─────────────────────────────────────────────────
+      'data-[side=bottom]:slide-in-from-top-1.5',
+      'data-[side=left]:slide-in-from-right-1.5',
+      'data-[side=right]:slide-in-from-left-1.5',
+      'data-[side=top]:slide-in-from-bottom-1.5',
+
+      // ── Transition ────────────────────────────────────────────────────────
+      'transition-all duration-200 ease-out',
+
+      props.class,
+    )"
+  >
+    <slot />
+  </TooltipContent>
 </template>

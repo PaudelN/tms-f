@@ -34,6 +34,7 @@
           :columns="columns"
           :fetch-fn="fetchWorkspaces"
           :external-search="searchQuery"
+          :features="tableFeatures"
           :config="{
             defaultPerPage: 10,
             defaultSortBy: 'created_at',
@@ -44,6 +45,7 @@
           search-placeholder="Search workspaces..."
           :show-refresh="false"
         >
+          <!-- CUSTOM CELLS -->
           <template #cell-name="{ row }">
             <div class="flex items-center gap-3">
               <div
@@ -87,40 +89,6 @@
                 >
                   {{ row.description }}
                 </div>
-              </div>
-            </div>
-          </template>
-
-          <template #cell-user="{ row }">
-            <div v-if="row.user" class="flex items-center gap-2">
-              <div
-                class="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-semibold relative"
-              >
-                {{ row.user.name.charAt(0).toUpperCase() }}
-                <div
-                  v-if="row.user.isOnline"
-                  class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-green-500 border-2 border-card"
-                />
-              </div>
-              <div class="min-w-0">
-                <div class="text-sm font-medium text-foreground truncate">
-                  {{ row.user.name }}
-                </div>
-                <div class="text-xs text-muted-foreground truncate">
-                  {{ row.user.email }}
-                </div>
-              </div>
-            </div>
-            <span v-else class="text-xs text-muted-foreground">No owner</span>
-          </template>
-
-          <template #cell-created_at="{ value }">
-            <div class="text-sm">
-              <div class="text-foreground font-medium">
-                {{ formatDate(value) }}
-              </div>
-              <div class="text-xs text-muted-foreground">
-                {{ formatTime(value) }}
               </div>
             </div>
           </template>
@@ -413,11 +381,13 @@
   import UiTable from "@/ui-table/UiTable.vue";
   import {
     Archive,
+    ArchiveIcon,
     ChevronRight,
     Eye,
     Pencil,
     Star,
     Trash2,
+    Trash2Icon,
   } from "lucide-vue-next";
   import { computed, ref, watch } from "vue";
   import { useRouter } from "vue-router";
@@ -453,6 +423,49 @@
     // For table view: search is forwarded via externalSearch prop (watched in UiTable)
     // For list/kanban: filterItems() is used client-side below
   });
+
+  const tableFeatures = {
+    selection: {
+      enabled: true, // 👈 this shows checkboxes
+    },
+
+    bulkActions: [
+      {
+        label: "Archive Selected",
+        icon: ArchiveIcon,
+
+        disabled: (rows: string | any[]) => rows.length === 0,
+
+        onClick: async (rows: any[]) => {
+          const ids = rows.map((r: { id: any; }) => r.id);
+          console.log("NUKESH",ids);
+          
+
+          // await workspaceStore.bulkArchive(ids);
+
+          tableRef.value?.refresh();
+          tableRef.value?.clearSelection?.();
+        },
+      },
+
+      {
+        label: "Delete Selected",
+        icon: Trash2Icon,
+
+        disabled: (rows: string | any[]) => rows.length === 0,
+
+        onClick: async (rows: any[]) => {
+          const ids = rows.map((r: { id: any; }) => r.id);
+          console.log("NUKESH",ids);
+
+          // await workspaceStore.bulkDelete(ids);
+
+          tableRef.value?.refresh();
+          tableRef.value?.clearSelection?.();
+        },
+      },
+    ],
+  };
 
   const isSortActive = computed(
     () => sort.value.column != null && sort.value.order != null,

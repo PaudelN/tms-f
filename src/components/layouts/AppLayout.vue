@@ -1,38 +1,37 @@
 <script setup lang="ts">
-  import ExpandableSearch from "@/components/common/ExpandableSearch.vue";
   import ModeToggle from "@/components/common/ModeToggle.vue";
-  import UserProfileMenu from "@/components/common/UserProfileMenu.vue";
-  import { Button } from "@/components/ui/button";
-  import {
-    Sidebar,
-    SidebarContent,
-    SidebarFooter,
-    SidebarGroup,
-    SidebarGroupContent,
-    SidebarGroupLabel,
-    SidebarHeader,
-    SidebarInset,
-    SidebarMenu,
-    SidebarMenuButton,
-    SidebarMenuItem,
-    SidebarProvider,
-    SidebarTrigger,
-  } from "@/components/ui/sidebar";
-  import {
-    BarChart3,
-    Bell,
-    ClipboardList,
-    Clock,
-    Columns3,
-    FileText,
-    FolderTree,
-    GalleryHorizontalEnd,
-    GalleryThumbnailsIcon,
-    GalleryVerticalEnd,
-    LayoutDashboard,
-    Wrench,
-  } from "lucide-vue-next";
-  import { useRoute } from "vue-router";
+import UserProfileMenu from "@/components/common/UserProfileMenu.vue";
+import { Button } from "@/components/ui/button";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+import {
+  BarChart3,
+  Bell,
+  ClipboardList,
+  Clock,
+  Columns3,
+  FileText,
+  FolderTree,
+  GalleryHorizontalEnd,
+  GalleryVerticalEnd,
+  LayoutDashboard,
+  Sprout,
+  Wrench
+} from "lucide-vue-next";
+import { useRoute } from "vue-router";
 
   const route = useRoute();
 
@@ -69,7 +68,7 @@
               <div
                 class="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground"
               >
-                <GalleryThumbnailsIcon class="size-4" />
+                <Sprout class="size-4" />
               </div>
               <div class="grid flex-1 text-left text-sm leading-tight">
                 <span class="truncate font-semibold">Taskification</span>

@@ -225,14 +225,6 @@
   import ExpandableSearch from "@/components/common/ExpandableSearch.vue";
   import Button from "@/components/ui/button/Button.vue";
   import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-  } from "@/components/ui/dropdown-menu";
-  import {
     Tooltip,
     TooltipContent,
     TooltipProvider,
@@ -240,11 +232,6 @@
   } from "@/components/ui/tooltip";
   import type { ViewMode } from "@/ui-table/types/table.types";
   import {
-    ArrowUpDown,
-    Download,
-    FileJson,
-    FileSpreadsheet,
-    FileText,
     Plus,
     RefreshCcw,
     SlidersHorizontal,
