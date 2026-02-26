@@ -6,11 +6,11 @@
         <div class="flex items-center gap-2.5">
           <!-- Accent bar -->
           <span
-            class="inline-block w-1 h-6 rounded-full bg-primary flex-shrink-0"
+            class="inline-block w-1 h-6 rounded-full bg-primary shrink-0"
             style="box-shadow: 0 0 8px rgb(var(--color-primary) / 0.6)"
           />
           <h1
-            class="text-xl text-primary font-bold tracking-tight text-foreground leading-none "
+            class="text-xl text-primary font-bold font-mono tracking-normal text-foreground leading-none "
           >
             {{ title }}
           </h1>

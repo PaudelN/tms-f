@@ -1,290 +1,384 @@
 <template>
   <div
-    class="bg-card p-2 text-muted-foreground rounded-md shadow-sm overflow-hidden border border-border"
+    class="rounded-sm overflow-hidden border border-border bg-card transition-all duration-300"
     :class="
       isFullscreen
-        ? 'fixed inset-0 z-50 overflow-auto bg-background p-30 transition-all duration-300 ease-in-out'
+        ? 'fixed inset-0 z-50 p-20 flex flex-col rounded-none overflow-auto bg-background'
         : ''
     "
   >
-    <div class="px-5 py-3 border-b border-border">
-      <div class="flex flex-wrap items-center justify-between">
-        <div class="flex flex-wrap items-center gap-2">
-          <div class="relative inline-flex items-center gap-1 group">
-            <Info class="w-4 h-4 text-primary cursor-pointer" />
+    <div
+      class="flex flex-wrap items-center justify-between gap-3 px-5 py-3 border-b border-border bg-muted"
+    >
+      <div class="flex items-center gap-3">
+        <div class="relative group/info">
+          <Info class="h-3.5 w-3.5 text-primary cursor-pointer shrink-0" />
+          <div
+            class="absolute top-full left-0 mt-2 w-64 z-50 opacity-0 invisible group-hover/info:opacity-100 group-hover/info:visible pointer-events-none transition-all duration-200"
+          >
             <div
-              class="absolute top-full w-48 opacity-0 invisible group-hover:visible group-hover:opacity-100 transition-opacity duration-200 bg-card backdrop-blur-sm border border-border rounded-md shadow-xs p-3 text-xs text-primary z-50"
+              class="rounded-xl border border-border bg-popover shadow-2xl p-4 text-xs"
             >
-              <span class="font-semibold text-primary">Table View</span>
-              <p class="mt-1 text-foreground text-[0.75rem] leading-snug">
-                This layout displays your data in a structured table format.<br />
+              <div class="flex items-center gap-2 mb-3">
+                <span class="font-medium text-primary text-xs">Table View</span>
+              </div>
+              <p class="text-muted-foreground leading-relaxed text-xs mb-3">
+                Structured tabular display with full sorting, filtering, column
+                control and bulk operations.
               </p>
             </div>
           </div>
-          <div v-if="selectedRows.length" class="flex items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger as-child>
-                <Button
-                  type="button"
-                  variant="header"
-                  shape="circle"
-                  size="sm"
-                  class="rounded-md"
-                  :disabled="loading"
-                >
-                  <Layers
-                    class="h-4.5 w-4.5 transition-transform duration-500"
-                    :class="loading ? 'animate-spin' : ''"
-                  />
-                  Bulk Actions
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent class="w-48">
-                <DropdownMenuLabel>Apply to selected</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  v-for="action in features?.bulkActions"
-                  :key="action.label"
-                  :disabled="action.disabled?.(selectedRows)"
-                  @click="action.onClick(selectedRows)"
-                >
-                  <component
-                    v-if="action.icon"
-                    :is="action.icon"
-                    class="mr-2 h-4 w-4"
-                  />
-                  {{ action.label }}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <div class="flex items-center space-x-0">
-              <Badge variant="default" class="text-xs">
-                {{ selectedRows.length }} selected
-              </Badge>
+        </div>
 
+        <div v-if="selectedRows.length" class="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger as-child>
+              <Button
+                variant="outline"
+                size="sm"
+                :disabled="loading"
+                class="h-8 px-3 text-xs cursor-pointer font-semibold gap-2 rounded-sm border-primary text-primary bg-secondary hover:bg-primary hover:text-primary-foreground transition-all duration-150"
+              >
+                <Layers
+                  class="h-3.5 w-3.5 shrink-0"
+                  :class="loading ? 'animate-spin' : ''"
+                />
+                Bulk Action
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="start"
+              class="w-52 rounded-xl border border-border shadow-xl p-1.5"
+            >
+              <DropdownMenuLabel
+                class="text-xs font-bold tracking-widest uppercase text-muted-foreground px-2 py-1.5"
+              >
+                Apply to {{ selectedRows.length }} selected
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator class="my-1" />
+              <DropdownMenuItem
+                v-for="action in features?.bulkActions"
+                :key="action.label"
+                :disabled="action.disabled?.(selectedRows)"
+                @click="action.onClick(selectedRows)"
+                class="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm cursor-pointer"
+              >
+                <component
+                  v-if="action.icon"
+                  :is="action.icon"
+                  class="h-4 w-4 shrink-0"
+                />
+                {{ action.label }}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <div class="flex items-center gap-1.5">
+            <Button
+              type="button"
+              variant="header"
+              size="xs"
+              shape="circle"
+              class="rounded-[9999px] cursor-pointer text-white bg-red-400 p-0 h-4 w-4 hover:bg-red-500 focus:bg-red-500"
+              @click="table.resetRowSelection()"
+            >
+              <X class="h-3 w-3" />
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right controls -->
+      <div class="flex items-center gap-1.5">
+        <!-- Density -->
+        <TooltipProvider :delay-duration="150">
+          <Tooltip>
+            <TooltipTrigger as-child>
               <Button
                 variant="ghost"
                 size="icon"
-                class="text-red-600 cursor-pointer"
-                @click="table.resetRowSelection()"
+                class="h-8 w-8 rounded-lg cursor-pointer text-primary hover:text-primary hover:bg-secondary"
+                @click="cycleDensity"
               >
-                <CircleX
-                  class="h-4 w-4 transition-transform duration-500"
-                  :class="loading ? 'animate-spin' : ''"
-                />
+                <component :is="densityIcon" class="h-4 w-4" />
               </Button>
-            </div>
-          </div>
-        </div>
+            </TooltipTrigger>
+            <TooltipContent
+              side="top"
+              :side-offset="6"
+              class="text-xs rounded-lg capitalize"
+            >
+              {{ density }} view
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
 
-        <!-- ── Right: 3 NEW buttons + existing column toggle + more options ── -->
-        <div class="flex flex-wrap items-center gap-2">
-          <TooltipProvider :delay-duration="200">
-            <Tooltip>
-              <TooltipTrigger as-child>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  class="text-primary cursor-pointer h-8 w-8"
-                  @click="cycleDensity"
-                >
-                  <component :is="densityIcon" class="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent
-                side="top"
-                :side-offset="8"
-                class="text-xs font-medium capitalize"
-              >
-                {{ density }} view
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-
-          <TooltipProvider :delay-duration="200">
-            <Tooltip>
-              <TooltipTrigger as-child>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  class="text-primary cursor-pointer h-8 w-8"
-                  @click="copyRowsAsCSV"
-                >
-                  <component
-                    :is="copyDone ? CheckCheck : ClipboardCopy"
-                    class="h-4 w-4 transition-all"
-                    :class="copyDone ? 'text-primary-500' : ''"
-                  />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent
-                side="top"
-                :side-offset="8"
-                class="text-xs font-medium"
-              >
-                {{ copyDone ? "Copied to clipboard!" : "Copy rows as CSV" }}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-
-          <!-- NEW BUTTON 3: Fullscreen toggle -->
-          <TooltipProvider :delay-duration="200">
-            <Tooltip>
-              <TooltipTrigger as-child>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  class="text-primary cursor-pointer h-8 w-8"
-                  @click="isFullscreen = !isFullscreen"
-                >
-                  <Minimize v-if="isFullscreen" class="h-4 w-4" />
-                  <Maximize v-else class="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent
-                side="top"
-                :side-offset="8"
-                class="text-xs font-medium"
-              >
-                {{ isFullscreen ? "Exit fullscreen" : "Fullscreen" }}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-
-          <!-- EXISTING: Column toggle (unchanged) -->
-          <Popover v-if="showColumnToggle">
-            <PopoverTrigger as-child>
+        <!-- Copy CSV -->
+        <TooltipProvider :delay-duration="150">
+          <Tooltip>
+            <TooltipTrigger as-child>
               <Button
-                type="button"
                 variant="ghost"
-                class="text-primary cursor-pointer h-8 w-8"
+                size="icon"
+                class="h-8 w-8 rounded-lg cursor-pointer text-primary transition-all duration-200"
+                @click="copyRowsAsCSV"
               >
-                <Settings class="h-4 w-4" />
+                <CheckCheck v-if="copyDone" class="h-4 w-4" />
+                <Copy v-else class="h-4 w-4" />
               </Button>
-            </PopoverTrigger>
-            <PopoverContent align="end" class="w-auto p-4">
-              <p class="mb-2 text-sm font-semibold text-foreground">
+            </TooltipTrigger>
+            <TooltipContent
+              side="top"
+              :side-offset="6"
+              class="text-xs rounded-lg"
+            >
+              {{ copyDone ? "Copied!" : "Copy as CSV" }}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
+        <!-- Fullscreen -->
+        <TooltipProvider :delay-duration="150">
+          <Tooltip>
+            <TooltipTrigger as-child>
+              <Button
+                variant="ghost"
+                size="icon"
+                class="h-8 w-8 rounded-lg cursor-pointer text-primary transition-all duration-200"
+                @click="isFullscreen = !isFullscreen"
+              >
+                <Minimize v-if="isFullscreen" class="h-4 w-4" />
+                <Maximize v-else class="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent
+              side="top"
+              :side-offset="6"
+              class="text-xs rounded-lg"
+            >
+              {{ isFullscreen ? "Exit fullscreen" : "Fullscreen" }}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
+        <!-- Divider -->
+        <div class="w-px h-5 bg-border shrink-0 mx-1"></div>
+
+        <!-- Column visibility -->
+        <Popover v-if="showColumnToggle">
+          <PopoverTrigger as-child>
+            <Button
+              variant="outline"
+              size="sm"
+              :disabled="loading"
+              class="h-8 px-3 text-xs cursor-pointer font-semibold gap-2 rounded-sm border-primary text-primary bg-secondary hover:bg-primary hover:text-primary-foreground transition-all duration-150"
+            >
+              <Columns3
+                class="h-3.5 w-3.5 shrink-0"
+                :class="loading ? 'animate-spin' : ''"
+              />
+              Columns
+              <ChevronDown class="h-3 w-3 shrink-0" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent
+            align="end"
+            class="w-56 rounded-xl border border-border shadow-xl p-0 overflow-hidden"
+          >
+            <div
+              class="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted"
+            >
+              <Columns3 class="h-3.5 w-3.5 text-primary shrink-0" />
+              <p class="text-xs font-semibold text-primary">
                 Configure Columns
               </p>
-              <div
-                class="space-y-2 flex flex-col items-start max-h-60 overflow-auto"
+            </div>
+            <div class="p-2 space-y-0.5 max-h-64 overflow-auto">
+              <Label
+                v-for="column in toggleableColumns"
+                :key="column.id"
+                class="flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 hover:bg-muted transition-colors duration-100 select-none"
               >
-                <label
-                  v-for="column in toggleableColumns"
-                  :key="column.id"
-                  class="flex cursor-pointer items-center gap-2 text-sm"
-                >
-                  <Checkbox
-                    :model-value="column.getIsVisible()"
-                    @update:model-value="
-                      (value) => column.toggleVisibility(!!value)
-                    "
-                  />
-                  <span>{{ getColumnLabel(column.id) }}</span>
-                </label>
-              </div>
-            </PopoverContent>
-          </Popover>
-        </div>
+                <Checkbox
+                  :model-value="column.getIsVisible()"
+                  :disabled="isLastVisibleColumn(column)"
+                  @update:model-value="
+                    (v) => handleColumnToggle(column, Boolean(v))
+                  "
+                  class="shrink-0"
+                />
+                <Label class="text-xs font-medium text-muted-foreground">
+                  {{ getColumnLabel(column.id) }}
+                </Label>
+              </Label>
+            </div>
+          </PopoverContent>
+        </Popover>
       </div>
     </div>
 
-    <!-- ── Table (100% unchanged) ── -->
-    <div>
+    <!-- ── Table ── -->
+    <div class="overflow-x-auto">
       <Table>
         <TableHeader>
           <TableRow
             v-for="headerGroup in table.getHeaderGroups()"
             :key="headerGroup.id"
           >
-            <TableHead v-for="header in headerGroup.headers" :key="header.id">
-              <FlexRender
-                v-if="!header.isPlaceholder"
-                :render="header.column.columnDef.header"
-                :props="header.getContext()"
-              />
+            <TableHead
+              v-for="header in headerGroup.headers"
+              :key="header.id"
+              class="h-14 px-4 text-xs font-sans font-bold uppercase text-muted-foreground whitespace-nowrap"
+              style="vertical-align: middle"
+            >
+              <!-- working headers -->
+              <div class="flex items-center h-full w-full">
+                <FlexRender
+                  class="cursor-pointer font-sans"
+                  v-if="!header.isPlaceholder"
+                  :render="header.column.columnDef.header"
+                  :props="header.getContext()"
+                />
+              </div>
             </TableHead>
           </TableRow>
         </TableHeader>
+
         <TableBody>
           <template v-if="loading">
-            <TableRow>
+            <TableRow class="hover:bg-transparent border-0">
               <TableCell
                 :colspan="table.getAllLeafColumns().length"
-                class="h-24 text-center"
+                class="h-48 text-center border-0"
               >
-                <div class="flex items-center justify-center gap-2">
-                  <Spinner class="h-4 w-4" />
-                  Loading...
-                </div>
-              </TableCell>
-            </TableRow>
-          </template>
-          <template v-else-if="error">
-            <TableRow>
-              <TableCell
-                :colspan="table.getAllLeafColumns().length"
-                class="h-24 text-center"
-              >
-                <div
-                  class="flex flex-col items-center gap-2 text-sm text-destructive"
-                >
-                  <span>{{ error }}</span>
-                  <Button variant="ghost" size="sm" @click="handleRefresh"
-                    >Try again</Button
+                <div class="flex flex-col items-center gap-4">
+                  <div class="flex items-end gap-1 h-6">
+                    <span
+                      v-for="i in 4"
+                      :key="i"
+                      class="w-1.5 bg-primary rounded-full animate-bounce"
+                      :style="`height:${6 + i * 4}px; animation-delay:${(i - 1) * 80}ms`"
+                    ></span>
+                  </div>
+                  <span
+                    class="text-xs tracking-widest uppercase text-muted-foreground font-medium"
+                    >Loading data…</span
                   >
                 </div>
               </TableCell>
             </TableRow>
           </template>
+
+          <!-- Error -->
+          <template v-else-if="error">
+            <TableRow class="hover:bg-transparent border-0">
+              <TableCell
+                :colspan="table.getAllLeafColumns().length"
+                class="h-48 text-center border-0"
+              >
+                <div class="flex flex-col items-center gap-3">
+                  <div
+                    class="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center"
+                  >
+                    <AlertCircle class="h-5 w-5 text-destructive" />
+                  </div>
+                  <p class="text-sm text-destructive font-medium">
+                    {{ error }}
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    class="h-8 px-4 rounded-lg text-xs"
+                    @click="handleRefresh"
+                  >
+                    <RefreshCw class="h-3.5 w-3.5 mr-2" />
+                    Try again
+                  </Button>
+                </div>
+              </TableCell>
+            </TableRow>
+          </template>
+
+          <!-- Data rows -->
           <template v-else-if="table.getRowModel().rows?.length">
             <template v-for="row in table.getRowModel().rows" :key="row.id">
               <TableRow
                 :data-state="row.getIsSelected() && 'selected'"
                 :class="{
-                  'h-7 text-xs [&_td]:py-1 [&_td]:px-3': density === 'compact',
-                  'h-16 [&_td]:py-4': density === 'comfortable',
+                  'h-8  [&_td]:py-1   [&_td]:text-xs': density === 'compact',
+                  'h-16 [&_td]:py-5': density === 'comfortable',
+                  'h-12 [&_td]:py-2.5': density === 'default',
+                  'border-l-3 border-l-purple-800': row.getIsSelected(),
                 }"
               >
-                <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id">
+                <TableCell
+                  v-for="cell in row.getVisibleCells()"
+                  :key="cell.id"
+                  class="px-4 text-xs text-foreground font-sans whitespace-nowrap"
+                  style="vertical-align: middle"
+                >
                   <FlexRender
                     :render="cell.column.columnDef.cell"
                     :props="cell.getContext()"
                   />
                 </TableCell>
               </TableRow>
+
               <TableRow v-if="row.getIsExpanded()">
-                <TableCell :colspan="row.getAllCells().length">
-                  <slot name="expanded" :row="row.original">
-                    {{ JSON.stringify(row.original) }}
-                  </slot>
+                <TableCell
+                  :colspan="row.getAllCells().length"
+                  class="bg-muted border-b border-border border-l-4 border-l-primary px-4 py-3"
+                >
+                  <slot name="expanded" :row="row.original">{{
+                    JSON.stringify(row.original)
+                  }}</slot>
                 </TableCell>
               </TableRow>
             </template>
           </template>
-          <TableRow v-else>
+
+          <!-- Empty -->
+          <TableRow v-else class="hover:bg-transparent border-0">
             <TableCell
               :colspan="table.getAllLeafColumns().length"
-              class="h-24 text-center text-muted-foreground"
+              class="h-48 text-center border-0"
             >
-              No results.
+              <div class="flex flex-col items-center gap-3">
+                <div
+                  class="w-12 h-12 rounded-xl border-2 border-dashed border-border flex items-center justify-center"
+                >
+                  <DatabaseZap class="h-5 w-5 text-muted-foreground" />
+                </div>
+                <div>
+                  <p class="text-sm font-medium text-foreground">
+                    No results found
+                  </p>
+                  <p class="text-xs text-muted-foreground mt-0.5">
+                    Try adjusting your search or filters
+                  </p>
+                </div>
+              </div>
             </TableCell>
           </TableRow>
         </TableBody>
       </Table>
     </div>
 
+    <!-- ── Footer ── -->
     <div
-      class="flex flex-wrap items-center justify-between gap-2 px-5 py-4 border-t border-border"
+      class="flex flex-wrap items-center justify-between gap-2 px-5 py-3 border-t border-border bg-muted"
     >
       <div
         v-if="
           features?.selection &&
-          table.getFilteredSelectedRowModel().rows.length > 0"
-        class="text-xs leading-snug tracking-tight font-medium text-foreground"
+          table.getFilteredSelectedRowModel().rows.length > 0
+        "
+        class="text-xs text-primary font-mono font-semibold"
       >
-        {{ table.getFilteredSelectedRowModel().rows.length }} of
-        {{ table.getFilteredRowModel().rows.length }} row(s) selected.
+        <span class="font-bold text-primary">{{
+          table.getFilteredSelectedRowModel().rows.length
+        }}</span>
+        of {{ table.getFilteredRowModel().rows.length }} row(s) selected
       </div>
       <div class="ml-auto">
         <UiPagination
@@ -302,7 +396,6 @@
 </template>
 
 <script setup lang="ts">
-  import Badge from "@/components/ui/badge/Badge.vue";
   import { Button } from "@/components/ui/button";
   import { Checkbox } from "@/components/ui/checkbox";
   import {
@@ -313,12 +406,12 @@
     DropdownMenuSeparator,
     DropdownMenuTrigger,
   } from "@/components/ui/dropdown-menu";
+  import Label from "@/components/ui/label/Label.vue";
   import {
     Popover,
     PopoverContent,
     PopoverTrigger,
   } from "@/components/ui/popover";
-  import Spinner from "@/components/ui/spinner/Spinner.vue";
   import {
     Table,
     TableBody,
@@ -351,10 +444,13 @@
     useVueTable,
   } from "@tanstack/vue-table";
   import {
+    AlertCircle,
     ArrowUpDown,
     CheckCheck,
-    CircleX,
-    ClipboardCopy,
+    ChevronDown,
+    Columns3,
+    Copy,
+    DatabaseZap,
     GalleryVertical,
     Info,
     Layers,
@@ -363,7 +459,8 @@
     Minimize,
     Minimize2,
     MoreHorizontal,
-    Settings,
+    RefreshCw,
+    X,
   } from "lucide-vue-next";
   import { computed, h, ref, useSlots, watch } from "vue";
   import { useTableInteractions } from "./composables/useTableInteractions";
@@ -374,7 +471,7 @@
     TableFetchFn,
   } from "./types/table.types";
 
-  // ── Props (externalSearch added; all original props preserved) ──────────────
+  // ─── Props ───────────────────────────────────────────────────────────────────
   interface Props {
     tableId: string;
     columns: TableColumn[];
@@ -383,40 +480,26 @@
     features?: TableFeatures;
     searchPlaceholder?: string;
     showRefresh?: boolean;
-    /** Driven by UiHeader's universal search via useUniversalInteractions */
     externalSearch?: string;
   }
-
   const props = withDefaults(defineProps<Props>(), {
     config: () => ({}),
     searchPlaceholder: "Search...",
     showRefresh: true,
   });
-
-  defineEmits<{
-    export: [];
-    "add-item": [];
-    filter: [];
-  }>();
-
+  defineEmits<{ export: []; "add-item": []; filter: [] }>();
   const slots = useSlots();
 
-  // ── Column toggle (unchanged) ───────────────────────────────────────────────
+  // ─── Internals ───────────────────────────────────────────────────────────────
   const showColumnToggle = computed(
     () => props.config?.showColumnToggle !== false,
   );
-  const showInfo = ref(false);
 
-  function toggleInfo() {
-    showInfo.value = !showInfo.value;
-  }
-  // ── Table interactions (unchanged — still owns pagination/sort/data fetching) ─
   const {
     tableData,
     loading,
     error,
     pagination,
-    filters,
     sort,
     handleSearch,
     handlePageChange,
@@ -431,7 +514,6 @@
     props.config,
   );
 
-  // ── Sync externalSearch → handleSearch (bridge from UiHeader universal search) ─
   watch(
     () => props.externalSearch,
     (val) => {
@@ -439,7 +521,7 @@
     },
   );
 
-  // ── NEW: Row density ────────────────────────────────────────────────────────
+  // Density
   type Density = "default" | "compact" | "comfortable";
   const densities: Density[] = ["default", "compact", "comfortable"];
   const density = ref<Density>("default");
@@ -453,15 +535,14 @@
     density.value = densities[(idx + 1) % densities.length];
   }
 
-  // ── NEW: Copy rows as CSV ───────────────────────────────────────────────────
+  // Copy CSV
   const copyDone = ref(false);
   function copyRowsAsCSV() {
     const rows = table.getFilteredRowModel().rows;
     const visibleCols = table
       .getVisibleLeafColumns()
-      .filter((col) => col.id !== "select" && col.id !== "actions");
-
-    const header = visibleCols.map((col) => col.id).join(",");
+      .filter((c) => c.id !== "select" && c.id !== "actions");
+    const header = visibleCols.map((c) => c.id).join(",");
     const body = rows
       .map((row) =>
         visibleCols
@@ -473,17 +554,16 @@
           .join(","),
       )
       .join("\n");
-
     navigator.clipboard.writeText(`${header}\n${body}`).then(() => {
       copyDone.value = true;
       setTimeout(() => (copyDone.value = false), 2000);
     });
   }
 
-  // ── NEW: Fullscreen ─────────────────────────────────────────────────────────
+  // Fullscreen
   const isFullscreen = ref(false);
 
-  // ── tanstack-table state (unchanged) ───────────────────────────────────────
+  // TanStack state
   const sorting = ref<SortingState>([]);
   const columnFilters = ref<ColumnFiltersState>([]);
   const columnVisibility = ref<VisibilityState>({});
@@ -491,189 +571,218 @@
   const expanded = ref<ExpandedState>({});
 
   const initialVisibility = computed(() =>
-    Object.fromEntries(
-      props.columns.map((column) => [column.key, column.visible !== false]),
-    ),
+    Object.fromEntries(props.columns.map((c) => [c.key, c.visible !== false])),
   );
-
   watch(
     initialVisibility,
-    (value) => {
-      columnVisibility.value = value;
+    (v) => {
+      columnVisibility.value = v;
     },
     { immediate: true },
   );
-
   watch(
     () => columnVisibility.value,
-    (value) => {
-      Object.entries(value).forEach(([key, visible]) => {
-        setColumnVisibility(key, Boolean(visible));
-      });
+    (v) => {
+      Object.entries(v).forEach(([key, visible]) =>
+        setColumnVisibility(key, Boolean(visible)),
+      );
     },
     { deep: true },
   );
-
   watch(
     () => sort.value,
-    (value) => {
-      if (!value?.column || !value.order) {
+    (v) => {
+      if (!v?.column || !v.order) {
         sorting.value = [];
         return;
       }
-      sorting.value = [{ id: value.column, desc: value.order === "desc" }];
+      sorting.value = [{ id: v.column, desc: v.order === "desc" }];
     },
     { immediate: true },
   );
 
-  // ── Column defs (unchanged) ─────────────────────────────────────────────────
-  const baseColumns = computed<ColumnDef<any>[]>(() => {
-    return props.columns.map((column) => ({
+  // ─── Column defs ──────────────────────────────────────────────────────────────
+  const baseColumns = computed<ColumnDef<any>[]>(() =>
+    props.columns.map((column) => ({
       id: column.key,
       accessorKey: column.key,
-      header: ({ column: tableColumn }) => {
-        if (column.sortable === false) {
-          return column.label;
-        }
+      header: ({ column: tc }) => {
+        if (column.sortable === false) return column.label;
         return h(
           Button,
           {
             variant: "ghost",
-            class: "px-0",
-            onClick: () =>
-              tableColumn.toggleSorting(tableColumn.getIsSorted() === "asc"),
+            class:
+              "px-0 h-auto text-xs font-bold uppercase tracking-widest text-muted-foreground hover:text-primary hover:bg-transparent gap-1 transition-colors",
+            onClick: () => tc.toggleSorting(tc.getIsSorted() === "asc"),
           },
-          () => [column.label, h(ArrowUpDown, { class: "ml-2 h-4 w-4" })],
+          () => [column.label, h(ArrowUpDown, { class: "h-3 w-3 shrink-0" })],
         );
       },
       cell: ({ row, getValue }) => {
         const slot = slots[`cell-${column.key}`];
-        if (slot) {
-          return slot({ row: row.original, value: getValue(), column });
-        }
-        if (column.formatter) {
-          return column.formatter(getValue(), row.original);
-        }
-        return getValue() ?? "-";
+        if (slot) return slot({ row: row.original, value: getValue(), column });
+        if (column.formatter) return column.formatter(getValue(), row.original);
+        return getValue() ?? "—";
       },
       enableSorting: column.sortable !== false,
       enableHiding: true,
-    }));
-  });
-
-  const toggleableColumns = computed(() =>
-    table.getAllColumns().filter((column) => column.getCanHide()),
+    })),
   );
 
-  function getColumnLabel(columnId: string) {
-    return (
-      props.columns.find((column) => column.key === columnId)?.label ?? columnId
-    );
+  const toggleableColumns = computed(() =>
+    table.getAllColumns().filter((c) => c.getCanHide()),
+  );
+  function getColumnLabel(id: string) {
+    return props.columns.find((c) => c.key === id)?.label ?? id;
+  }
+
+  const visibleColumnsCount = computed(
+    () => toggleableColumns.value.filter((c) => c.getIsVisible()).length,
+  );
+
+  function isLastVisibleColumn(column: any) {
+    return visibleColumnsCount.value === 2 && column.getIsVisible();
+  }
+
+  function handleColumnToggle(column: any, value: boolean) {
+    // Prevent hiding the last visible column
+    if (visibleColumnsCount.value === 1 && column.getIsVisible()) return;
+
+    column.toggleVisibility(!!value);
   }
 
   const selectionEnabled = computed(() =>
     Boolean(props.features?.selection?.enabled),
   );
   const hasActionColumn = computed(() =>
-    props.columns.some((column) => column.key === "actions"),
+    props.columns.some((c) => c.key === "actions"),
   );
-
   defineExpose({ refresh: handleRefresh });
 
-  // ── Action column (unchanged) ───────────────────────────────────────────────
+  // ─── Actions column ───────────────────────────────────────────────────────────
+  // The DropdownMenu, Trigger, and Content are all rendered via `h()` so that
+  // TanStack can use them inside its cell renderer. The trigger IS a proper
+  // shadcn Button with MoreHorizontal inside it.
   const actionColumn = computed<ColumnDef<any> | null>(() => {
     if (hasActionColumn.value || !props.features?.rowActions?.length)
       return null;
+
     return {
       id: "actions",
       enableHiding: false,
-      cell: ({ row }) =>
-        h(
-          DropdownMenu,
-          {},
-          {
-            default: () => [
-              h(
-                DropdownMenuTrigger,
-                { asChild: true },
-                {
-                  default: () =>
-                    h(
-                      Button,
-                      { variant: "ghost", class: "h-8 w-8 p-0" },
-                      {
-                        default: () => [
-                          h("span", { class: "sr-only" }, "Open menu"),
-                          h(MoreHorizontal, { class: "h-4 w-4" }),
-                        ],
-                      },
-                    ),
-                },
-              ),
-              h(
-                DropdownMenuContent,
-                { align: "end" },
-                {
-                  default: () =>
-                    props.features?.rowActions?.map((action) =>
-                      h(
-                        DropdownMenuItem,
-                        {
-                          key: action.label,
-                          onClick: () => action.onClick(row.original),
-                        },
-                        {
-                          default: () => [
-                            action.icon
-                              ? h(action.icon, { class: "mr-2 h-4 w-4" })
-                              : null,
-                            action.label,
-                          ],
-                        },
-                      ),
-                    ) ?? [],
-                },
-              ),
+      enableSorting: false,
+      header: () => null,
+      cell: ({ row }) => {
+        // Build menu items from rowActions
+        const menuItems = props.features!.rowActions!.map((action) =>
+          h(
+            DropdownMenuItem,
+            {
+              key: action.label,
+              class:
+                "flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm cursor-pointer",
+              onClick: () => action.onClick(row.original),
+            },
+            () => [
+              action.icon
+                ? h(action.icon, {
+                    class: "h-4 w-4 shrink-0 text-muted-foreground",
+                  })
+                : null,
+              h("span", { class: "text-foreground" }, action.label),
             ],
-          },
-        ),
+          ),
+        );
+
+        // The full dropdown tree
+        return h(
+          "div",
+          { class: "flex items-center justify-center w-full h-full" },
+          [
+            h(
+              DropdownMenu,
+              {},
+              {
+                default: () => [
+                  // ── Trigger button ──────────────────────────────────────────────
+                  h(
+                    DropdownMenuTrigger,
+                    { asChild: true },
+                    {
+                      default: () =>
+                        h(
+                          Button,
+                          {
+                            variant: "ghost",
+                            size: "icon",
+                            class:
+                              "h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary data-[state=open]:bg-secondary data-[state=open]:text-foreground",
+                          },
+                          {
+                            default: () => [
+                              h("span", { class: "sr-only" }, "Actions"),
+                              h(MoreHorizontal, { class: "h-4 w-4" }),
+                            ],
+                          },
+                        ),
+                    },
+                  ),
+
+                  // ── Dropdown menu ───────────────────────────────────────────────
+                  h(
+                    DropdownMenuContent,
+                    {
+                      align: "end",
+                      class:
+                        "w-48 rounded-xl border border-border bg-popover shadow-xl p-1.5",
+                    },
+                    {
+                      default: () => menuItems,
+                    },
+                  ),
+                ],
+              },
+            ),
+          ],
+        );
+      },
     };
   });
 
-  // ── Selection column (unchanged) ────────────────────────────────────────────
+  // ─── Selection column ─────────────────────────────────────────────────────────
   const selectionColumn = computed<ColumnDef<any> | null>(() => {
     if (!selectionEnabled.value) return null;
     return {
       id: "select",
+      enableHiding: false,
+      enableSorting: false,
       header: ({ table }) =>
         h(Checkbox, {
           modelValue:
             table.getIsAllPageRowsSelected() ||
             (table.getIsSomePageRowsSelected() && "indeterminate"),
-          "onUpdate:modelValue": (value) =>
-            table.toggleAllPageRowsSelected(!!value),
+          "onUpdate:modelValue": (v) => table.toggleAllPageRowsSelected(!!v),
           ariaLabel: "Select all",
         }),
       cell: ({ row }) =>
         h(Checkbox, {
           modelValue: row.getIsSelected(),
-          "onUpdate:modelValue": (value) => row.toggleSelected(!!value),
+          "onUpdate:modelValue": (v) => row.toggleSelected(!!v),
           ariaLabel: "Select row",
         }),
-      enableSorting: false,
-      enableHiding: false,
     };
   });
 
   const tableColumns = computed<ColumnDef<any>[]>(() => {
-    const columns: ColumnDef<any>[] = [];
-    if (selectionColumn.value) columns.push(selectionColumn.value);
-    columns.push(...baseColumns.value);
-    if (actionColumn.value) columns.push(actionColumn.value);
-    return columns;
+    const cols: ColumnDef<any>[] = [];
+    if (selectionColumn.value) cols.push(selectionColumn.value);
+    cols.push(...baseColumns.value);
+    if (actionColumn.value) cols.push(actionColumn.value);
+    return cols;
   });
 
-  // ── useVueTable (unchanged) ─────────────────────────────────────────────────
+  // ─── useVueTable ──────────────────────────────────────────────────────────────
   const table = useVueTable({
     get data() {
       return tableData.value ?? [];
@@ -697,8 +806,7 @@
         handleSortingChange(null, null);
         return;
       }
-      const first = next[0];
-      handleSortingChange(first.id, first.desc ? "desc" : "asc");
+      handleSortingChange(next[0].id, next[0].desc ? "desc" : "asc");
     },
     onColumnVisibilityChange: (updater) => {
       columnVisibility.value = applyUpdater(updater, columnVisibility.value);
@@ -729,12 +837,10 @@
   });
 
   const selectedRows = computed(() =>
-    table.getFilteredSelectedRowModel().rows.map((row) => row.original),
+    table.getFilteredSelectedRowModel().rows.map((r) => r.original),
   );
 
-  function applyUpdater<T>(updaterOrValue: ((prev: T) => T) | T, state: T): T {
-    return typeof updaterOrValue === "function"
-      ? (updaterOrValue as (prev: T) => T)(state)
-      : updaterOrValue;
+  function applyUpdater<T>(fn: ((prev: T) => T) | T, state: T): T {
+    return typeof fn === "function" ? (fn as (p: T) => T)(state) : fn;
   }
 </script>

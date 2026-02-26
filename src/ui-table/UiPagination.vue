@@ -124,15 +124,13 @@
             inset 0 -1px 0 rgba(0, 0, 0, 0.08);
         "
       >
-        <!-- Animated glow track -->
         <div
           class="absolute inset-y-0 pointer-events-none z-0 transition-all duration-300 ease-out"
           :style="glowTrackStyle"
         />
 
-        <!-- Sliding pill -->
         <div
-          class="absolute top-[3px] h-[calc(100%-6px)] rounded-lg pointer-events-none z-[1] transition-all duration-300 ease-[cubic-bezier(0.34,1.5,0.64,1)]"
+          class="absolute top-0.75 h-[calc(100%-6px)] rounded-lg pointer-events-none z-1 transition-all duration-300 ease-[cubic-bezier(0.34,1.5,0.64,1)]"
           :style="pillStyle"
           style="
             background: linear-gradient(
@@ -147,20 +145,18 @@
           "
         />
 
-        <!-- ◀◀ First — only rendered when not on page 1 -->
         <button
           v-if="currentPage > 1"
-          class="relative z-[2] flex items-center justify-center h-8 w-7 text-muted-foreground/40 cursor-pointer transition-all duration-150 hover:text-foreground active:scale-90"
+          class="relative z-2 flex items-center justify-center h-8 w-7 text-muted-foreground/40 cursor-pointer transition-all duration-150 hover:text-foreground active:scale-90"
           @click="emitPageChange(1)"
           title="First page"
         >
           <ChevronsLeft class="h-3 w-3" />
         </button>
 
-        <!-- ◀ Prev — only rendered when not on page 1 -->
         <button
           v-if="currentPage > 1"
-          class="relative z-[2] flex items-center justify-center h-8 w-7 text-muted-foreground/40 cursor-pointer transition-all duration-150 hover:text-foreground active:scale-90"
+          class="relative z-2 flex items-center justify-center h-8 w-7 text-muted-foreground/40 cursor-pointer transition-all duration-150 hover:text-foreground active:scale-90"
           @click="emitPageChange(currentPage - 1)"
           title="Previous page"
         >
@@ -168,18 +164,15 @@
         </button>
 
         <!-- Left divider — only when prev buttons are present -->
-        <div
-          v-if="currentPage > 1"
-          class="w-px h-3.5 bg-border/25 flex-shrink-0"
-        />
+        <div v-if="currentPage > 1" class="w-px h-3.5 bg-border/25 shrink-0" />
 
         <!-- Page number buttons -->
-        <div class="relative flex items-center z-[2]">
+        <div class="relative flex items-center z-2">
           <button
             v-for="page in visiblePages"
             :key="page"
             :ref="(el) => captureRef(el, page)"
-            class="relative flex items-center justify-center h-8 min-w-[30px] px-1 text-[11px] font-bold tracking-wider transition-all duration-150"
+            class="relative flex items-center justify-center h-8 min-w-7.5 px-1 text-[11px] font-bold tracking-wider transition-all duration-150"
             :class="
               page === currentPage
                 ? 'text-primary-foreground cursor-default'
@@ -191,16 +184,14 @@
           </button>
         </div>
 
-        <!-- Right divider — only when next buttons are present -->
         <div
           v-if="currentPage < totalPages"
-          class="w-px h-3.5 bg-border/25 flex-shrink-0"
+          class="w-px h-3.5 bg-border/25 shrink-0"
         />
 
-        <!-- ▶ Next — only rendered when not on last page -->
         <button
           v-if="currentPage < totalPages"
-          class="relative z-[2] flex items-center justify-center h-8 w-7 text-muted-foreground/40 cursor-pointer transition-all duration-150 hover:text-foreground active:scale-90"
+          class="relative z-2 flex items-center justify-center h-8 w-7 text-muted-foreground/40 cursor-pointer transition-all duration-150 hover:text-foreground active:scale-90"
           @click="emitPageChange(currentPage + 1)"
           title="Next page"
         >
@@ -210,7 +201,7 @@
         <!-- ▶▶ Last — only rendered when not on last page -->
         <button
           v-if="currentPage < totalPages"
-          class="relative z-[2] flex items-center justify-center h-8 w-7 text-muted-foreground/40 cursor-pointer transition-all duration-150 hover:text-foreground active:scale-90"
+          class="relative z-2 flex items-center justify-center h-8 w-7 text-muted-foreground/40 cursor-pointer transition-all duration-150 hover:text-foreground active:scale-90"
           @click="emitPageChange(totalPages)"
           title="Last page"
         >
