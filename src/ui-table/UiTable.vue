@@ -3,9 +3,14 @@
     class="bg-card text-muted-foreground rounded-lg shadow-sm border border-border overflow-hidden"
   >
     <div
-      class="flex flex-wrap items-center gap-3 px-5 py-3 border-b border-border"
+      class="flex flex-wrap items-center justify-between gap-3 px-5 py-3 border-b border-border"
     >
-      <div v-if="showSearch">
+      <div class="flex items-center gap-1.5 text-foreground">
+        <h2 class="text-sm font-semibold">Table Header</h2>
+        <Info class="h-3.5 w-3.5 text-muted-foreground" />
+      </div>
+
+      <div v-if="showSearch" class="w-full max-w-[320px] min-w-[220px]">
         <div class="relative">
           <Search
             class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
@@ -20,7 +25,7 @@
         </div>
       </div>
 
-      <div class="flex flex-wrap items-center gap-2">
+      <div class="flex flex-wrap items-center justify-end gap-2">
         <div v-if="selectedRows.length" class="flex items-center gap-2">
           <Badge variant="secondary" class="text-xs">
             {{ selectedRows.length }} selected
@@ -72,26 +77,44 @@
           Refresh
         </Button> -->
 
+        <Button variant="ghost" size="sm" class="gap-1.5 text-primary">
+          <Download class="h-4 w-4" />
+          Export
+          <ChevronDown class="h-3.5 w-3.5" />
+        </Button>
+
+        <Button size="sm" class="gap-1.5">
+          <Plus class="h-4 w-4" />
+          Add item
+        </Button>
+
+        <Button variant="ghost" size="icon" class="h-8 w-8 text-muted-foreground">
+          <ListFilter class="h-4 w-4" />
+        </Button>
+
         <DropdownMenu v-if="showColumnToggle">
           <DropdownMenuTrigger as-child>
-            <Button variant="outline" size="sm" class="gap-2">
-              Columns <ChevronDown class="h-4 w-4" />
+            <Button variant="ghost" size="icon" class="h-8 w-8 text-muted-foreground">
+              <Columns3 class="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Columns</DropdownMenuLabel>
+            <DropdownMenuSeparator />
             <DropdownMenuCheckboxItem
-              v-for="column in table
-                .getAllColumns()
-                .filter((column) => column.getCanHide())"
+              v-for="column in hidableColumns"
               :key="column.id"
-              class="capitalize"
               :model-value="column.getIsVisible()"
               @update:model-value="(value) => column.toggleVisibility(!!value)"
             >
-              {{ column.id }}
+              {{ getColumnLabel(column.id) }}
             </DropdownMenuCheckboxItem>
           </DropdownMenuContent>
         </DropdownMenu>
+
+        <Button variant="ghost" size="icon" class="h-8 w-8 text-muted-foreground">
+          <MoreVertical class="h-4 w-4" />
+        </Button>
       </div>
     </div>
 
@@ -236,8 +259,14 @@
   import {
     ArrowUpDown,
     ChevronDown,
+    Columns3,
+    Download,
+    Info,
     Layers,
+    ListFilter,
     MoreHorizontal,
+    MoreVertical,
+    Plus,
     Search,
   } from "lucide-vue-next";
   import { computed, h, ref, useSlots, watch } from "vue";
@@ -368,9 +397,19 @@
         return getValue() ?? "-";
       },
       enableSorting: column.sortable !== false,
-      enableHiding: column.visible !== false,
+      enableHiding: true,
     }));
   });
+
+  const hidableColumns = computed(() =>
+    table
+      .getAllLeafColumns()
+      .filter((column) => column.getCanHide() && !["select", "actions"].includes(column.id)),
+  );
+
+  const columnLabelMap = computed(() =>
+    Object.fromEntries(props.columns.map((column) => [column.key, column.label])),
+  );
 
   const selectionEnabled = computed(() =>
     Boolean(props.features?.selection?.enabled),
@@ -538,5 +577,9 @@
     return typeof updaterOrValue === "function"
       ? (updaterOrValue as (prev: T) => T)(state)
       : updaterOrValue;
+  }
+
+  function getColumnLabel(columnId: string) {
+    return columnLabelMap.value[columnId] || columnId;
   }
 </script>
