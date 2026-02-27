@@ -1,0 +1,33 @@
+.ui-dialog-content {
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  width: min(92vw, 1200px);
+  height: 85vh;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 1rem;
+}
+
+.ui-dialog-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: hsl(var(--background));
+}
+
+.ui-dialog-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem;
+  border-bottom: 1px solid hsl(var(--border));
+  background: hsl(var(--background) / 0.85);
+  backdrop-filter: blur(8px);
+}
+
+.ui-dialog-panels {
+  flex: 1;
+  min-height: 0;
+}

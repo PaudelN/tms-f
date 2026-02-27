@@ -1,287 +1,124 @@
 <template>
-  <div class="min-h-screen bg-background p-6">
-    <div class="max-w-3xl mx-auto">
-      <!-- Loading State -->
-      <div v-if="loading" class="flex items-center justify-center py-20">
-        <div class="text-center">
-          <svg class="animate-spin h-12 w-12 text-primary mx-auto mb-4" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          <p class="text-muted-foreground">Loading workspace...</p>
-        </div>
-      </div>
+  <div :class="inDialog ? 'space-y-4' : 'min-h-screen bg-background p-6'">
+    <div :class="inDialog ? 'space-y-4' : 'max-w-3xl mx-auto space-y-6'">
+      <div v-if="loading" class="py-10 text-sm text-muted-foreground">Loading workspace...</div>
 
-      <!-- Form -->
-      <div v-else>
-        <!-- Header -->
-        <div class="mb-8">
-          <div class="flex items-center gap-4 mb-4">
-            <button
-              @click="router.back()"
-              class="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-all"
-              title="Go back"
-            >
-              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-            <div>
-              <h1 class="text-4xl font-bold text-foreground mb-2">
-                Edit Workspace
-              </h1>
-              <p class="text-muted-foreground">
-                Update workspace information
-              </p>
-            </div>
+      <template v-else>
+        <header v-if="!inDialog" class="space-y-2">
+          <Button variant="ghost" class="-ml-3" @click="router.back()">Back</Button>
+          <div class="flex items-center gap-3">
+            <h1 class="text-3xl font-semibold tracking-tight">Edit Workspace</h1>
+            <Badge v-if="hasChanges" class="bg-amber-500/15 text-amber-700 border-transparent animate-pulse">
+              <CircleDot class="h-3 w-3 mr-1" /> Unsaved changes
+            </Badge>
           </div>
-        </div>
+        </header>
 
-        <!-- Form Card -->
         <Card>
           <CardHeader>
-            <CardTitle class="flex items-center gap-2">
-              <svg class="h-5 w-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-              Workspace Details
-            </CardTitle>
+            <CardTitle>Workspace Details</CardTitle>
+            <CardDescription>Keep your workspace profile up to date.</CardDescription>
           </CardHeader>
           <CardContent>
-            <form @submit.prevent="handleSubmit" class="space-y-6">
-              <!-- Name Field -->
+            <form @submit.prevent="handleSubmit" class="space-y-5">
               <div class="space-y-2">
-                <Label for="name" class="text-sm font-semibold text-foreground">
-                  Workspace Name
-                  <span class="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="name"
-                  v-model="form.name"
-                  type="text"
-                  placeholder="Enter workspace name"
-                  :class="{ 'border-destructive focus:border-destructive focus:ring-destructive': errors.name }"
-                  required
-                />
-                <p v-if="errors.name" class="text-xs text-destructive mt-1">
-                  {{ errors.name }}
-                </p>
+                <Label for="name">Workspace Name</Label>
+                <Input id="name" v-model="form.name" required />
+                <p v-if="errors.name" class="text-xs text-destructive">{{ errors.name }}</p>
               </div>
-
-              <!-- Description Field -->
               <div class="space-y-2">
-                <Label for="description" class="text-sm font-semibold text-foreground">
-                  Description
-                </Label>
-                <Textarea
-                  id="description"
-                  v-model="form.description"
-                  placeholder="Enter workspace description (optional)"
-                  rows="4"
-                  :class="{ 'border-destructive focus:border-destructive focus:ring-destructive': errors.description }"
-                />
-                <p v-if="errors.description" class="text-xs text-destructive mt-1">
-                  {{ errors.description }}
-                </p>
-                <p class="text-xs text-muted-foreground">
-                  Provide a brief description of what this workspace is for
-                </p>
+                <Label for="description">Description</Label>
+                <Textarea id="description" v-model="form.description" rows="4" />
+                <p v-if="errors.description" class="text-xs text-destructive">{{ errors.description }}</p>
               </div>
-
-              <!-- Metadata Display -->
-              <div class="bg-muted rounded-lg p-4 space-y-2">
-                <h3 class="text-sm font-semibold text-foreground mb-3">Metadata</h3>
-                <div class="grid grid-cols-2 gap-3 text-sm">
-                  <div>
-                    <span class="text-muted-foreground">Created:</span>
-                    <span class="ml-2 text-foreground font-medium">
-                      {{ workspace ? formatDate(workspace.created_at) : 'N/A' }}
-                    </span>
-                  </div>
-                  <div>
-                    <span class="text-muted-foreground">Updated:</span>
-                    <span class="ml-2 text-foreground font-medium">
-                      {{ workspace ? formatDate(workspace.updated_at) : 'N/A' }}
-                    </span>
-                  </div>
-                </div>
+              <div class="grid grid-cols-2 gap-3 text-sm rounded-lg border p-3">
+                <div><span class="text-muted-foreground">Created:</span> {{ workspace ? formatDate(workspace.created_at) : '-' }}</div>
+                <div><span class="text-muted-foreground">Updated:</span> {{ workspace ? formatDate(workspace.updated_at) : '-' }}</div>
               </div>
-
-              <!-- Error Alert -->
               <Alert v-if="workspaceStore.hasError" variant="destructive">
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
                 <AlertTitle>Error</AlertTitle>
-                <AlertDescription>
-                  {{ workspaceStore.errorMessage }}
-                </AlertDescription>
+                <AlertDescription>{{ workspaceStore.errorMessage }}</AlertDescription>
               </Alert>
 
-              <!-- Actions -->
-              <div class="flex gap-3 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  @click="router.back()"
-                  class="flex-1"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  :disabled="workspaceStore.isLoading || !hasChanges"
-                  class="flex-1 gap-2"
-                >
-                  <svg v-if="workspaceStore.isLoading" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  <span>{{ workspaceStore.isLoading ? 'Saving...' : 'Save Changes' }}</span>
-                </Button>
+              <div :class="inDialog ? 'sticky bottom-0 bg-background/95 backdrop-blur pt-3 flex justify-end gap-2' : 'flex gap-3 pt-2'">
+                <Button type="button" variant="outline" @click="handleCancel">Cancel</Button>
+                <Button type="submit" :disabled="workspaceStore.isLoading || !hasChanges">{{ workspaceStore.isLoading ? 'Saving...' : 'Save changes' }}</Button>
               </div>
             </form>
           </CardContent>
         </Card>
-      </div>
+      </template>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { useWorkspaceStore } from '@/stores/workspace'
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from '@/components/ui/alert'
+import { ref, reactive, computed, onMounted } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { CircleDot } from "lucide-vue-next";
+import { useWorkspaceStore } from "@/stores/workspace";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
-const route = useRoute()
-const router = useRouter()
-const workspaceStore = useWorkspaceStore()
+const props = withDefaults(defineProps<{ inDialog?: boolean; workspaceId?: number }>(), { inDialog: false, workspaceId: undefined });
+const emit = defineEmits<{ success: [number]; cancel: [] }>();
 
-const loading = ref(true)
-const workspace = computed(() => workspaceStore.activeWorkspace)
+const route = useRoute();
+const router = useRouter();
+const workspaceStore = useWorkspaceStore();
 
-const form = reactive({
-  name: '',
-  description: '',
-})
+const loading = ref(true);
+const workspace = computed(() => workspaceStore.activeWorkspace);
+const form = reactive({ name: "", description: "" });
+const originalForm = reactive({ name: "", description: "" });
+const errors = reactive({ name: "", description: "" });
+const hasChanges = computed(() => form.name.trim() !== originalForm.name || form.description.trim() !== originalForm.description);
 
-const originalForm = reactive({
-  name: '',
-  description: '',
-})
-
-const errors = reactive({
-  name: '',
-  description: '',
-})
-
-const hasChanges = computed(() => {
-  return (
-    form.name.trim() !== originalForm.name ||
-    form.description.trim() !== originalForm.description
-  )
-})
-
-onMounted(async () => {
-  await loadWorkspace()
-})
+onMounted(loadWorkspace);
 
 async function loadWorkspace() {
-  const id = Number(route.params.id)
-  if (!id || isNaN(id)) {
-    router.push({ name: 'workspace' })
-    return
+  const id = props.workspaceId ?? Number(route.params.id);
+  if (!id || Number.isNaN(id)) return router.push({ name: "workspace" });
+  loading.value = true;
+  await workspaceStore.fetchWorkspace(id);
+  if (workspace.value) {
+    form.name = workspace.value.name;
+    form.description = workspace.value.description || "";
+    originalForm.name = form.name;
+    originalForm.description = form.description;
   }
-
-  loading.value = true
-  try {
-    await workspaceStore.fetchWorkspace(id)
-    
-    if (workspace.value) {
-      form.name = workspace.value.name
-      form.description = workspace.value.description || ''
-      
-      originalForm.name = workspace.value.name
-      originalForm.description = workspace.value.description || ''
-    }
-  } catch (error) {
-    console.error('Failed to load workspace:', error)
-    router.push({ name: 'workspace' })
-  } finally {
-    loading.value = false
-  }
+  loading.value = false;
 }
 
-function validateForm(): boolean {
-  errors.name = ''
-  errors.description = ''
-
-  let isValid = true
-
-  if (!form.name.trim()) {
-    errors.name = 'Workspace name is required'
-    isValid = false
-  } else if (form.name.trim().length < 3) {
-    errors.name = 'Workspace name must be at least 3 characters'
-    isValid = false
-  } else if (form.name.trim().length > 255) {
-    errors.name = 'Workspace name must not exceed 255 characters'
-    isValid = false
-  }
-
-  if (form.description && form.description.length > 1000) {
-    errors.description = 'Description must not exceed 1000 characters'
-    isValid = false
-  }
-
-  return isValid
+function validateForm() {
+  errors.name = "";
+  errors.description = "";
+  if (!form.name.trim()) errors.name = "Workspace name is required";
+  if (form.name.trim().length > 255) errors.name = "Workspace name must not exceed 255 characters";
+  if (form.description.length > 1000) errors.description = "Description must not exceed 1000 characters";
+  return !errors.name && !errors.description;
 }
 
 async function handleSubmit() {
-  if (!workspace.value) return
-
-  workspaceStore.clearError()
-
-  if (!validateForm()) {
-    return
-  }
-
-  try {
-    await workspaceStore.updateWorkspace(workspace.value.id, {
-      name: form.name.trim(),
-      description: form.description.trim() || undefined,
-    })
-
-    originalForm.name = form.name.trim()
-    originalForm.description = form.description.trim()
-
-    router.push({ name: 'workspace-detail', params: { id: workspace.value.id } })
-  } catch (error) {
-    console.error('Failed to update workspace:', error)
-  }
+  if (!workspace.value || !validateForm()) return;
+  await workspaceStore.updateWorkspace(workspace.value.id, { name: form.name.trim(), description: form.description.trim() || undefined });
+  originalForm.name = form.name.trim();
+  originalForm.description = form.description.trim();
+  if (props.inDialog) emit("success", workspace.value.id);
+  else router.push({ name: "workspace-detail", params: { id: workspace.value.id } });
 }
 
-function formatDate(dateString: string): string {
-  const date = new Date(dateString)
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  })
+function handleCancel() {
+  if (props.inDialog) emit("cancel");
+  else router.back();
+}
+
+function formatDate(dateString: string) {
+  return new Date(dateString).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
 }
 </script>
