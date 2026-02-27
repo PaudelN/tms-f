@@ -94,47 +94,45 @@
           </template>
 
           <template #cell-actions="{ row }">
-            <div class="flex items-center justify-center gap-1">
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                class="text-primary"
-                title="View"
-                @click="handleView(row.id)"
-              >
-                <Eye class="h-4 w-4" />
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                title="Edit"
-                @click="handleEdit(row.id)"
-              >
-                <Pencil class="h-4 w-4" />
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                class="text-orange-600"
-                :title="row.isArchived ? 'Unarchive' : 'Archive'"
-                @click="toggleArchive(row.id)"
-              >
-                <Archive class="h-4 w-4" />
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                class="text-destructive"
-                title="Delete"
-                @click="handleDelete(row.id, row.name)"
-              >
-                <Trash2 class="h-4 w-4" />
-              </Button>
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger as-child>
+                <Button type="button" variant="ghost" size="icon" class="rounded-full">
+                  <MoreHorizontal class="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" class="w-64">
+                <DropdownMenuLabel>Workspace actions</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem @click="openWorkspaceDialog('detail', row)">
+                  <div class="mr-2 rounded-md bg-sky-500/15 p-1"><Eye class="h-3.5 w-3.5 text-sky-600" /></div>
+                  <div>
+                    <div class="text-sm font-medium">View</div>
+                    <p class="text-xs text-muted-foreground">Open details in dialog</p>
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuItem @click="openWorkspaceDialog('edit', row)">
+                  <div class="mr-2 rounded-md bg-amber-500/15 p-1"><Pencil class="h-3.5 w-3.5 text-amber-600" /></div>
+                  <div>
+                    <div class="text-sm font-medium">Edit</div>
+                    <p class="text-xs text-muted-foreground">Update workspace settings</p>
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuItem @click="toggleArchive(row.id)">
+                  <div class="mr-2 rounded-md bg-orange-500/15 p-1"><Archive class="h-3.5 w-3.5 text-orange-600" /></div>
+                  <div>
+                    <div class="text-sm font-medium">{{ row.isArchived ? 'Unarchive' : 'Archive' }}</div>
+                    <p class="text-xs text-muted-foreground">Move workspace state</p>
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuItem @click="handleDelete(row.id, row.name)">
+                  <div class="mr-2 rounded-md bg-destructive/15 p-1"><Trash2 class="h-3.5 w-3.5 text-destructive" /></div>
+                  <div>
+                    <div class="text-sm font-medium">Delete</div>
+                    <p class="text-xs text-muted-foreground">Permanently remove workspace</p>
+                  </div>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </template>
         </UiTable>
 
@@ -195,13 +193,7 @@
                       "
                     />
                   </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    class="h-8 w-8 text-primary"
-                    @click="handleView(item.id)"
-                  >
+                  <Button type="button" variant="ghost" size="icon" class="h-8 w-8 text-primary" @click="openWorkspaceDialog('detail', item)">
                     <ChevronRight class="h-4 w-4" />
                   </Button>
                 </div>
@@ -220,7 +212,7 @@
               v-for="(item, index) in items"
               :key="index"
               class="bg-background rounded-xl p-4 shadow-sm border border-border hover:shadow-md transition-all cursor-pointer group"
-              @click="handleView(item.id)"
+              @click="openWorkspaceDialog('detail', item)"
             >
               <div class="flex items-start justify-between mb-3">
                 <div class="flex items-center gap-2">
@@ -270,7 +262,7 @@
                     variant="ghost"
                     size="icon"
                     class="h-7 w-7"
-                    @click.stop="handleEdit(item.id)"
+                    @click.stop="openWorkspaceDialog('edit', item)"
                   >
                     <Pencil class="h-3.5 w-3.5" />
                   </Button>
@@ -351,11 +343,26 @@
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <UiDialog
+      v-model:open="workspaceDialog.open"
+      :title="workspaceDialog.title"
+      :description="workspaceDialog.description"
+      :mode="workspaceDialog.mode"
+      size="xl"
+      :component="workspaceDialog.component"
+      :component-props="workspaceDialog.componentProps"
+      :sidebar-component="WorkspaceSidebarInfo"
+      :sidebar-props="{ workspace: workspaceDialog.workspace }"
+      :fullscreen-route="workspaceDialog.fullscreenRoute"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
   import UiHeader from "@/components/common/UiHeader.vue";
+  import UiDialog from "@/components/common/UiDialog.vue";
+  import WorkspaceSidebarInfo from "@/components/common/WorkspaceSidebarInfo.vue";
   import { Button } from "@/components/ui/button";
   import {
     Dialog,
@@ -366,6 +373,17 @@
     DialogTitle,
   } from "@/components/ui/dialog";
   import { Input } from "@/components/ui/input";
+  import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+  } from "@/components/ui/dropdown-menu";
+  import WorkspaceAdd from "@/views/workspace/add.vue";
+  import WorkspaceDetail from "@/views/workspace/detail.vue";
+  import WorkspaceEdit from "@/views/workspace/edit.vue";
   import Spinner from "@/components/ui/spinner/Spinner.vue";
   import { notify } from "@/helpers/toast";
   import type { Workspace } from "@/stores/workspace";
@@ -385,14 +403,12 @@
     ChevronRight,
     Eye,
     Pencil,
+    MoreHorizontal,
     Star,
     Trash2,
     Trash2Icon,
   } from "lucide-vue-next";
   import { computed, ref, watch } from "vue";
-  import { useRouter } from "vue-router";
-
-  const router = useRouter();
   const workspaceStore = useWorkspaceStore();
 
   // ── View state (unchanged) ──────────────────────────────────────────────────
@@ -405,6 +421,16 @@
   const pinnedWorkspaceIds = ref<number[]>([1, 3]);
   const isLoading = ref(false);
   const tableRef = ref();
+  const workspaceDialog = ref<any>({
+    open: false,
+    mode: "detail",
+    title: "Workspace",
+    description: "",
+    component: WorkspaceDetail,
+    componentProps: {},
+    workspace: null,
+    fullscreenRoute: { name: "workspace" },
+  });
 
   // ── Filter/sort panel visibility ────────────────────────────────────────────
   const showFilterPanel = ref(false);
@@ -416,7 +442,6 @@
     sort,
     activeFilterCount,
     handleSearch,
-    handleSort,
     filterItems,
   } = useUniversalInteractions({
     debounceMs: 400,
@@ -630,13 +655,38 @@
 
   // ── CRUD handlers (unchanged) ───────────────────────────────────────────────
   function handleCreate() {
-    router.push({ name: "workspace-add" });
+    openWorkspaceDialog("add");
   }
-  function handleView(id: number) {
-    router.push({ name: "workspace-detail", params: { id } });
-  }
-  function handleEdit(id: number) {
-    router.push({ name: "workspace-edit", params: { id } });
+
+  function openWorkspaceDialog(mode: "add" | "edit" | "detail", row?: Workspace) {
+    const isAdd = mode === "add";
+    const id = row?.id;
+    workspaceDialog.value = {
+      open: true,
+      mode,
+      title:
+        mode === "add"
+          ? "Create Workspace"
+          : mode === "edit"
+            ? `Edit ${row?.name ?? "Workspace"}`
+            : row?.name ?? "Workspace details",
+      description:
+        mode === "add"
+          ? "Create without leaving this page"
+          : mode === "edit"
+            ? "Quick edits with full SPA flow"
+            : "Inspect workspace information",
+      component: isAdd ? WorkspaceAdd : mode === "edit" ? WorkspaceEdit : WorkspaceDetail,
+      componentProps: isAdd
+        ? { inDialog: true }
+        : { inDialog: true, workspaceId: id },
+      workspace: row ?? null,
+      fullscreenRoute: isAdd
+        ? { name: "workspace-add", params: {} }
+        : mode === "edit"
+          ? { name: "workspace-edit", params: { id } }
+          : { name: "workspace-detail", params: { id } },
+    };
   }
   function handleDelete(id: number, name: string) {
     workspaceToDelete.value = { id, name };
@@ -679,12 +729,6 @@
       year: "numeric",
       month: "short",
       day: "numeric",
-    });
-  }
-  function formatTime(dateString: string) {
-    return new Date(dateString).toLocaleTimeString("en-UK", {
-      hour: "2-digit",
-      minute: "2-digit",
     });
   }
 </script>

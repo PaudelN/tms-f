@@ -1,0 +1,14 @@
+.ui-dialog-centered {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  width: min(96vw, 1200px);
+  border-radius: 1rem;
+}
+
+.ui-dialog-shell {
+  display: flex;
+  flex-direction: column;
+  background: hsl(var(--card));
+}
