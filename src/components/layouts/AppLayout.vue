@@ -1,43 +1,37 @@
 <script setup lang="ts">
   import ModeToggle from "@/components/common/ModeToggle.vue";
-import UserProfileMenu from "@/components/common/UserProfileMenu.vue";
-import { Button } from "@/components/ui/button";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarInset,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
-import {
-  BarChart3,
-  Bell,
-  ClipboardList,
-  Clock,
-  Columns3,
-  Component,
-  Earth,
-  FileText,
-  FolderTree,
-  GalleryHorizontalEnd,
-  GalleryVerticalEnd,
-  Grab,
-  LayoutDashboard,
-  PhilippinePeso,
-  Sprout,
-  Subscript,
-  Wrench
-} from "lucide-vue-next";
-import { ComboboxArrow } from "reka-ui";
-import { useRoute } from "vue-router";
+  import UserProfileMenu from "@/components/common/UserProfileMenu.vue";
+  import { Button } from "@/components/ui/button";
+  import {
+    Sidebar,
+    SidebarContent,
+    SidebarFooter,
+    SidebarGroup,
+    SidebarGroupContent,
+    SidebarGroupLabel,
+    SidebarHeader,
+    SidebarInset,
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
+    SidebarProvider,
+    SidebarTrigger,
+  } from "@/components/ui/sidebar";
+  import {
+    BarChart3,
+    Bell,
+    ClipboardList,
+    Clock,
+    Columns3,
+    FileText,
+    FolderTree,
+    GalleryHorizontalEnd,
+    GalleryVerticalEnd,
+    LayoutDashboard,
+    PhilippinePeso,
+    Wrench,
+  } from "lucide-vue-next";
+  import { useRoute } from "vue-router";
 
   const route = useRoute();
 
@@ -136,7 +130,7 @@ import { useRoute } from "vue-router";
       </SidebarFooter>
     </Sidebar>
 
-    <SidebarInset>
+    <SidebarInset class="overflow-x-hidden min-w-0 flex flex-col min-h-0">
       <header
         class="sticky top-0 z-40 backdrop-blur-md supports-backdrop-filter:bg-card/95 shadow-md"
       >
@@ -144,13 +138,9 @@ import { useRoute } from "vue-router";
           class="flex h-16 items-center gap-3 px-2 transition-[height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12"
         >
           <SidebarTrigger />
-
           <div class="flex-1" />
-
           <div class="flex items-center gap-2">
-
             <ModeToggle />
-
             <Button variant="ghost" size="icon" class="relative">
               <Bell class="h-5 w-5" />
               <span
@@ -161,8 +151,10 @@ import { useRoute } from "vue-router";
         </div>
       </header>
 
-      <main class="min-h-[calc(100vh-3rem)]">
-        <router-view />
+      <main class="overflow-x-hidden min-w-0 flex-1 flex flex-col">
+        <div class="w-full min-w-0 flex-1 flex flex-col">
+          <router-view />
+        </div>
       </main>
     </SidebarInset>
   </SidebarProvider>

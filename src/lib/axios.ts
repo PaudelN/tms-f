@@ -32,6 +32,8 @@ const getSanctumUrl = (apiUrl: string): string => {
 
 const baseURL = getApiUrl();
 const sanctumUrl = getSanctumUrl(baseURL);
+console.log("BUKESH",sanctumUrl);
+
 
 const api: AxiosInstance = axios.create({
   baseURL,
