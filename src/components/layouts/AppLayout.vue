@@ -132,7 +132,7 @@
 
     <SidebarInset class="overflow-x-hidden min-w-0 flex flex-col min-h-0">
       <header
-        class="sticky top-0 z-40 backdrop-blur-md supports-backdrop-filter:bg-card/95 shadow-md"
+        class="sticky bg-card top-0 z-40 backdrop-blur-md supports-backdrop-filter:bg-card shadow-md"
       >
         <div
           class="flex h-16 items-center gap-3 px-2 transition-[height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12"

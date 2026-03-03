@@ -1,22 +1,26 @@
-import { defineStore } from "pinia";
-import { ref, computed } from "vue";
 import axios from "@/lib/axios";
 import type { AxiosError } from "axios";
+import { defineStore } from "pinia";
+import { computed, ref } from "vue";
 
 // Types
 export interface Workspace {
   id: number;
   name: string;
+  slug: string;
+  status: string | null;
   description: string | null;
+  is_active: boolean;
+  is_archived: boolean;
+  extra?: Record<string, unknown> | null;
   user_id: number;
-  created_at: string;
-  updated_at: string;
-  isArchived?: boolean;
   user?: {
     id: number;
     name: string;
     email: string;
   };
+  created_at: string;
+  updated_at: string;
 }
 
 export interface WorkspaceMeta {
@@ -33,6 +37,7 @@ export interface WorkspaceListResponse {
 
 export interface WorkspaceDetailResponse {
   data: Workspace;
+  formatted: string;
 }
 
 export interface WorkspaceFilters {
@@ -46,6 +51,15 @@ export interface WorkspaceFilters {
 export interface WorkspaceFormData {
   name: string;
   description?: string;
+  status?: string;
+}
+
+export interface WorkspaceStatus {
+  value: string;
+  label: string;
+  description: string;
+  dot: string;
+  badge: string;
 }
 
 export const useWorkspaceStore = defineStore(
@@ -65,6 +79,10 @@ export const useWorkspaceStore = defineStore(
       total: 0,
       last_page: 0,
     });
+
+    //statuses
+    const statuses = ref<WorkspaceStatus[]>([]);
+    const statusesLoaded = ref(false);
 
     // Filters state
     const filters = ref<WorkspaceFilters>({
@@ -260,6 +278,21 @@ export const useWorkspaceStore = defineStore(
       }
     }
 
+    async function fetchStatuses() {
+      if (statusesLoaded.value) return statuses.value; // cached
+      try {
+        const response = await axios.get<{ data: WorkspaceStatus[] }>(
+          "/enums/workspace-statuses",
+        );
+        statuses.value = response.data.data;
+        statusesLoaded.value = true;
+        return statuses.value;
+      } catch (err) {
+        console.error("Failed to load statuses", err);
+        return [];
+      }
+    }
+
     /**
      * Update filters and refetch
      */
@@ -338,6 +371,8 @@ export const useWorkspaceStore = defineStore(
       error,
       meta,
       filters,
+      statuses,
+      statusesLoaded,
 
       // Getters
       isLoading,
@@ -364,13 +399,14 @@ export const useWorkspaceStore = defineStore(
       clearError,
       clearCurrentWorkspace,
       $reset,
+      fetchStatuses,
     };
   },
   {
     persist: {
       key: "workspace-store",
       storage: localStorage,
-    //   paths: ["workspaces", "currentWorkspace", "filters", "meta"],
+      //   paths: ["workspaces", "currentWorkspace", "filters", "meta"],
     },
   },
 );

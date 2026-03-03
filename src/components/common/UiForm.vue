@@ -1,125 +1,215 @@
 <template>
-  <div class="flex-1 flex flex-col min-h-0 w-full bg-background">
+  <div class="flex flex-col bg-background p-8">
+    <div
+      class="sticky top-0 z-50 shrink-0 h-14"
+      style="box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.06)"
+    >
+      <div
+        class="h-full max-w-7xl mx-auto px-6 flex items-center justify-between gap-4"
+      >
+        <!-- Left: back + breadcrumbs -->
+        <div class="flex items-center gap-3 min-w-0">
+          <Breadcrumb>
+            <BreadcrumbList class="gap-1 flex-nowrap min-w-0">
+              <template v-for="(crumb, i) in breadcrumbs" :key="i">
+                <BreadcrumbItem class="min-w-0">
+                  <BreadcrumbPage
+                    v-if="i === breadcrumbs.length - 1"
+                    class="text-[12px] font-semibold text-foreground truncate max-w-40"
+                  >
+                    {{ crumb.label }}
+                  </BreadcrumbPage>
+                  <BreadcrumbLink
+                    v-else
+                    as="button"
+                    class="text-[12px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer whitespace-nowrap"
+                    @click="crumb.onClick?.()"
+                  >
+                    {{ crumb.label }}
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator
+                  v-if="i < breadcrumbs.length - 1"
+                  class="text-muted-foreground"
+                />
+              </template>
+            </BreadcrumbList>
+          </Breadcrumb>
+          <Transition name="fade-fast">
+            <Badge
+              v-if="hasChanges && mode === 'edit'"
+              variant="default"
+              class="text-[10px] bg-primary font-bold uppercase tracking-wider px-2 py-0.5 rounded-xs"
+            >
+              Unsaved changes
+            </Badge>
+          </Transition>
+        </div>
 
-    <!-- Loading -->
-    <div v-if="loading" class="flex-1 flex items-center justify-center">
-      <div class="flex flex-col items-center gap-3">
-        <div class="h-8 w-8 rounded-full border-2 border-primary/20 border-t-primary animate-spin" />
-        <p class="text-[11px] text-muted-foreground font-medium tracking-widest uppercase">{{ loadingText }}</p>
+        <div class="flex items-center gap-3 shrink-0">
+          <Button
+            type="button"
+            variant="header"
+            shape="circle"
+            size="icon"
+            class="relative cursor-pointer flex items-center justify-center w-8 h-8 rounded-[9999px] transition-all duration-200 text-primary bg-primary-20"
+            @click="onCancel"
+          >
+            <ArrowLeft class="h-4 w-4" />
+          </Button>
+        </div>
       </div>
     </div>
 
-    <div v-else class="flex-1 flex flex-col min-h-0">
-
-      <!-- ── Top bar ── -->
-      <div class="px-6 pt-4 pb-3 flex items-center justify-between flex-shrink-0 border-b border-border/30">
-        <nav class="flex items-center gap-2">
-          <button
-            v-for="(crumb, i) in breadcrumbs"
-            :key="i"
-            class="flex items-center gap-2"
-            @click="crumb.onClick?.()"
-          >
-            <span
-              :class="[
-                'transition-colors',
-                i === breadcrumbs.length - 1
-                  ? 'text-[13px] font-semibold text-foreground cursor-default'
-                  : 'text-[12px] font-medium text-muted-foreground hover:text-foreground cursor-pointer',
-              ]"
-            >{{ crumb.label }}</span>
-            <ChevronRight v-if="i < breadcrumbs.length - 1" class="h-3 w-3 text-muted-foreground/40" />
-          </button>
-        </nav>
-
-        <button
-          type="button"
-          class="flex items-center gap-1.5 text-[12px] font-medium text-muted-foreground hover:text-foreground transition-colors"
-          @click="onCancel"
-        >
-          <ArrowLeft class="h-3.5 w-3.5" />
-          Back
-        </button>
+    <!-- ── Loading State ─────────────────────────────────────────────────── -->
+    <div v-if="loading" class="flex-1 flex items-center justify-center">
+      <div class="flex flex-col items-center gap-5">
+        <div class="relative h-12 w-12">
+          <div class="absolute inset-0 rounded-full border-2 border-muted" />
+          <div
+            class="absolute inset-0 rounded-full border-2 border-transparent animate-spin"
+            style="border-top-color: rgb(var(--color-primary))"
+          />
+        </div>
+        <div class="text-center">
+          <p class="text-[13px] font-semibold text-foreground">
+            {{ loadingText }}
+          </p>
+          <p class="text-[11px] text-muted-foreground mt-0.5">Please wait…</p>
+        </div>
       </div>
+    </div>
 
-      <!-- ── Scrollable body ── -->
-      <div class="flex-1 min-h-0 overflow-y-auto">
-        <div class="w-full h-full flex flex-col">
-
-          <!-- Page title strip -->
-          <div class="px-8 pt-7 pb-6 border-b border-border/20 flex-shrink-0">
-            <h1 class="text-[26px] font-semibold tracking-tight text-foreground leading-tight">{{ title }}</h1>
-            <p v-if="description" class="text-[13px] text-muted-foreground mt-1.5 leading-relaxed">{{ description }}</p>
-          </div>
-
-          <!-- Main form area -->
-          <div class="flex-1 px-8 py-8 space-y-8">
-
-            <!-- Global error -->
-            <div
-              v-if="errorMessage"
-              class="flex items-start gap-3 rounded-lg bg-destructive/5 border border-destructive/20 px-5 py-4"
-            >
-              <AlertCircle class="h-4 w-4 text-destructive flex-shrink-0 mt-0.5" />
-              <p class="text-[13px] text-destructive leading-relaxed">{{ errorMessage }}</p>
-            </div>
-
-            <!-- Fields -->
-            <div class="space-y-7">
-              <slot name="fields" />
-            </div>
-
-            <!-- Tips -->
-            <div v-if="tips.length" class="space-y-3 pt-2">
-              <p class="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/40">Tips</p>
-              <div class="space-y-2">
-                <div
-                  v-for="(tip, i) in tips"
-                  :key="i"
-                  class="flex items-start gap-3 px-4 py-3 rounded-lg border text-[12px] leading-relaxed"
-                  :class="getTipClass(tip.type)"
+    <div v-else class="flex-1 overflow-y-auto">
+      <div class="max-w-7xl mx-auto px-6 py-8 pb-28">
+        <div
+          class="grid grid-cols-1 xl:grid-cols-[minmax(0,2fr)_450px] gap-10 items-start"
+        >
+          <!-- Form Column -->
+          <div class="space-y-5">
+            <Transition name="slide-down">
+              <Alert
+                v-if="errorMessage"
+                variant="destructive"
+                class="border-destructive bg-card"
+                style="box-shadow: 0 0 0 4px rgb(239 68 68 / 0.08)"
+              >
+                <AlertCircle class="h-4 w-4" />
+                <AlertTitle class="text-[13px] font-semibold"
+                  >Something went wrong</AlertTitle
                 >
-                  <span
-                    class="flex-shrink-0 text-[9px] font-bold uppercase tracking-widest opacity-60 mt-0.5 w-12"
-                    :class="getTipLabelClass(tip.type)"
-                  >{{ getTipLabel(tip.type) }}</span>
-                  <span :class="getTipTextClass(tip.type)">{{ tip.text }}</span>
-                </div>
-              </div>
-            </div>
+                <AlertDescription class="text-[12px] leading-relaxed mt-0.5">
+                  {{ errorMessage }}
+                </AlertDescription>
+              </Alert>
+            </Transition>
 
+            <!-- Card wrapper for form -->
+            <Card class="border-border rounded-sm shadow-soft overflow-hidden">
+              <CardContent class="p-0">
+                <slot name="fields" />
+              </CardContent>
+            </Card>
           </div>
 
-          <!-- ── Sticky footer ── -->
-          <div class="flex-shrink-0 sticky bottom-0 border-t border-border/40 bg-background/95 backdrop-blur-sm px-8 py-4">
-            <div class="flex items-center justify-between">
-              <div class="text-[11px] text-muted-foreground/50">
-                <span v-if="hasChanges && mode === 'edit'" class="flex items-center gap-1.5">
-                  <span class="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse inline-block" />
-                  Unsaved changes
-                </span>
+          <!-- Sidebar Column -->
+          <div class="space-y-3">
+            <slot name="sidebar">
+              <!-- Default: form guidance card -->
+              <Card class="border-border">
+                <CardHeader class="pb-3 pt-5 px-5">
+                  <div class="flex items-center gap-2">
+                    <div
+                      class="h-7 w-7 rounded-lg bg-primary-20 flex items-center justify-center"
+                    >
+                      <Info class="h-3.5 w-3.5 text-primary" />
+                    </div>
+                    <CardTitle class="text-[13px] font-semibold"
+                      >About this form</CardTitle
+                    >
+                  </div>
+                </CardHeader>
+                <CardContent class="px-5 pb-5 pt-0 space-y-3">
+                  <p class="text-[12px] text-muted-foreground leading-relaxed">
+                    Fill in all required fields marked with
+                    <span class="text-destructive font-bold">*</span>. Your
+                    changes are not saved until you click the
+                    <strong class="text-foreground font-semibold">{{
+                      submitLabel ??
+                      (mode === "edit" ? "Save Changes" : "Create")
+                    }}</strong>
+                    button.
+                  </p>
+                  <Separator />
+                  <div class="space-y-2">
+                    <div
+                      class="flex items-center gap-2 text-[11px] text-muted-foreground"
+                    >
+                      <kbd
+                        class="inline-flex h-5 items-center px-1.5 rounded border border-border bg-muted font-mono text-[10px] font-medium"
+                        >⌘S</kbd
+                      >
+                      <span>Save changes</span>
+                    </div>
+                    <div
+                      class="flex items-center gap-2 text-[11px] text-muted-foreground"
+                    >
+                      <kbd
+                        class="inline-flex h-5 items-center px-1.5 rounded border border-border bg-muted font-mono text-[10px] font-medium"
+                        >Esc</kbd
+                      >
+                      <span>Discard & go back</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </slot>
+          </div>
+
+          <div
+            v-if="!loading"
+            style="box-shadow: 0 -4px 16px rgb(0 0 0 / 0.06)"
+            class=""
+          >
+            <div class="max-w-7xl mx-auto flex items-center justify-between">
+              <div
+                class="flex items-center gap-1.5 text-[11px] text-muted-foreground"
+              >
+                <kbd
+                  class="inline-flex h-5 items-center px-1.5 rounded border border-border bg-muted font-mono text-[10px] font-medium"
+                  >cmd/⌘ + S</kbd
+                >
+                <span>to save</span>
               </div>
-              <div class="flex items-center gap-3">
-                <button
+
+              <div class="flex items-center gap-4">
+                <Button
                   type="button"
-                  class="h-9 px-6 text-[13px] font-medium rounded-md border border-border bg-transparent text-muted-foreground hover:text-foreground hover:border-border/80 hover:bg-muted/30 transition-all"
+                  variant="destructive"
+                  size="sm"
+                  class="h-9 px-4 cursor-pointer text-[13px] hover:text-foreground rounded-sm"
                   @click="onCancel"
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+
+                <Button
                   type="button"
-                  class="h-9 px-7 text-[13px] font-semibold rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+                  variant="default"
+                  size="sm"
+                  class="h-9 px-5 cursor-pointer text-[13px] font-semibold rounded-sm gap-2 hover:bg-violet-600"
+                  style="box-shadow: 0 1px 3px rgb(0 0 0 / 0.15)"
                   :disabled="submitting || (mode === 'edit' && !hasChanges)"
                   @click="onSubmit"
                 >
-                  <Loader2 v-if="submitting" class="h-4 w-4 animate-spin" />
-                  {{ submitLabel ?? (mode === 'edit' ? 'Save Changes' : 'Create') }}
-                </button>
+                  <Loader2 v-if="submitting" class="h-3.5 w-3.5 animate-spin" />
+                  {{
+                    submitLabel ?? (mode === "edit" ? "Save Changes" : "Create")
+                  }}
+                </Button>
               </div>
             </div>
           </div>
-
         </div>
       </div>
     </div>
@@ -127,89 +217,102 @@
 </template>
 
 <script setup lang="ts">
-import type { Component } from 'vue'
-import { AlertCircle, ArrowLeft, ChevronRight, Loader2 } from 'lucide-vue-next'
+  import { AlertCircle, ArrowLeft, Info, Loader2 } from "lucide-vue-next";
+  import { onMounted, onUnmounted } from "vue";
 
-export interface FormBreadcrumb {
-  label: string
-  onClick?: () => void
-}
+  import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+  import { Badge } from "@/components/ui/badge";
+  import {
+    Breadcrumb,
+    BreadcrumbItem,
+    BreadcrumbLink,
+    BreadcrumbList,
+    BreadcrumbPage,
+    BreadcrumbSeparator,
+  } from "@/components/ui/breadcrumb";
+  import { Button } from "@/components/ui/button";
+  import {
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+  } from "@/components/ui/card";
+  import { Separator } from "@/components/ui/separator";
 
-export interface FormMetaField {
-  label: string
-  value?: string
-  icon?: Component
-  type?: 'text' | 'badge'
-  badgeClass?: string
-}
-
-export type TipType = 'default' | 'pro' | 'info' | 'warning'
-
-export interface FormTip {
-  text: string
-  type?: TipType
-}
-
-withDefaults(defineProps<{
-  mode?: 'create' | 'edit'
-  loading?: boolean
-  loadingText?: string
-  submitting?: boolean
-  breadcrumbs?: FormBreadcrumb[]
-  title?: string
-  description?: string
-  tips?: FormTip[]
-  hasChanges?: boolean
-  errorMessage?: string | null
-  submitLabel?: string
-}>(), {
-  mode: 'create',
-  loading: false,
-  loadingText: 'Loading…',
-  submitting: false,
-  breadcrumbs: () => [],
-  title: 'Form',
-  tips: () => [],
-  hasChanges: false,
-})
-
-const emit = defineEmits<{ submit: []; cancel: [] }>()
-function onSubmit() { emit('submit') }
-function onCancel() { emit('cancel') }
-
-function getTipLabel(type?: TipType): string {
-  switch (type) {
-    case 'pro':     return 'Pro'
-    case 'info':    return 'Note'
-    case 'warning': return 'Heads up'
-    default:        return 'Tip'
+  export interface FormBreadcrumb {
+    label: string;
+    onClick?: () => void;
   }
-}
 
-function getTipClass(type?: TipType): string {
-  switch (type) {
-    case 'pro':     return 'bg-primary/5 border-primary/15'
-    case 'info':    return 'bg-blue-50/60 border-blue-200/50 dark:bg-blue-950/20 dark:border-blue-800/30'
-    case 'warning': return 'bg-amber-50/60 border-amber-200/50 dark:bg-amber-950/20 dark:border-amber-800/30'
-    default:        return 'bg-muted/20 border-border/30'
-  }
-}
+  const props = withDefaults(
+    defineProps<{
+      mode?: "create" | "edit";
+      loading?: boolean;
+      loadingText?: string;
+      submitting?: boolean;
+      breadcrumbs?: FormBreadcrumb[];
+      hasChanges?: boolean;
+      errorMessage?: string | null;
+      submitLabel?: string;
+    }>(),
+    {
+      mode: "create",
+      loading: false,
+      loadingText: "Loading…",
+      submitting: false,
+      breadcrumbs: () => [],
+      hasChanges: false,
+    },
+  );
 
-function getTipLabelClass(type?: TipType): string {
-  switch (type) {
-    case 'pro':     return 'text-primary'
-    case 'info':    return 'text-blue-500'
-    case 'warning': return 'text-amber-500'
-    default:        return 'text-muted-foreground'
-  }
-}
+  const emit = defineEmits<{ submit: []; cancel: [] }>();
 
-function getTipTextClass(type?: TipType): string {
-  switch (type) {
-    case 'pro':     return 'text-primary/70'
-    case 'info':    return 'text-blue-700 dark:text-blue-300'
-    case 'warning': return 'text-amber-700 dark:text-amber-300'
-    default:        return 'text-muted-foreground'
+  function onSubmit() {
+    emit("submit");
   }
-}
+  function onCancel() {
+    emit("cancel");
+  }
+
+  // ── Keyboard shortcuts ────────────────────────────────────────────────────────
+  function handleKeydown(e: KeyboardEvent) {
+    if ((e.metaKey || e.ctrlKey) && e.key === "s") {
+      e.preventDefault();
+      if (!props.submitting && !(props.mode === "edit" && !props.hasChanges)) {
+        onSubmit();
+      }
+    }
+    if (e.key === "Escape") {
+      onCancel();
+    }
+  }
+
+  onMounted(() => window.addEventListener("keydown", handleKeydown));
+  onUnmounted(() => window.removeEventListener("keydown", handleKeydown));
 </script>
+
+<style scoped>
+  .fade-fast-enter-active,
+  .fade-fast-leave-active {
+    transition:
+      opacity 0.15s ease,
+      transform 0.15s ease;
+  }
+  .fade-fast-enter-from,
+  .fade-fast-leave-to {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+
+  .slide-down-enter-active {
+    transition: all 0.25s ease-out;
+  }
+  .slide-down-leave-active {
+    transition: all 0.2s ease-in;
+  }
+  .slide-down-enter-from,
+  .slide-down-leave-to {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+</style>

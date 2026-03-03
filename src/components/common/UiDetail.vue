@@ -23,7 +23,7 @@
     <div v-else class="flex-1 flex flex-col min-h-0">
       <!-- Top Bar -->
       <div
-        class="px-5 pt-3.5 pb-2.5 flex items-center justify-between flex-shrink-0"
+        class="px-5 pt-3.5 pb-2.5 flex items-center justify-between shrink-0"
       >
         <!-- Breadcrumb -->
         <nav class="flex items-center gap-1.5">
@@ -44,14 +44,14 @@
             >
             <ChevronRight
               v-if="i < breadcrumbs.length - 1"
-              class="h-3 w-3 text-muted-foreground/40 flex-shrink-0"
+              class="h-3 w-3 text-muted-foreground/40 shrink-0"
             />
           </button>
 
           <!-- Status badge inline with breadcrumb -->
           <div v-if="statusBadge" class="ml-2">
             <Badge
-              class="rounded-full text-[10px] font-bold uppercase tracking-wider"
+              class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wider uppercase font-mono border border-transparent transition-all duration-200"
               :class="
                 statusBadge.class ??
                 'bg-primary-20 text-primary border-primary-thin'
@@ -126,7 +126,7 @@
                         :class="i < metaFields.length - 1"
                       >
                         <p
-                          class="text-[9px] font-bold uppercase tracking-[0.12em] text-muted-foreground/60"
+                          class="'flex items-center gap-2 text-[11px] font-semibold tracking-[0.06em] uppercase transition-all duration-200 select-none',"
                         >
                           {{ field.label }}
                         </p>
@@ -221,7 +221,7 @@
               >
                 <div class="flex items-center gap-2">
                   <h3
-                    class="text-[12px] font-bold tracking-wide text-foreground"
+                    class="'flex items-center gap-2 text-[11px] font-semibold tracking-[0.06em] uppercase transition-all duration-200 select-none',"
                   >
                     Activity & Comments
                   </h3>
@@ -249,7 +249,7 @@
                         :style="`opacity: ${0.06 + i * 0.04}`"
                       >
                         <div
-                          class="h-6 w-6 rounded-full bg-muted flex-shrink-0 mt-0.5"
+                          class="h-6 w-6 rounded-full bg-muted shrink-0 mt-0.5"
                         />
                         <div class="flex-1 space-y-1.5 pt-0.5">
                           <div
@@ -262,7 +262,7 @@
                           />
                         </div>
                         <div
-                          class="h-1.5 w-12 rounded-full bg-muted/50 mt-1 flex-shrink-0"
+                          class="h-1.5 w-12 rounded-full bg-muted/50 mt-1 shrink-0"
                         />
                       </div>
                     </div>
@@ -292,7 +292,7 @@
         <DialogHeader>
           <div class="flex items-center gap-3">
             <div
-              class="h-10 w-10 rounded-full bg-destructive/10 border border-destructive/20 flex items-center justify-center flex-shrink-0"
+              class="h-10 w-10 rounded-full bg-destructive/10 border border-destructive/20 flex items-center justify-center shrink-0"
             >
               <Trash2 class="h-4.5 w-4.5 text-destructive" />
             </div>

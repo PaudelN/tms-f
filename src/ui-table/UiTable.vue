@@ -311,13 +311,16 @@
                   'h-12 [&_td]:py-2.5': density === 'default',
                   'border-l-3 border-l-purple-800': row.getIsSelected(),
                 }"
-                @click="emit('row-click', row.original)"
               >
                 <TableCell
                   v-for="cell in row.getVisibleCells()"
                   :key="cell.id"
                   class="px-4 text-xs text-foreground font-sans whitespace-nowrap"
                   style="vertical-align: middle"
+                  @click="
+                    !['actions', 'select'].includes(cell.column.id) &&
+                    emit('row-click', row.original)
+                  "
                 >
                   <FlexRender
                     :render="cell.column.columnDef.cell"
@@ -489,7 +492,7 @@
     searchPlaceholder: "Search...",
     showRefresh: true,
   });
-  
+
   const emit = defineEmits<{
     export: [];
     "add-item": [];

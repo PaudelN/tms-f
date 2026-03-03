@@ -27,7 +27,7 @@
               class="text-border/40 text-[10px] font-mono select-none"
               >·</span
             >
-            <span
+            <Badge
               class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wider uppercase font-mono border border-transparent transition-all duration-200"
               :style="{
                 backgroundColor: `color-mix(in srgb, ${stat.color} 10%, transparent)`,
@@ -43,7 +43,7 @@
                 }"
               />
               {{ stat.value }} {{ stat.label }}
-            </span>
+            </Badge>
           </template>
         </div>
       </div>
@@ -236,6 +236,7 @@
 
 <script setup lang="ts">
   import ExpandableSearch from "@/components/common/ExpandableSearch.vue";
+import Badge from "@/components/ui/badge/Badge.vue";
   import Button from "@/components/ui/button/Button.vue";
   import {
     Tooltip,

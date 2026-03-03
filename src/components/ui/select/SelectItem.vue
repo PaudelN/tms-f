@@ -1,21 +1,23 @@
 <script setup lang="ts">
-import type { SelectItemProps } from "reka-ui"
-import type { HTMLAttributes } from "vue"
-import { reactiveOmit } from "@vueuse/core"
-import { Check } from "lucide-vue-next"
-import {
-  SelectItem,
-  SelectItemIndicator,
-  SelectItemText,
-  useForwardProps,
-} from "reka-ui"
-import { cn } from "@/lib/utils"
+  import { cn } from "@/lib/utils";
+  import { reactiveOmit } from "@vueuse/core";
+  import { CircleCheckBig } from "lucide-vue-next";
+  import type { SelectItemProps } from "reka-ui";
+  import {
+    SelectItem,
+    SelectItemIndicator,
+    SelectItemText,
+    useForwardProps,
+  } from "reka-ui";
+  import type { HTMLAttributes } from "vue";
 
-const props = defineProps<SelectItemProps & { class?: HTMLAttributes["class"] }>()
+  const props = defineProps<
+    SelectItemProps & { class?: HTMLAttributes["class"] }
+  >();
 
-const delegatedProps = reactiveOmit(props, "class")
+  const delegatedProps = reactiveOmit(props, "class");
 
-const forwardedProps = useForwardProps(delegatedProps)
+  const forwardedProps = useForwardProps(delegatedProps);
 </script>
 
 <template>
@@ -32,7 +34,7 @@ const forwardedProps = useForwardProps(delegatedProps)
     <span class="absolute right-2 flex size-3.5 items-center justify-center">
       <SelectItemIndicator>
         <slot name="indicator-icon">
-          <Check class="size-4" />
+          <CircleCheckBig class="size-3.5" />
         </slot>
       </SelectItemIndicator>
     </span>

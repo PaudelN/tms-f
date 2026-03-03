@@ -14,19 +14,15 @@
         search-placeholder="Search workspaces..."
         show-filter
         :active-filter-count="activeFilterCount"
-        show-sort
-        :is-sort-active="isSortActive"
-        :show-export="true"
         @create="handleCreate"
         @update:current-view="handleViewChange"
         @update:search-value="handleSearch"
         @refresh="onRefresh"
         @filter="showFilterPanel = true"
-        @sort="showSortPanel = true"
-        @export="handleExport"
       />
 
       <div>
+        <!-- ── Table View ── -->
         <UiTable
           ref="tableRef"
           v-if="currentView === 'table'"
@@ -44,16 +40,17 @@
           }"
           search-placeholder="Search workspaces..."
           :show-refresh="false"
+          @row-click="handleView($event.id)"
         >
-          <!-- CUSTOM CELLS -->
+          <!-- Name cell -->
           <template #cell-name="{ row }">
             <div class="flex items-center gap-3">
               <div
                 class="h-10 w-10 rounded-xl bg-primary/20 flex items-center justify-center relative"
               >
-                <span class="text-primary text-sm font-bold">{{
-                  row.name.charAt(0).toUpperCase()
-                }}</span>
+                <span class="text-primary text-sm font-bold">
+                  {{ row.name?.charAt(0).toUpperCase() ?? "?" }}
+                </span>
                 <Button
                   type="button"
                   variant="ghost"
@@ -77,7 +74,7 @@
                 >
                   {{ row.name }}
                   <span
-                    v-if="row.isArchived"
+                    v-if="row.is_archived"
                     class="text-xs font-medium text-orange-600 bg-orange-500/10 px-2 py-0.5 rounded-full"
                   >
                     Archived
@@ -93,51 +90,129 @@
             </div>
           </template>
 
+          <!-- Owner cell -->
+          <template #cell-user="{ row }">
+            <span class="text-sm text-foreground">
+              {{ row.user?.name ?? "—" }}
+            </span>
+          </template>
+
+          <!-- Actions cell — single "…" dropdown -->
           <template #cell-actions="{ row }">
-            <div class="flex items-center justify-center gap-1">
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                class="text-primary"
-                title="View"
-                @click="handleView(row.id)"
+            <div class="flex items-center justify-center">
+              <DropdownMenu
+                :open="openRowId === row.id"
+                @update:open="(val: any) => (openRowId = val ? row.id : null)"
               >
-                <Eye class="h-4 w-4" />
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                title="Edit"
-                @click="handleEdit(row.id)"
-              >
-                <Pencil class="h-4 w-4" />
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                class="text-orange-600"
-                :title="row.isArchived ? 'Unarchive' : 'Archive'"
-                @click="toggleArchive(row.id)"
-              >
-                <Archive class="h-4 w-4" />
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                class="text-destructive"
-                title="Delete"
-                @click="handleDelete(row.id, row.name)"
-              >
-                <Trash2 class="h-4 w-4" />
-              </Button>
+                <DropdownMenuTrigger as-child>
+                  <button
+                    type="button"
+                    class="h-8 w-8 inline-flex items-center justify-center rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all duration-150 border-0 bg-transparent cursor-pointer"
+                    :class="
+                      openRowId === row.id ? 'bg-primary/10 text-primary' : ''
+                    "
+                    @click.stop="
+                      openRowId = openRowId === row.id ? null : row.id
+                    "
+                  >
+                    <MoreVertical class="h-4 w-4" />
+                  </button>
+                </DropdownMenuTrigger>
+
+                <DropdownMenuContent
+                :align="'end'"
+                  :side-offset="6"
+                  class="w-48 p-1.5 rounded-xl border border-border bg-popover shadow-lg"
+                >
+                  <!-- Header label -->
+                  <div class="px-2.5 py-1.5 mb-1">
+                    <p
+                      class="text-[10px] font-bold uppercase tracking-widest text-muted-foreground"
+                    >
+                      Actions
+                    </p>
+                  </div>
+
+                  <!-- View -->
+                  <DropdownMenuItem
+                    class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium cursor-pointer text-foreground hover:bg-primary/10 hover:text-primary focus:bg-primary/10 focus:text-primary transition-colors"
+                    @click="
+                      () => {
+                        openRowId = null;
+                        handleView(row.id);
+                      }
+                    "
+                  >
+                    <div
+                      class="h-6 w-6 rounded-md bg-primary/10 flex items-center justify-center shrink-0"
+                    >
+                      <Eye class="h-3.5 w-3.5 text-primary" />
+                    </div>
+                    View details
+                  </DropdownMenuItem>
+
+                  <!-- Edit -->
+                  <DropdownMenuItem
+                    class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium cursor-pointer text-foreground hover:bg-primary/10 hover:text-primary focus:bg-primary/10 focus:text-primary transition-colors"
+                    @click="
+                      () => {
+                        openRowId = null;
+                        handleEdit(row.id);
+                      }
+                    "
+                  >
+                    <div
+                      class="h-6 w-6 rounded-md bg-primary/10 flex items-center justify-center shrink-0"
+                    >
+                      <Pencil class="h-3.5 w-3.5 text-primary" />
+                    </div>
+                    Edit
+                  </DropdownMenuItem>
+
+                  <DropdownMenuSeparator class="my-1.5 bg-border" />
+
+                  <!-- Archive / Unarchive -->
+                  <DropdownMenuItem
+                    class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium cursor-pointer text-orange-600 hover:bg-orange-500/10 focus:bg-orange-500/10 focus:text-orange-600 transition-colors"
+                    @click="
+                      () => {
+                        openRowId = null;
+                        toggleArchive(row.id, row.is_archived);
+                      }
+                    "
+                  >
+                    <div
+                      class="h-6 w-6 rounded-md bg-orange-500/10 flex items-center justify-center shrink-0"
+                    >
+                      <Archive class="h-3.5 w-3.5 text-orange-500" />
+                    </div>
+                    {{ row.is_archived ? "Unarchive" : "Archive" }}
+                  </DropdownMenuItem>
+
+                  <!-- Delete -->
+                  <DropdownMenuItem
+                    class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium cursor-pointer text-destructive hover:bg-destructive/10 focus:bg-destructive/10 focus:text-destructive transition-colors"
+                    @click="
+                      () => {
+                        openRowId = null;
+                        handleDelete(row.id, row.name);
+                      }
+                    "
+                  >
+                    <div
+                      class="h-6 w-6 rounded-md bg-destructive/10 flex items-center justify-center shrink-0"
+                    >
+                      <Trash2 class="h-3.5 w-3.5 text-destructive" />
+                    </div>
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </template>
         </UiTable>
 
+        <!-- ── List View ── -->
         <UiList
           v-else-if="currentView === 'list'"
           :items="filteredWorkspaces"
@@ -151,9 +226,9 @@
                 <div
                   class="h-10 w-10 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0"
                 >
-                  <span class="text-primary text-sm font-bold">{{
-                    item.name.charAt(0).toUpperCase()
-                  }}</span>
+                  <span class="text-primary text-sm font-bold">
+                    {{ item.name?.charAt(0).toUpperCase() ?? "?" }}
+                  </span>
                 </div>
                 <div class="min-w-0 flex-1">
                   <div
@@ -161,10 +236,11 @@
                   >
                     {{ item.name }}
                     <span
-                      v-if="item.isArchived"
+                      v-if="item.is_archived"
                       class="text-xs font-medium text-orange-600 bg-orange-500/10 px-2 py-0.5 rounded-full"
-                      >Archived</span
                     >
+                      Archived
+                    </span>
                   </div>
                   <div
                     v-if="item.description"
@@ -175,9 +251,9 @@
                 </div>
               </div>
               <div class="flex items-center gap-3 flex-shrink-0 ml-4">
-                <span class="text-xs text-muted-foreground">{{
-                  formatDate(item.created_at)
-                }}</span>
+                <span class="text-xs text-muted-foreground">
+                  {{ item.created_at ? formatDate(item.created_at) : "—" }}
+                </span>
                 <div class="flex gap-1">
                   <Button
                     type="button"
@@ -210,6 +286,7 @@
           </template>
         </UiList>
 
+        <!-- ── Kanban View ── -->
         <UiKanban
           v-else-if="currentView === 'kanban'"
           :columns="kanbanColumns"
@@ -227,9 +304,9 @@
                   <div
                     class="h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center"
                   >
-                    <span class="text-primary text-xs font-bold">{{
-                      item.name.charAt(0).toUpperCase()
-                    }}</span>
+                    <span class="text-primary text-xs font-bold">
+                      {{ item.name?.charAt(0).toUpperCase() ?? "?" }}
+                    </span>
                   </div>
                   <div class="font-medium text-sm text-foreground">
                     {{ item.name }}
@@ -261,9 +338,9 @@
               <div
                 class="flex items-center justify-between pt-3 border-t border-border"
               >
-                <span class="text-xs text-muted-foreground">{{
-                  formatDate(item.created_at)
-                }}</span>
+                <span class="text-xs text-muted-foreground">
+                  {{ item.created_at ? formatDate(item.created_at) : "—" }}
+                </span>
                 <div class="flex gap-1">
                   <Button
                     type="button"
@@ -279,7 +356,7 @@
                     variant="ghost"
                     size="icon"
                     class="h-7 w-7 text-orange-600"
-                    @click.stop="toggleArchive(item.id)"
+                    @click.stop="toggleArchive(item.id, item.is_archived)"
                   >
                     <Archive class="h-3.5 w-3.5" />
                   </Button>
@@ -291,7 +368,7 @@
       </div>
     </div>
 
-    <!-- Delete dialog (unchanged) -->
+    <!-- Delete Dialog -->
     <Dialog v-model:open="deleteModalOpen">
       <DialogContent class="sm:max-w-md">
         <DialogHeader>
@@ -320,43 +397,12 @@
         </DialogFooter>
       </DialogContent>
     </Dialog>
-
-    <!-- Share dialog (unchanged) -->
-    <Dialog v-model:open="showShareModal">
-      <DialogContent class="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Share Workspace</DialogTitle>
-          <DialogDescription>Share with your team</DialogDescription>
-        </DialogHeader>
-        <div class="space-y-4">
-          <div>
-            <label class="block text-xs font-medium text-muted-foreground mb-2"
-              >Invite Link</label
-            >
-            <div class="flex items-center gap-2">
-              <Input
-                type="text"
-                :model-value="shareLink"
-                readonly
-                class="flex-1"
-              />
-              <Button size="sm" @click="copyShareLink">Copy</Button>
-            </div>
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" @click="showShareModal = false"
-            >Close</Button
-          >
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
   import UiHeader from "@/components/common/UiHeader.vue";
-  import { Button } from "@/components/ui/button";
+  import Button from "@/components/ui/button/Button.vue";
   import {
     Dialog,
     DialogContent,
@@ -365,7 +411,13 @@
     DialogHeader,
     DialogTitle,
   } from "@/components/ui/dialog";
-  import { Input } from "@/components/ui/input";
+  import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+  } from "@/components/ui/dropdown-menu";
   import Spinner from "@/components/ui/spinner/Spinner.vue";
   import { notify } from "@/helpers/toast";
   import type { Workspace } from "@/stores/workspace";
@@ -384,6 +436,7 @@
     ArchiveIcon,
     ChevronRight,
     Eye,
+    MoreVertical,
     Pencil,
     Star,
     Trash2,
@@ -395,70 +448,51 @@
   const router = useRouter();
   const workspaceStore = useWorkspaceStore();
 
-  // ── View state (unchanged) ──────────────────────────────────────────────────
+  // ── View state ──────────────────────────────────────────────────────────────
   const currentView = ref<ViewMode>("table");
+  const isLoading = ref(false);
+  const tableRef = ref();
+  const openRowId = ref<number | null>(null);
+
+  // ── Delete dialog ────────────────────────────────────────────────────────────
   const deleteModalOpen = ref(false);
   const deleteLoading = ref(false);
   const workspaceToDelete = ref<{ id: number; name: string } | null>(null);
-  const showShareModal = ref(false);
-  const shareLink = ref("https://workspace.app/invite/abc123xyz");
-  const pinnedWorkspaceIds = ref<number[]>([1, 3]);
-  const isLoading = ref(false);
-  const tableRef = ref();
 
-  // ── Filter/sort panel visibility ────────────────────────────────────────────
+  // ── Pin state ────────────────────────────────────────────────────────────────
+  const pinnedWorkspaceIds = ref<number[]>([]);
+
+  // ── Filter panel visibility ──────────────────────────────────────────────────
   const showFilterPanel = ref(false);
-  const showSortPanel = ref(false);
 
-  // ── Universal interactions (search/filter/sort — shared across all views) ───
-  const {
-    searchQuery,
-    sort,
-    activeFilterCount,
-    handleSearch,
-    handleSort,
-    filterItems,
-  } = useUniversalInteractions({
-    debounceMs: 400,
-    // For table view: search is forwarded via externalSearch prop (watched in UiTable)
-    // For list/kanban: filterItems() is used client-side below
-  });
+  // ── Universal interactions (search/filter — shared across all views) ─────────
+  const { searchQuery, activeFilterCount, handleSearch, filterItems } =
+    useUniversalInteractions({ debounceMs: 400 });
 
+  // ── Table features ───────────────────────────────────────────────────────────
   const tableFeatures = {
-    selection: {
-      enabled: true, // 👈 this shows checkboxes
-    },
-
+    selection: { enabled: true },
     bulkActions: [
       {
         label: "Archive Selected",
         icon: ArchiveIcon,
-
-        disabled: (rows: string | any[]) => rows.length === 0,
-
+        disabled: (rows: any[]) => rows.length === 0,
         onClick: async (rows: any[]) => {
-          const ids = rows.map((r: { id: any }) => r.id);
-          console.log("NUKESH", ids);
-
-          // await workspaceStore.bulkArchive(ids);
-
+          const ids = rows.map((r) => r.id);
+          console.log("Bulk archive:", ids);
+          // await workspaceStore.bulkArchive(ids)
           tableRef.value?.refresh();
           tableRef.value?.clearSelection?.();
         },
       },
-
       {
         label: "Delete Selected",
         icon: Trash2Icon,
-
-        disabled: (rows: string | any[]) => rows.length === 0,
-
+        disabled: (rows: any[]) => rows.length === 0,
         onClick: async (rows: any[]) => {
-          const ids = rows.map((r: { id: any }) => r.id);
-          console.log("NUKESH", ids);
-
-          // await workspaceStore.bulkDelete(ids);
-
+          const ids = rows.map((r) => r.id);
+          console.log("Bulk delete:", ids);
+          // await workspaceStore.bulkDelete(ids)
           tableRef.value?.refresh();
           tableRef.value?.clearSelection?.();
         },
@@ -466,21 +500,19 @@
     ],
   };
 
-  const isSortActive = computed(
-    () => sort.value.column != null && sort.value.order != null,
-  );
-
-  // ── Stats (unchanged) ───────────────────────────────────────────────────────
+  // ── Stats ────────────────────────────────────────────────────────────────────
+  // Only meaningful when list/kanban view has loaded workspaces
   const activeWorkspacesCount = computed(
-    () => workspaceStore.workspaces.filter((w) => !w.isArchived).length || 8,
+    () => workspaceStore.workspaces.filter((w) => !w.is_archived).length,
   );
   const archivedWorkspacesCount = computed(
-    () => workspaceStore.workspaces.filter((w) => w.isArchived).length || 2,
+    () => workspaceStore.workspaces.filter((w) => w.is_archived).length,
   );
-  const pinnedWorkspaces = computed(() =>
-    workspaceStore.workspaces
-      .filter((w) => pinnedWorkspaceIds.value.includes(w.id))
-      .slice(0, 5),
+  const pinnedCount = computed(
+    () =>
+      workspaceStore.workspaces.filter((w) =>
+        pinnedWorkspaceIds.value.includes(w.id),
+      ).length,
   );
 
   const headerStats = computed(() => [
@@ -490,23 +522,19 @@
       value: archivedWorkspacesCount.value,
       color: "#f97316",
     },
-    {
-      label: "Pinned",
-      value: pinnedWorkspaces.value.length,
-      color: "#3b82f6",
-    },
+    { label: "Pinned", value: pinnedCount.value, color: "#3b82f6" },
   ]);
 
-  // ── Filtered workspaces for list/kanban (client-side via universal search) ──
+  // ── Filtered workspaces for list/kanban (client-side search) ─────────────────
   const filteredWorkspaces = computed(() =>
     filterItems(workspaceStore.workspaces, ["name", "description"]),
   );
 
-  // ── Kanban columns using filteredWorkspaces so search applies there too ──────
+  // ── Kanban columns ────────────────────────────────────────────────────────────
   const kanbanColumns = computed(() => {
-    const workspaces = filteredWorkspaces.value;
-    const active = workspaces.filter((w) => !w.isArchived);
-    const archived = workspaces.filter((w) => w.isArchived);
+    const all = filteredWorkspaces.value;
+    const active = all.filter((w) => !w.is_archived);
+    const archived = all.filter((w) => w.is_archived);
     const recent = active.slice(0, Math.ceil(active.length / 2));
     return [
       { id: "recent", title: "Recent", items: recent },
@@ -515,7 +543,7 @@
     ];
   });
 
-  // ── Table columns (unchanged) ───────────────────────────────────────────────
+  // ── Table columns ─────────────────────────────────────────────────────────────
   const columns: TableColumn<Workspace>[] = [
     { key: "name", label: "Workspace", sortable: true, width: "35%" },
     { key: "user", label: "Owner", sortable: false, width: "25%" },
@@ -529,13 +557,14 @@
     },
   ];
 
-  // ── Data loading (unchanged) ────────────────────────────────────────────────
+  // ── Data loading ──────────────────────────────────────────────────────────────
   watch(currentView, (v) => {
     if (
       (v === "list" || v === "kanban") &&
       workspaceStore.workspaces.length === 0
-    )
-      workspaceStore.fetchWorkspaces();
+    ) {
+      fetchData();
+    }
   });
 
   function onRefresh() {
@@ -560,7 +589,7 @@
     if (view !== "table") fetchData();
   }
 
-  // ── fetchWorkspaces passed to UiTable (unchanged signature) ─────────────────
+  // ── fetchWorkspaces passed to UiTable ─────────────────────────────────────────
   async function fetchWorkspaces(params: {
     page: number;
     perPage: number;
@@ -572,76 +601,30 @@
       page: params.page,
       perPage: params.perPage,
       search: params.search,
-      sortBy: params.sortBy || undefined,
-      sortOrder: params.sortOrder || undefined,
+      sortBy: params.sortBy ?? undefined,
+      sortOrder: params.sortOrder ?? undefined,
     });
     return { data: response.data, meta: response.meta };
   }
 
-  // ── Export handler ───────────────────────────────────────────────────────────
-  function handleExport(format: "csv" | "json" | "pdf") {
-    const data = filteredWorkspaces.value;
-
-    if (!data.length) {
-      notify.error("Nothing to export", "There is no data available.");
-      return;
-    }
-
-    if (format === "json") {
-      const blob = new Blob([JSON.stringify(data, null, 2)], {
-        type: "application/json",
-      });
-
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "workspaces.json";
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-
-    if (format === "csv") {
-      const keys = Object.keys(data[0]);
-
-      const csv =
-        keys.join(",") +
-        "\n" +
-        data
-          .map((row) =>
-            keys.map((k) => `"${String((row as any)[k] ?? "")}"`).join(","),
-          )
-          .join("\n");
-
-      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "workspaces.csv";
-      a.click();
-
-      URL.revokeObjectURL(url);
-    }
-
-    if (format === "pdf") {
-      notify.info("PDF export", "Hook your PDF generator here.");
-    }
-  }
-
-  // ── CRUD handlers (unchanged) ───────────────────────────────────────────────
+  // ── CRUD handlers ─────────────────────────────────────────────────────────────
   function handleCreate() {
     router.push({ name: "workspace-add" });
   }
+
   function handleView(id: number) {
     router.push({ name: "workspace-detail", params: { id } });
   }
+
   function handleEdit(id: number) {
     router.push({ name: "workspace-edit", params: { id } });
   }
+
   function handleDelete(id: number, name: string) {
     workspaceToDelete.value = { id, name };
     deleteModalOpen.value = true;
   }
+
   async function confirmDelete() {
     if (!workspaceToDelete.value) return;
     deleteLoading.value = true;
@@ -653,38 +636,40 @@
         "Workspace deleted",
         "The workspace was removed successfully.",
       );
+      if (currentView.value === "table") tableRef.value?.refresh?.();
     } catch {
       notify.error("Delete failed", "We couldn't delete the workspace.");
     } finally {
       deleteLoading.value = false;
     }
   }
+
+  // ── Pin / Archive helpers ─────────────────────────────────────────────────────
   function togglePin(id: number) {
     const i = pinnedWorkspaceIds.value.indexOf(id);
     if (i > -1) pinnedWorkspaceIds.value.splice(i, 1);
     else pinnedWorkspaceIds.value.push(id);
   }
+
   function isPinned(id: number) {
     return pinnedWorkspaceIds.value.includes(id);
   }
-  function toggleArchive(id: number) {
+
+  function toggleArchive(id: number, currentState: boolean) {
+    // Optimistic update for list/kanban view
     const w = workspaceStore.workspaces.find((item) => item.id === id);
-    if (w) w.isArchived = !w.isArchived;
+    if (w) (w as any).is_archived = !currentState;
+    // Refresh table when in table view
+    if (currentView.value === "table") tableRef.value?.refresh?.();
   }
-  function copyShareLink() {
-    navigator.clipboard.writeText(shareLink.value);
-  }
+
+  // ── Formatting ────────────────────────────────────────────────────────────────
   function formatDate(dateString: string) {
+    if (!dateString) return "—";
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
       month: "short",
       day: "numeric",
-    });
-  }
-  function formatTime(dateString: string) {
-    return new Date(dateString).toLocaleTimeString("en-UK", {
-      hour: "2-digit",
-      minute: "2-digit",
     });
   }
 </script>
