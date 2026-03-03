@@ -50,13 +50,7 @@
 
           <!-- Status badge inline with breadcrumb -->
           <div v-if="statusBadge" class="ml-2">
-            <Badge
-              class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wider uppercase font-mono border border-transparent transition-all duration-200"
-              :class="
-                statusBadge.class ??
-                'bg-primary-20 text-primary border-primary-thin'
-              "
-            >
+            <Badge :color="getDotColor(statusBadge.dot ?? '')">
               {{ statusBadge.label }}
             </Badge>
           </div>
@@ -137,16 +131,13 @@
                             class="h-3 w-3 text-muted-foreground/50 flex-shrink-0"
                           />
                           <!-- Badge type -->
-                          <span
+
+                          <Badge
                             v-if="field.type === 'badge'"
-                            class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
-                            :class="
-                              field.badgeClass ??
-                              'bg-primary-20 text-primary border-primary-thin'
-                            "
+                            :color="getDotColor((field as any).dot ?? '')"
                           >
                             {{ field.value }}
-                          </span>
+                          </Badge>
                           <!-- Avatar type -->
                           <div
                             v-else-if="
@@ -384,6 +375,9 @@
     Trash2,
   } from "lucide-vue-next";
 
+  import { useDotColor } from "@/composables/useDotColor";
+  const { getDotColor } = useDotColor();
+
   // ─────────────────────────────────────────
   // Types
   // ─────────────────────────────────────────
@@ -396,6 +390,7 @@
   export interface StatusBadge {
     label: string;
     class?: string;
+    dot?: string;
   }
 
   export interface ActionButton {
@@ -413,6 +408,7 @@
     icon?: Component;
     type?: "text" | "badge" | "avatar";
     badgeClass?: string;
+    dot?: string;
     avatarData?: {
       initials: string;
       name: string;

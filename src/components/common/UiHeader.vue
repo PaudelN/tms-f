@@ -4,13 +4,12 @@
       <div class="space-y-2">
         <!-- Title row -->
         <div class="flex items-center gap-2.5">
-          <!-- Accent bar -->
           <span
             class="inline-block w-1 h-6 rounded-full bg-primary shrink-0"
             style="box-shadow: 0 0 8px rgb(var(--color-primary) / 0.6)"
           />
           <h1
-            class="text-xl text-primary font-bold font-mono tracking-normal text-foreground leading-none "
+            class="text-xl text-primary font-bold font-mono tracking-normal text-foreground leading-none"
           >
             {{ title }}
           </h1>
@@ -21,27 +20,8 @@
           v-if="stats && stats.length"
           class="flex items-center gap-1.5 pl-3.5"
         >
-          <template v-for="(stat, i) in stats" :key="stat.label">
-            <span
-              v-if="i > 0"
-              class="text-border/40 text-[10px] font-mono select-none"
-              >·</span
-            >
-            <Badge
-              class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wider uppercase font-mono border border-transparent transition-all duration-200"
-              :style="{
-                backgroundColor: `color-mix(in srgb, ${stat.color} 10%, transparent)`,
-                color: stat.color,
-                borderColor: `color-mix(in srgb, ${stat.color} 20%, transparent)`,
-              }"
-            >
-              <span
-                class="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                :style="{
-                  backgroundColor: stat.color,
-                  boxShadow: `0 0 5px ${stat.color}`,
-                }"
-              />
+          <template v-for="stat in stats" :key="stat.label">
+            <Badge :color="getDotColor(stat.dot ?? stat.color ?? '')">
               {{ stat.value }} {{ stat.label }}
             </Badge>
           </template>
@@ -50,7 +30,6 @@
 
       <!-- RIGHT TOOLBAR -->
       <div class="flex items-center gap-3 shrink-0">
-        <!-- Slot Actions -->
         <slot name="actions" />
 
         <!-- Search -->
@@ -120,76 +99,6 @@
           </Tooltip>
         </TooltipProvider>
 
-        <!-- Sort -->
-        <!-- <TooltipProvider v-if="showSort" :delay-duration="200">
-          <Tooltip>
-            <TooltipTrigger as-child>
-              <Button
-                type="button"
-                class="relative cursor-pointer flex items-center justify-center w-10 h-10 rounded-sm transition-all duration-200 bg-primary-20 text-primary hover:text-foreground hover:bg-background/60"
-                @click="emit('sort')"
-              >
-                <ArrowUpDown class="h-4.5 w-4.5" />
-                <span
-                  v-if="isSortActive"
-                  class="absolute -top-1 -right-1 flex h-2.5 w-2.5 rounded-full bg-primary"
-                />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent
-              side="bottom"
-              :side-offset="8"
-              class="text-xs font-medium"
-            >
-              Sort{{ isSortActive ? " (active)" : "" }}
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider> -->
-
-        <!-- Export -->
-        <!-- <TooltipProvider v-if="showExport" :delay-duration="200">
-          <Tooltip>
-            <TooltipTrigger as-child>
-              <DropdownMenu>
-                <DropdownMenuTrigger as-child>
-                  <Button
-                    type="button"
-                    class="relative cursor-pointer flex items-center justify-center w-10 h-10 rounded-sm transition-all duration-200 bg-primary-20 text-primary hover:text-foreground hover:bg-background/60"
-                  >
-                    <Download class="h-4.5 w-4.5" />
-                  </Button>
-                </DropdownMenuTrigger>
-
-                <DropdownMenuContent align="end" class="w-40">
-                  <DropdownMenuLabel class="text-xs"
-                    >Export as</DropdownMenuLabel
-                  >
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem @click="emit('export', 'csv')">
-                    <FileSpreadsheet class="mr-2 h-3.5 w-3.5" />
-                    CSV
-                  </DropdownMenuItem>
-                  <DropdownMenuItem @click="emit('export', 'json')">
-                    <FileJson class="mr-2 h-3.5 w-3.5" />
-                    JSON
-                  </DropdownMenuItem>
-                  <DropdownMenuItem @click="emit('export', 'pdf')">
-                    <FileText class="mr-2 h-3.5 w-3.5" />
-                    PDF
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </TooltipTrigger>
-            <TooltipContent
-              side="bottom"
-              :side-offset="8"
-              class="text-xs font-medium"
-            >
-              Export
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider> -->
-
         <!-- Refresh -->
         <Tooltip v-if="showRefresh">
           <TooltipTrigger as-child>
@@ -236,7 +145,7 @@
 
 <script setup lang="ts">
   import ExpandableSearch from "@/components/common/ExpandableSearch.vue";
-import Badge from "@/components/ui/badge/Badge.vue";
+  import Badge from "@/components/ui/badge/Badge.vue";
   import Button from "@/components/ui/button/Button.vue";
   import {
     Tooltip,
@@ -254,10 +163,17 @@ import Badge from "@/components/ui/badge/Badge.vue";
     TableOfContents,
   } from "lucide-vue-next";
 
+  import { useDotColor } from "@/composables/useDotColor";
+  const { getDotColor } = useDotColor();
+
+  // Stat can come from the backend (dot + badge Tailwind classes)
+  // or be defined manually (color hex/rgb for Badge :color prop)
   export type UiHeaderStat = {
     label: string;
     value: number | string;
-    color: string;
+    dot?: string;
+    badge?: string;
+    color?: string;
   };
 
   const views = [
@@ -286,7 +202,6 @@ import Badge from "@/components/ui/badge/Badge.vue";
 
   withDefaults(
     defineProps<{
-      // ── Existing props (unchanged) ──
       title: string;
       stats?: UiHeaderStat[];
       showViews?: boolean;
@@ -294,7 +209,6 @@ import Badge from "@/components/ui/badge/Badge.vue";
       createLabel?: string;
       showRefresh?: boolean;
       loading?: boolean;
-      // ── Universal props ──
       showSearch?: boolean;
       searchValue?: string;
       searchPlaceholder?: string;
@@ -316,11 +230,9 @@ import Badge from "@/components/ui/badge/Badge.vue";
   );
 
   const emit = defineEmits<{
-    // ── Existing events (unchanged) ──
     (e: "update:currentView", value: ViewMode): void;
     (e: "create"): void;
     (e: "refresh"): void;
-    // ── Universal events ──
     (e: "update:searchValue", value: string): void;
     (e: "filter"): void;
     (e: "sort"): void;

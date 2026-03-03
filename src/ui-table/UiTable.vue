@@ -1,9 +1,9 @@
 <template>
   <div
-    class="rounded-sm overflow-hidden border border-border bg-card transition-all duration-300"
+    class="rounded-sm overflow-hidden border border-border bg-card transition-all duration-300 flex flex-col max-h-full"
     :class="
       isFullscreen
-        ? 'fixed inset-0 z-50 p-20 flex flex-col rounded-none overflow-auto bg-background'
+        ? 'fixed inset-0 z-50 h-screen flex flex-col rounded-none overflow-hidden bg-background p-20'
         : ''
     "
   >
@@ -218,7 +218,7 @@
     </div>
 
     <!-- ── Table ── -->
-    <div class="overflow-x-auto">
+    <div class="overflow-auto flex-1 min-h-0">
       <Table>
         <TableHeader>
           <TableRow

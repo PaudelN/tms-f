@@ -130,7 +130,7 @@
       </SidebarFooter>
     </Sidebar>
 
-    <SidebarInset class="overflow-x-hidden min-w-0 flex flex-col min-h-0">
+    <SidebarInset class="overflow-hidden min-w-0 flex flex-col h-screen">
       <header
         class="sticky bg-card top-0 z-40 backdrop-blur-md supports-backdrop-filter:bg-card shadow-md"
       >
@@ -151,8 +151,8 @@
         </div>
       </header>
 
-      <main class="overflow-x-hidden min-w-0 flex-1 flex flex-col">
-        <div class="w-full min-w-0 flex-1 flex flex-col">
+      <main class="overflow-hidden min-w-0 flex-1 flex flex-col min-h-0">
+        <div class="w-full min-w-0 flex-1 flex flex-col min-h-0">
           <router-view />
         </div>
       </main>

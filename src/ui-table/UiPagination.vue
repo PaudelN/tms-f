@@ -88,7 +88,7 @@
           >PG/</span
         >
         <Select
-          :model-value="String(perPage)"
+          :model-value="isAllSelected ? 'All' : String(perPage)"
           @update:model-value="handlePerPageChange"
         >
           <SelectTrigger
@@ -101,7 +101,7 @@
           >
             <SelectItem
               v-for="size in pageSizes"
-              :key="size"
+              :key="String(size)"
               :value="String(size)"
               class="relative flex items-center px-2.5 py-1.5 rounded-md text-[11px] font-bold tracking-wider text-foreground cursor-pointer outline-none transition-all duration-100 hover:bg-primary/15 hover:text-primary data-[state=checked]:bg-primary/20 data-[state=checked]:text-primary"
             >
@@ -234,33 +234,37 @@
 
 <script setup lang="ts">
   import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-  } from "@/components/ui/select";
-  import SelectItemText from "@/components/ui/select/SelectItemText.vue";
-  import {
-    ChevronLeft,
-    ChevronRight,
-    ChevronsLeft,
-    ChevronsRight,
-  } from "lucide-vue-next";
-  import { SelectItemIndicator } from "reka-ui";
-  import { computed, nextTick, ref, watch, type CSSProperties } from "vue";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import SelectItemText from "@/components/ui/select/SelectItemText.vue";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+} from "lucide-vue-next";
+import { SelectItemIndicator } from "reka-ui";
+import { computed, nextTick, ref, watch, type CSSProperties } from "vue";
 
   interface Props {
     currentPage: number;
     totalPages: number;
     total: number;
     perPage: number;
-    pageSizes?: number[];
+    pageSizes?: (number | string)[];
   }
 
   const props = withDefaults(defineProps<Props>(), {
-    pageSizes: () => [5, 10, 20, 50, 100],
+    pageSizes: () => [5, 10, 20, 50, 100, "All"],
   });
+
+  const isAllSelected = computed(
+    () => props.total > 0 && props.perPage >= props.total,
+  );
 
   const emit = defineEmits<{
     "page-change": [page: number];
@@ -295,9 +299,16 @@
     if (page !== props.currentPage && page >= 1 && page <= props.totalPages)
       emit("page-change", page);
   }
+
   function handlePerPageChange(v: any) {
-    emit("per-page-change", Number(v));
+    if (!v) return;
+    if (v === "All") {
+      emit("per-page-change", props.total);
+    } else {
+      emit("per-page-change", Number(v));
+    }
   }
+
   function handleJump(e: Event) {
     const val = Number((e.target as HTMLInputElement).value);
     if (val >= 1 && val <= props.totalPages) emitPageChange(val);

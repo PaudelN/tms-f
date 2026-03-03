@@ -1,6 +1,8 @@
 <template>
-  <div class="min-h-screen bg-background">
-    <div class="max-w-800 mx-auto p-8">
+  <div class="h-full flex flex-col bg-background overflow-hidden">
+    <div
+      class="flex flex-col flex-1 min-h-0 max-w-350 w-full mx-auto px-8 py-6"
+    >
       <UiHeader
         title="Workspaces"
         :stats="headerStats"
@@ -21,9 +23,10 @@
         @filter="showFilterPanel = true"
       />
 
-      <div>
+      <div class="flex-1 min-h-0 flex flex-col">
         <!-- ── Table View ── -->
         <UiTable
+          class="min-h-0 max-h-full"
           ref="tableRef"
           v-if="currentView === 'table'"
           table-id="workspaces-table"
@@ -120,7 +123,7 @@
                 </DropdownMenuTrigger>
 
                 <DropdownMenuContent
-                :align="'end'"
+                  :align="'end'"
                   :side-offset="6"
                   class="w-48 p-1.5 rounded-xl border border-border bg-popover shadow-lg"
                 >
@@ -215,6 +218,7 @@
         <!-- ── List View ── -->
         <UiList
           v-else-if="currentView === 'list'"
+          class="flex-1 min-h-0"
           :items="filteredWorkspaces"
           :loading="isLoading"
         >
@@ -289,6 +293,7 @@
         <!-- ── Kanban View ── -->
         <UiKanban
           v-else-if="currentView === 'kanban'"
+          class="flex-1 min-h-0"
           :columns="kanbanColumns"
           :loading="isLoading"
         >
@@ -401,49 +406,50 @@
 </template>
 
 <script setup lang="ts">
-  import UiHeader from "@/components/common/UiHeader.vue";
-  import Button from "@/components/ui/button/Button.vue";
-  import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-  } from "@/components/ui/dialog";
-  import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-  } from "@/components/ui/dropdown-menu";
-  import Spinner from "@/components/ui/spinner/Spinner.vue";
-  import { notify } from "@/helpers/toast";
-  import type { Workspace } from "@/stores/workspace";
-  import { useWorkspaceStore } from "@/stores/workspace";
-  import { useUniversalInteractions } from "@/ui-table/composables/useUniversalInteractions";
-  import type {
-    ApiResponse,
-    TableColumn,
-    ViewMode,
-  } from "@/ui-table/types/table.types";
-  import UiKanban from "@/ui-table/UiKanban.vue";
-  import UiList from "@/ui-table/UiList.vue";
-  import UiTable from "@/ui-table/UiTable.vue";
-  import {
-    Archive,
-    ArchiveIcon,
-    ChevronRight,
-    Eye,
-    MoreVertical,
-    Pencil,
-    Star,
-    Trash2,
-    Trash2Icon,
-  } from "lucide-vue-next";
-  import { computed, ref, watch } from "vue";
-  import { useRouter } from "vue-router";
+  import type { UiHeaderStat } from "@/components/common/UiHeader.vue";
+import UiHeader from "@/components/common/UiHeader.vue";
+import Button from "@/components/ui/button/Button.vue";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import Spinner from "@/components/ui/spinner/Spinner.vue";
+import { notify } from "@/helpers/toast";
+import type { Workspace } from "@/stores/workspace";
+import { useWorkspaceStore } from "@/stores/workspace";
+import { useUniversalInteractions } from "@/ui-table/composables/useUniversalInteractions";
+import type {
+  ApiResponse,
+  TableColumn,
+  ViewMode,
+} from "@/ui-table/types/table.types";
+import UiKanban from "@/ui-table/UiKanban.vue";
+import UiList from "@/ui-table/UiList.vue";
+import UiTable from "@/ui-table/UiTable.vue";
+import {
+  Archive,
+  ArchiveIcon,
+  ChevronRight,
+  Eye,
+  MoreVertical,
+  Pencil,
+  Star,
+  Trash2,
+  Trash2Icon,
+} from "lucide-vue-next";
+import { computed, onMounted, ref, watch } from "vue";
+import { useRouter } from "vue-router";
 
   const router = useRouter();
   const workspaceStore = useWorkspaceStore();
@@ -500,30 +506,21 @@
     ],
   };
 
-  // ── Stats ────────────────────────────────────────────────────────────────────
-  // Only meaningful when list/kanban view has loaded workspaces
-  const activeWorkspacesCount = computed(
-    () => workspaceStore.workspaces.filter((w) => !w.is_archived).length,
+  // ── Stats — driven entirely by backend statuses ───────────────────────────────
+  const headerStats = computed<UiHeaderStat[]>(() =>
+    workspaceStore.statuses.map((s) => ({
+      label: s.label,
+      dot: s.dot,
+      value: workspaceStore.workspaces.filter((w) => {
+        if (s.value === "active") return w.is_active && !w.is_archived;
+        if (s.value === "archived") return w.is_archived;
+        if (s.value === "pending") return w.pending;
+        if (s.value === "on_hold") return w.on_hold;
+        if (s.value === "completed") return w.completed;
+        return w.status === s.value;
+      }).length,
+    })),
   );
-  const archivedWorkspacesCount = computed(
-    () => workspaceStore.workspaces.filter((w) => w.is_archived).length,
-  );
-  const pinnedCount = computed(
-    () =>
-      workspaceStore.workspaces.filter((w) =>
-        pinnedWorkspaceIds.value.includes(w.id),
-      ).length,
-  );
-
-  const headerStats = computed(() => [
-    { label: "Active", value: activeWorkspacesCount.value, color: "#22c55e" },
-    {
-      label: "Archived",
-      value: archivedWorkspacesCount.value,
-      color: "#f97316",
-    },
-    { label: "Pinned", value: pinnedCount.value, color: "#3b82f6" },
-  ]);
 
   // ── Filtered workspaces for list/kanban (client-side search) ─────────────────
   const filteredWorkspaces = computed(() =>
@@ -672,4 +669,12 @@
       day: "numeric",
     });
   }
+
+  onMounted(async () => {
+    // Run both in parallel — statuses for the chips, workspaces for the counts
+    await Promise.all([
+      workspaceStore.fetchStatuses(),
+      workspaceStore.fetchWorkspaces({ page: 1, perPage: 10 }),
+    ]);
+  });
 </script>

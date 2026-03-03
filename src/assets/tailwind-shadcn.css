@@ -378,9 +378,9 @@
   }
 
   /* Refined scrollbar for webkit browsers */
-  ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+  /* ::-webkit-scrollbar {
+    width: 2px;
+    height: 4px;
   }
 
   ::-webkit-scrollbar-track {
@@ -393,6 +393,38 @@
   }
 
   ::-webkit-scrollbar-thumb:hover {
+    background: rgb(var(--color-muted-foreground) / 0.5);
+  } */
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+  }
+
+  *:hover {
+    scrollbar-color: rgb(var(--color-muted-foreground) / 0.3) transparent;
+  }
+
+  ::webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 9999px;
+    transition: background 0.3s;
+  }
+
+  *:hover::-webkit-scrollbar-thumb {
+    background: rgb(var(--color-muted-foreground) / 0.3);
+  }
+
+  *:hover::-webkit-scrollbar-thumb:hover {
     background: rgb(var(--color-muted-foreground) / 0.5);
   }
 }

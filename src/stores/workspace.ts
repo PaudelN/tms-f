@@ -12,6 +12,9 @@ export interface Workspace {
   description: string | null;
   is_active: boolean;
   is_archived: boolean;
+  pending: boolean;
+  on_hold: boolean;
+  completed: boolean;
   extra?: Record<string, unknown> | null;
   user_id: number;
   user?: {
@@ -198,7 +201,7 @@ export const useWorkspaceStore = defineStore(
         // Add to local list
         workspaces.value.unshift(response.data.data);
         meta.value.total += 1;
-
+        await fetchWorkspaces({ page: 1, perPage: 10 });
         return response.data.data;
       } catch (err) {
         const axiosError = err as AxiosError<{ message: string }>;
