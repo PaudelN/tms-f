@@ -1,6 +1,11 @@
-import { ref, computed, watch, onMounted, onUnmounted } from "vue";
-import { useUiTableStore } from "../stores/useUiTableStore";
+// composables/useTableInteractions.ts
+// ─────────────────────────────────────────────────────────────────────────────
+// Self-contained table composable — no Pinia store required.
+// All state (data, loading, pagination, sort, columns) lives locally here.
+// UiTable.vue is the only consumer; views never touch this directly.
+// ─────────────────────────────────────────────────────────────────────────────
 import { useDebounceFn } from "@vueuse/core";
+import { computed, onMounted, onUnmounted, ref } from "vue";
 import type {
   TableColumn,
   TableConfig,
@@ -13,192 +18,153 @@ export function useTableInteractions<T = any>(
   fetchFn: TableFetchFn<T>,
   config: TableConfig = {},
 ) {
-  const store = useUiTableStore();
-  const fetchInProgress = ref(false);
-  const autoRefreshInterval = ref<number | null>(null);
-
   const {
     debounceMs = 300,
-    persistState = true,
     autoRefresh = false,
-    autoRefreshInterval: refreshInterval = 30000,
+    autoRefreshInterval: refreshInterval = 30_000,
+    defaultPerPage = 10,
+    defaultSortBy = null,
+    defaultSortOrder = null,
   } = config;
 
-  // Initialize table on mount
-  onMounted(() => {
-    if (!store.getTable(tableId)?.initialized) {
-      store.initializeTable(tableId, columns, config);
-    }
-    fetchData();
+  // ── Local reactive state ───────────────────────────────────────────────────
+  const tableData = ref<T[]>([]);
+  const loading = ref(false);
+  const error = ref<string | null>(null);
 
-    // Setup auto-refresh if enabled
-    if (autoRefresh) {
-      setupAutoRefresh();
-    }
+  const pagination = ref({
+    currentPage: 1,
+    perPage: defaultPerPage,
+    total: 0,
+    totalPages: 0,
   });
 
-  // Cleanup on unmount
-  onUnmounted(() => {
-    if (!persistState) {
-      store.destroyTable(tableId);
-    }
-    clearAutoRefresh();
+  const sort = ref<{ column: string | null; order: "asc" | "desc" | null }>({
+    column: defaultSortBy,
+    order: defaultSortOrder,
   });
 
-  // Setup auto-refresh
-  function setupAutoRefresh() {
-    if (autoRefreshInterval.value) {
-      clearInterval(autoRefreshInterval.value);
-    }
-    autoRefreshInterval.value = window.setInterval(() => {
-      if (!fetchInProgress.value) {
-        fetchData(true); // silent refresh
-      }
-    }, refreshInterval);
-  }
+  const searchQuery = ref("");
 
-  // Clear auto-refresh
-  function clearAutoRefresh() {
-    if (autoRefreshInterval.value) {
-      clearInterval(autoRefreshInterval.value);
-      autoRefreshInterval.value = null;
-    }
-  }
+  // Column state — initialised from prop; tracks visibility locally
+  const columnState = ref<TableColumn<T>[]>(
+    columns.map((col) => ({ ...col, visible: col.visible !== false })),
+  );
 
-  // Computed getters
-  const tableData = computed(() => store.getTableData(tableId));
-  const loading = computed(() => store.isLoading(tableId));
-  const error = computed(() => store.getError(tableId));
-  const pagination = computed(() => store.getPagination(tableId));
-  const filters = computed(() => store.getFilters(tableId));
-  const sort = computed(() => store.getSort(tableId));
-  const visibleColumns = computed(() => store.getVisibleColumns(tableId));
-  const allColumns = computed(() => store.getColumns(tableId));
-  const hasData = computed(() => store.hasData(tableId));
-  const isEmpty = computed(() => store.isEmpty(tableId));
-  const hasError = computed(() => store.hasError(tableId));
-  const canGoNext = computed(() => store.canGoNext(tableId));
-  const canGoPrevious = computed(() => store.canGoPrevious(tableId));
-  const searchQuery = computed(() => store.getSearchQuery(tableId));
+  const fetchInProgress = ref(false);
+  const autoRefreshHandle = ref<ReturnType<typeof setInterval> | null>(null);
 
-  // Fetch data function
+  // ── Derived / computed ────────────────────────────────────────────────────
+  const hasData = computed(() => tableData.value.length > 0);
+  const isEmpty = computed(() => !loading.value && !hasData.value);
+  const hasError = computed(() => !!error.value);
+  const canGoNext = computed(
+    () => pagination.value.currentPage < pagination.value.totalPages,
+  );
+  const canGoPrevious = computed(() => pagination.value.currentPage > 1);
+  const visibleColumns = computed(() =>
+    columnState.value.filter((c) => c.visible !== false),
+  );
+  const allColumns = computed(() => columnState.value);
+
+  // ── Core fetch ────────────────────────────────────────────────────────────
   async function fetchData(silent = false) {
     if (fetchInProgress.value) return;
-
-    // Ensure table is initialized
-    const table = store.getTable(tableId);
-    if (!table) {
-      console.warn(`Table ${tableId} not initialized`);
-      return;
-    }
-
     fetchInProgress.value = true;
-    if (!silent) {
-      store.setLoading(tableId, true);
-    }
-    store.setError(tableId, null);
+    if (!silent) loading.value = true;
+    error.value = null;
 
     try {
-      const currentFilters = store.getFilters(tableId);
-      const currentSort = store.getSort(tableId);
-      const currentPagination = store.getPagination(tableId);
-
-      if (!currentFilters || !currentSort || !currentPagination) {
-        throw new Error("Table state not properly initialized");
-      }
-
       const response = await fetchFn({
-        page: currentPagination.currentPage,
-        perPage: currentPagination.perPage,
-        search: currentFilters.search,
-        sortBy: currentSort.column,
-        sortOrder: currentSort.order,
-        filters: currentFilters,
+        page: pagination.value.currentPage,
+        perPage: pagination.value.perPage,
+        search: searchQuery.value,
+        sortBy: sort.value.column,
+        sortOrder: sort.value.order,
       });
 
-      store.updateTableData(tableId, response);
+      tableData.value = response.data as T[];
+      pagination.value = {
+        currentPage: response.meta.current_page,
+        perPage: response.meta.per_page,
+        total: response.meta.total,
+        totalPages: response.meta.last_page,
+      };
     } catch (err: any) {
-      const errorMessage = err.message || "Failed to fetch data";
-      store.setError(tableId, errorMessage);
-      console.error(`Table ${tableId} fetch error:`, err);
+      error.value = err?.message ?? "Failed to fetch data";
+      console.error(`[useTableInteractions:${tableId}]`, err);
     } finally {
-      if (!silent) {
-        store.setLoading(tableId, false);
-      }
+      if (!silent) loading.value = false;
       fetchInProgress.value = false;
     }
   }
 
-  // Debounced fetch for search
-  const debouncedFetch = useDebounceFn(fetchData, debounceMs);
+  // Debounced variant used for search keystrokes
+  const debouncedFetch = useDebounceFn(() => fetchData(), debounceMs);
 
-  // Watch for search changes
-  watch(
-    () => store.getFilters(tableId)?.search,
-    (newSearch, oldSearch) => {
-      if (newSearch !== oldSearch) {
-        debouncedFetch();
-      }
-    },
-  );
+  // ── Lifecycle ─────────────────────────────────────────────────────────────
+  onMounted(() => {
+    fetchData();
 
-  // Watch for sort changes
-  watch(
-    () => store.getSort(tableId),
-    (newSort, oldSort) => {
-      if (
-        newSort?.column !== oldSort?.column ||
-        newSort?.order !== oldSort?.order
-      ) {
-        fetchData();
-      }
-    },
-    { deep: true },
-  );
-
-  // Watch for pagination changes
-  watch(
-    () => store.getPagination(tableId),
-    (newPagination, oldPagination) => {
-      if (
-        newPagination?.currentPage !== oldPagination?.currentPage ||
-        newPagination?.perPage !== oldPagination?.perPage
-      ) {
-        fetchData();
-      }
-    },
-    { deep: true },
-  );
-
-  // Actions
-  function handleSearch(value: any) {
-    store.setSearch(tableId, value);
-  }
-
-  function handleSort(columnKey: string) {
-    const column = allColumns.value.find((col) => col.key === columnKey);
-    if (column?.sortable !== false) {
-      store.setSort(tableId, columnKey);
+    if (autoRefresh) {
+      autoRefreshHandle.value = setInterval(() => {
+        if (!fetchInProgress.value) fetchData(true);
+      }, refreshInterval);
     }
+  });
+
+  onUnmounted(() => {
+    if (autoRefreshHandle.value) clearInterval(autoRefreshHandle.value);
+  });
+
+  // ── Public actions ────────────────────────────────────────────────────────
+
+  /** Called by UiHeader / externalSearch watcher */
+  function handleSearch(value: string) {
+    searchQuery.value = value;
+    pagination.value = { ...pagination.value, currentPage: 1 };
+    debouncedFetch();
   }
 
+  /** Called by TanStack column header sort toggle */
   function handleSortingChange(
-    columnKey: string | null,
+    column: string | null,
     order: "asc" | "desc" | null,
   ) {
-    store.setSorting(tableId, columnKey, order);
+    sort.value = { column, order };
+    pagination.value = { ...pagination.value, currentPage: 1 };
+    fetchData();
+  }
+
+  /** Alias kept for UiTable's handleSort(columnKey) usage */
+  function handleSort(columnKey: string) {
+    const col = columnState.value.find((c) => c.key === columnKey);
+    if (col?.sortable === false) return;
+
+    const current = sort.value;
+    let order: "asc" | "desc" | null = "asc";
+    let newColumn: string | null = columnKey;
+
+    if (current.column === columnKey) {
+      if (current.order === "asc") order = "desc";
+      else if (current.order === "desc") {
+        order = null;
+        newColumn = null;
+      }
+    }
+
+    handleSortingChange(newColumn, order);
   }
 
   function handlePageChange(page: number) {
-    store.setPage(tableId, page);
+    const valid = Math.max(1, Math.min(page, pagination.value.totalPages || 1));
+    pagination.value = { ...pagination.value, currentPage: valid };
+    fetchData();
   }
 
   function handlePerPageChange(perPage: number) {
-    store.setPerPage(tableId, perPage);
-  }
-
-  function handleColumnToggle(columnKey: string) {
-    store.toggleColumnVisibility(tableId, columnKey);
+    pagination.value = { ...pagination.value, perPage, currentPage: 1 };
+    fetchData();
   }
 
   function handleRefresh() {
@@ -206,80 +172,99 @@ export function useTableInteractions<T = any>(
   }
 
   function handleReset() {
-    store.resetTable(tableId);
+    searchQuery.value = "";
+    sort.value = { column: defaultSortBy, order: defaultSortOrder };
+    pagination.value = {
+      currentPage: 1,
+      perPage: defaultPerPage,
+      total: 0,
+      totalPages: 0,
+    };
     fetchData();
   }
 
   function handleNextPage() {
-    store.nextPage(tableId);
+    if (canGoNext.value) handlePageChange(pagination.value.currentPage + 1);
   }
 
   function handlePreviousPage() {
-    store.previousPage(tableId);
+    if (canGoPrevious.value) handlePageChange(pagination.value.currentPage - 1);
   }
 
   function handleFirstPage() {
-    store.firstPage(tableId);
+    handlePageChange(1);
   }
 
   function handleLastPage() {
-    store.lastPage(tableId);
+    handlePageChange(pagination.value.totalPages);
   }
 
-  function clearError() {
-    store.setError(tableId, null);
-  }
-
-  function clearSearch() {
-    store.setSearch(tableId, "");
-  }
-
+  // ── Column visibility ─────────────────────────────────────────────────────
   function setColumnVisibility(columnKey: string, visible: boolean) {
-    store.setColumnVisibility(tableId, columnKey, visible);
+    const col = columnState.value.find((c) => c.key === columnKey);
+    if (col) col.visible = visible;
+  }
+
+  function toggleColumnVisibility(columnKey: string) {
+    const col = columnState.value.find((c) => c.key === columnKey);
+    if (col) col.visible = !col.visible;
   }
 
   function showAllColumns() {
-    store.showAllColumns(tableId);
+    columnState.value.forEach((c) => (c.visible = true));
   }
 
   function hideAllColumns() {
-    store.hideAllColumns(tableId);
+    columnState.value.forEach((c) => (c.visible = false));
   }
 
+  // ── Misc ──────────────────────────────────────────────────────────────────
+  function clearError() {
+    error.value = null;
+  }
+
+  function clearSearch() {
+    searchQuery.value = "";
+    pagination.value = { ...pagination.value, currentPage: 1 };
+    fetchData();
+  }
+
+  // ── Return ────────────────────────────────────────────────────────────────
   return {
-    // State
+    // State (readonly refs — only mutated through actions)
     tableData,
     loading,
     error,
     pagination,
-    filters,
     sort,
+    searchQuery,
     visibleColumns,
     allColumns,
+
+    // Derived
     hasData,
     isEmpty,
     hasError,
     canGoNext,
     canGoPrevious,
-    searchQuery,
 
     // Actions
+    fetchData,
     handleSearch,
     handleSort,
     handleSortingChange,
     handlePageChange,
     handlePerPageChange,
-    handleColumnToggle,
     handleRefresh,
     handleReset,
     handleNextPage,
     handlePreviousPage,
     handleFirstPage,
     handleLastPage,
-    fetchData,
     clearError,
     clearSearch,
     setColumnVisibility,
+    toggleColumnVisibility,
     showAllColumns,
     hideAllColumns,
   };

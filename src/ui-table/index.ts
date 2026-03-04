@@ -11,9 +11,6 @@ export { default as UiViews } from "./UiViews.vue";
 // Composables
 export { useTableInteractions } from "./composables/useTableInteractions";
 
-// Store
-export { useUiTableStore } from "./stores/useUiTableStore";
-
 // Types
 export type {
   ApiResponse, PaginationState, SortState, TableColumn, TableConfig, TableFetchFn, TableFilters, TableState, ViewMode

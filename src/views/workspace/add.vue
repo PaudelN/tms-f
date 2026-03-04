@@ -12,7 +12,7 @@
     <!-- ── Sidebar ───────────────────────────────────────────────────────── -->
     <template #sidebar>
       <Card class="border-border rounded-lg">
-        <CardHeader class="pb-2 pt-5 px-5">
+        <CardHeader class="pb-2 px-5">
           <div class="flex items-center gap-2">
             <div class="h-7 w-7 rounded-lg bg-primary-20 flex items-center justify-center">
               <Flashlight class="h-3.5 w-3.5 text-primary" />

@@ -1,8 +1,6 @@
 <template>
   <div class="h-full flex flex-col bg-background overflow-hidden">
-    <div
-      class="flex flex-col flex-1 min-h-0 max-w-350 w-full mx-auto px-8 py-6"
-    >
+    <div class="flex flex-col flex-1 min-h-0 w-full mx-auto p-8">
       <UiHeader
         title="Workspaces"
         :stats="headerStats"
@@ -407,49 +405,49 @@
 
 <script setup lang="ts">
   import type { UiHeaderStat } from "@/components/common/UiHeader.vue";
-import UiHeader from "@/components/common/UiHeader.vue";
-import Button from "@/components/ui/button/Button.vue";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import Spinner from "@/components/ui/spinner/Spinner.vue";
-import { notify } from "@/helpers/toast";
-import type { Workspace } from "@/stores/workspace";
-import { useWorkspaceStore } from "@/stores/workspace";
-import { useUniversalInteractions } from "@/ui-table/composables/useUniversalInteractions";
-import type {
-  ApiResponse,
-  TableColumn,
-  ViewMode,
-} from "@/ui-table/types/table.types";
-import UiKanban from "@/ui-table/UiKanban.vue";
-import UiList from "@/ui-table/UiList.vue";
-import UiTable from "@/ui-table/UiTable.vue";
-import {
-  Archive,
-  ArchiveIcon,
-  ChevronRight,
-  Eye,
-  MoreVertical,
-  Pencil,
-  Star,
-  Trash2,
-  Trash2Icon,
-} from "lucide-vue-next";
-import { computed, onMounted, ref, watch } from "vue";
-import { useRouter } from "vue-router";
+  import UiHeader from "@/components/common/UiHeader.vue";
+  import Button from "@/components/ui/button/Button.vue";
+  import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+  } from "@/components/ui/dialog";
+  import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+  } from "@/components/ui/dropdown-menu";
+  import Spinner from "@/components/ui/spinner/Spinner.vue";
+  import { notify } from "@/helpers/toast";
+  import type { Workspace } from "@/stores/workspace";
+  import { useWorkspaceStore } from "@/stores/workspace";
+  import { useUniversalInteractions } from "@/ui-table/composables/useUniversalInteractions";
+  import type {
+    ApiResponse,
+    TableColumn,
+    ViewMode,
+  } from "@/ui-table/types/table.types";
+  import UiKanban from "@/ui-table/UiKanban.vue";
+  import UiList from "@/ui-table/UiList.vue";
+  import UiTable from "@/ui-table/UiTable.vue";
+  import {
+    Archive,
+    ArchiveIcon,
+    ChevronRight,
+    Eye,
+    MoreVertical,
+    Pencil,
+    Star,
+    Trash2,
+    Trash2Icon,
+  } from "lucide-vue-next";
+  import { computed, onMounted, ref, watch } from "vue";
+  import { useRouter } from "vue-router";
 
   const router = useRouter();
   const workspaceStore = useWorkspaceStore();

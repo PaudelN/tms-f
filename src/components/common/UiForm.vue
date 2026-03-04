@@ -1,11 +1,11 @@
 <template>
-  <div class="flex flex-col bg-background p-8">
+  <div class="flex flex-col bg-background p-2">
     <div
-      class="sticky top-0 z-50 shrink-0 h-14"
+      class="sticky top-0 z-50 shrink-0 h-10"
       style="box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.06)"
     >
       <div
-        class="h-full max-w-7xl mx-auto px-6 flex items-center justify-between gap-4"
+        class="h-full max-w-full mx-auto px-4 flex items-center justify-between gap-4"
       >
         <!-- Left: back + breadcrumbs -->
         <div class="flex items-center gap-3 min-w-0">
@@ -81,7 +81,7 @@
     </div>
 
     <div v-else class="flex-1 overflow-y-auto">
-      <div class="max-w-7xl mx-auto px-6 py-8 pb-28">
+      <div class="max-w-full mx-auto p-10">
         <div
           class="grid grid-cols-1 xl:grid-cols-[minmax(0,2fr)_450px] gap-10 items-start"
         >
