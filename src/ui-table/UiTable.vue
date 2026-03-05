@@ -8,7 +8,7 @@
     "
   >
     <div
-      class="flex flex-wrap items-center justify-between gap-3 px-5 py-3 border-b border-border bg-muted"
+      class="flex flex-wrap items-center justify-between gap-3 px-5 py-3 border-b border-border bg-primary-20"
     >
       <div class="flex items-center gap-3">
         <div class="relative group/info">
@@ -306,10 +306,11 @@
                 :data-state="row.getIsSelected() && 'selected'"
                 class="cursor-pointer"
                 :class="{
-                  'h-8  [&_td]:py-1   [&_td]:text-xs': density === 'compact',
+                  'h-8 [&_td]:py-1 [&_td]:text-xs': density === 'compact',
                   'h-16 [&_td]:py-5': density === 'comfortable',
                   'h-12 [&_td]:py-2.5': density === 'default',
-                  'border-l-3 border-l-purple-800': row.getIsSelected(),
+                  '[&_td:first-child]:border-l-4 [&_td:first-child]:border-violet-400':
+                    row.getIsSelected(),
                 }"
               >
                 <TableCell
@@ -371,7 +372,7 @@
 
     <!-- ── Footer ── -->
     <div
-      class="flex flex-wrap items-center justify-between gap-2 px-5 py-3 border-t border-border bg-muted"
+      class="flex flex-wrap items-center justify-between gap-2 px-5 py-3 border-t border-border bg-primary-20"
     >
       <div
         v-if="
@@ -484,13 +485,11 @@
     config?: TableConfig;
     features?: TableFeatures;
     searchPlaceholder?: string;
-    showRefresh?: boolean;
     externalSearch?: string;
   }
   const props = withDefaults(defineProps<Props>(), {
     config: () => ({}),
     searchPlaceholder: "Search...",
-    showRefresh: true,
   });
 
   const emit = defineEmits<{
