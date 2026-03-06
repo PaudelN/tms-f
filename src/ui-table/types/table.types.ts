@@ -1,6 +1,29 @@
-import type { Component } from "vue";
+// ─────────────────────────────────────────────────────────────────────────────
+// table.types.ts
+// ─────────────────────────────────────────────────────────────────────────────
 
-// Core table column definition
+import type { Component } from "vue";
+import type {
+  UniversalApiResponse,
+  UniversalFetchFn,
+  UniversalFetchParams,
+} from "./universal.types";
+
+// Re-export shared types under table-idiomatic names so existing UiTable
+// code keeps working without changes.
+export type { ViewMode } from "./universal.types";
+export type { UniversalFetchParams as TableFetchParams };
+export type { UniversalApiResponse as ApiResponse };
+
+/**
+ * The fetch function UiTable accepts.
+ * Identical to UniversalFetchFn — same shape as UiList and UiKanban.
+ * Alias exists so existing imports of TableFetchFn still compile.
+ */
+export type TableFetchFn<T = any> = UniversalFetchFn<T>;
+
+// ── Table column ───────────────────────────────────────────────────────────
+
 export interface TableColumn<T = any> {
   key: string;
   label: string;
@@ -13,13 +36,13 @@ export interface TableColumn<T = any> {
   headerClass?: string;
 }
 
-// Sort state
+// ── Sort / pagination ──────────────────────────────────────────────────────
+
 export interface SortState {
   column: string | null;
   order: "asc" | "desc" | null;
 }
 
-// Pagination state
 export interface PaginationState {
   currentPage: number;
   perPage: number;
@@ -27,24 +50,13 @@ export interface PaginationState {
   totalPages: number;
 }
 
-// Table filters
 export interface TableFilters {
   search: string;
   [key: string]: any;
 }
 
-// API response structure
-export interface ApiResponse<T = any> {
-  data: T[];
-  meta: {
-    current_page: number;
-    per_page: number;
-    total: number;
-    last_page: number;
-  };
-}
+// ── Config ─────────────────────────────────────────────────────────────────
 
-// Table configuration
 export interface TableConfig {
   defaultPerPage?: number;
   defaultSortBy?: string | null;
@@ -62,7 +74,8 @@ export interface TableConfig {
   errorMessage?: string;
 }
 
-// Table state (stored in Pinia)
+// ── Internal state ─────────────────────────────────────────────────────────
+
 export interface TableState<T = any> {
   data: T[];
   loading: boolean;
@@ -74,38 +87,8 @@ export interface TableState<T = any> {
   initialized: boolean;
 }
 
-// Fetch function type
-export type TableFetchFn<T = any> = (params: {
-  page: number;
-  perPage: number;
-  search: string;
-  sortBy: string | null;
-  sortOrder: "asc" | "desc" | null;
-  filters?: Record<string, any>;
-}) => Promise<ApiResponse<T>>;
+// ── Actions ────────────────────────────────────────────────────────────────
 
-// View mode type for navigation
-export type ViewMode = "table" | "list" | "kanban";
-
-// Kanban column type
-export interface KanbanColumn<T = any> {
-  id: string | number;
-  title: string;
-  items?: T[];
-  color?: string;
-  icon?: string;
-}
-
-// List item type
-export interface ListItem {
-  [key: string]: any;
-}
-
-// Export utility types
-export type TableColumnKey<T> = keyof T | string;
-export type TableRow<T = any> = T;
-
-// Action types for table interactions
 export interface TableAction<T = any> {
   label: string;
   icon?: Component;
@@ -114,7 +97,6 @@ export interface TableAction<T = any> {
   show?: (row: T) => boolean;
 }
 
-// Bulk action types
 export interface BulkAction<T = any> {
   label: string;
   icon?: Component;
@@ -135,7 +117,8 @@ export interface TableFeatures<T = any> {
   bulkActions?: BulkAction<T>[];
 }
 
-// Table event types
+// ── Events ─────────────────────────────────────────────────────────────────
+
 export interface TableEvents<T = any> {
   onRowClick?: (row: T) => void;
   onRowDoubleClick?: (row: T) => void;
@@ -146,3 +129,9 @@ export interface TableEvents<T = any> {
   onSearch?: (searchTerm: string) => void;
   onRefresh?: () => void;
 }
+
+// ── Utility aliases ────────────────────────────────────────────────────────
+
+export type TableColumnKey<T> = keyof T | string;
+export type TableRow<T = any> = T;
+export type ListItem = Record<string, any>;

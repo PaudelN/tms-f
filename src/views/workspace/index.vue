@@ -1,13 +1,13 @@
 <template>
   <div class="h-full flex flex-col bg-background overflow-hidden">
     <div class="flex flex-col flex-1 min-h-0 w-full mx-auto p-8">
+
       <UiHeader
         title="Workspaces"
         :stats="headerStats"
         :show-views="true"
         :show-refresh="true"
         :current-view="currentView"
-        :loading="isLoading"
         create-label="Add Workspace"
         show-search
         :search-value="searchQuery"
@@ -15,258 +15,168 @@
         show-filter
         :active-filter-count="activeFilterCount"
         @create="handleCreate"
-        @update:current-view="handleViewChange"
+        @update:current-view="onViewChange"
         @update:search-value="handleSearch"
         @refresh="onRefresh"
-        @filter="showFilterPanel = true"
       />
 
       <div class="flex-1 min-h-0 flex flex-col">
 
-        <!-- ── Table View ── -->
+        <!-- TABLE -->
         <UiTable
           v-if="currentView === 'table'"
           ref="tableRef"
           class="min-h-0 max-h-full"
           table-id="workspaces-table"
           :columns="tableColumns"
-          :fetch-fn="fetchWorkspacesForTable"
+          :fetch-fn="workspaceStore.fetchWorkspaces"
           :external-search="searchQuery"
           :features="tableFeatures"
-          :config="{
-            defaultPerPage: 10,
-            defaultSortBy: 'created_at',
-            defaultSortOrder: 'desc',
-            debounceMs: 400,
-            persistState: true,
-          }"
-          search-placeholder="Search workspaces..."
+          :config="tableConfig"
           @row-click="handleView($event.id)"
         >
           <template #cell-name="{ row }">
             <div class="flex items-center gap-3">
-              <div class="h-10 w-10 rounded-xl bg-primary/20 flex items-center justify-center relative">
+              <div class="h-9 w-9 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
                 <span class="text-primary text-sm font-bold">{{ row.name?.charAt(0).toUpperCase() ?? '?' }}</span>
-                <Button type="button" variant="ghost" size="icon"
-                  class="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-card border border-border hover:bg-primary hover:border-primary group"
-                  @click.stop="togglePin(row.id)">
-                  <Star class="h-2.5 w-2.5" :class="isPinned(row.id) ? 'text-primary fill-primary' : 'text-muted-foreground group-hover:text-white'" />
-                </Button>
               </div>
               <div class="min-w-0">
-                <div class="font-semibold text-foreground truncate flex items-center gap-2">
-                  {{ row.name }}
-                  <span v-if="row.is_archived" class="text-xs font-medium text-orange-600 bg-orange-500/10 px-2 py-0.5 rounded-full">Archived</span>
-                </div>
-                <div v-if="row.description" class="text-xs text-muted-foreground truncate">{{ row.description }}</div>
+                <p class="font-semibold text-foreground truncate">{{ row.name }}</p>
+                <p v-if="row.description" class="text-xs text-muted-foreground truncate">{{ row.description }}</p>
               </div>
             </div>
           </template>
           <template #cell-user="{ row }">
-            <span class="text-sm text-foreground">{{ row.user?.name ?? '—' }}</span>
+            <span class="text-sm">{{ row.user?.name ?? '—' }}</span>
           </template>
           <template #cell-actions="{ row }">
-            <div class="flex items-center justify-center">
-              <DropdownMenu :open="openRowId === row.id" @update:open="(val: any) => (openRowId = val ? row.id : null)">
-                <DropdownMenuTrigger as-child>
-                  <button type="button"
-                    class="h-8 w-8 inline-flex items-center justify-center rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all duration-150 border-0 bg-transparent cursor-pointer"
-                    :class="openRowId === row.id ? 'bg-primary/10 text-primary' : ''"
-                    @click.stop="openRowId = openRowId === row.id ? null : row.id">
-                    <MoreVertical class="h-4 w-4" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" :side-offset="6" class="w-48 p-1.5 rounded-xl border border-border bg-popover shadow-lg">
-                  <div class="px-2.5 py-1.5 mb-1">
-                    <p class="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Actions</p>
-                  </div>
-                  <DropdownMenuItem class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium cursor-pointer text-foreground hover:bg-primary/10 hover:text-primary focus:bg-primary/10 focus:text-primary transition-colors" @click="() => { openRowId = null; handleView(row.id) }">
-                    <div class="h-6 w-6 rounded-md bg-primary/10 flex items-center justify-center shrink-0"><Eye class="h-3.5 w-3.5 text-primary" /></div>
-                    View details
-                  </DropdownMenuItem>
-                  <DropdownMenuItem class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium cursor-pointer text-foreground hover:bg-primary/10 hover:text-primary focus:bg-primary/10 focus:text-primary transition-colors" @click="() => { openRowId = null; handleEdit(row.id) }">
-                    <div class="h-6 w-6 rounded-md bg-primary/10 flex items-center justify-center shrink-0"><Pencil class="h-3.5 w-3.5 text-primary" /></div>
-                    Edit
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator class="my-1.5 bg-border" />
-                  <DropdownMenuItem class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium cursor-pointer text-orange-600 hover:bg-orange-500/10 focus:bg-orange-500/10 focus:text-orange-600 transition-colors" @click="() => { openRowId = null; toggleArchive(row.id, row.is_archived) }">
-                    <div class="h-6 w-6 rounded-md bg-orange-500/10 flex items-center justify-center shrink-0"><Archive class="h-3.5 w-3.5 text-orange-500" /></div>
-                    {{ row.is_archived ? 'Unarchive' : 'Archive' }}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium cursor-pointer text-destructive hover:bg-destructive/10 focus:bg-destructive/10 focus:text-destructive transition-colors" @click="() => { openRowId = null; handleDelete(row.id, row.name) }">
-                    <div class="h-6 w-6 rounded-md bg-destructive/10 flex items-center justify-center shrink-0"><Trash2 class="h-3.5 w-3.5 text-destructive" /></div>
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+            <div class="flex items-center justify-center gap-1" @click.stop>
+              <button type="button" class="h-7 w-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" @click="handleView(row.id)">
+                <Eye class="h-3.5 w-3.5" />
+              </button>
+              <button type="button" class="h-7 w-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" @click="handleEdit(row.id)">
+                <Pencil class="h-3.5 w-3.5" />
+              </button>
+              <button type="button" class="h-7 w-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors" @click="confirmDeletePrompt(row.id, row.name)">
+                <Trash2 class="h-3.5 w-3.5" />
+              </button>
             </div>
           </template>
         </UiTable>
 
-        <!-- ── List View ── -->
+        <!-- LIST -->
         <UiList
           v-else-if="currentView === 'list'"
           ref="listRef"
           class="flex-1 min-h-0"
           list-id="workspaces-list"
-          :fetch-fn="fetchWorkspacesForList"
+          :fetch-fn="workspaceStore.fetchWorkspaces"
           :features="listFeatures"
           :config="listConfig"
           :external-search="searchQuery"
           item-key="id"
         >
-          <template #item-summary="{ item, isExpanded }">
+          <template #item-summary="{ item }">
             <div class="flex items-center gap-3 w-full min-w-0">
-              <div class="h-9 w-9 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0 relative">
+              <div class="h-9 w-9 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
                 <span class="text-primary text-sm font-bold">{{ item.name?.charAt(0).toUpperCase() ?? '?' }}</span>
-                <div v-if="!item.is_archived" class="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 border-2 border-card" />
               </div>
               <div class="min-w-0 flex-1">
-                <div class="flex items-center gap-2 flex-wrap">
+                <div class="flex items-center gap-2">
                   <span class="text-sm font-semibold text-foreground truncate">{{ item.name }}</span>
                   <span v-if="item.is_archived" class="text-xs font-medium text-orange-600 bg-orange-500/10 px-2 py-0.5 rounded-full shrink-0">Archived</span>
-                  <span v-if="isPinned(item.id)" class="text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full shrink-0">Pinned</span>
                 </div>
                 <p v-if="item.description" class="text-xs text-muted-foreground truncate mt-0.5">{{ item.description }}</p>
-              </div>
-              <div v-if="!isExpanded" class="flex items-center gap-3 shrink-0 ml-2">
-                <span class="text-xs text-muted-foreground hidden sm:block">{{ item.created_at ? formatDate(item.created_at) : '—' }}</span>
               </div>
             </div>
           </template>
           <template #item-actions="{ item }">
-            <div class="flex items-center gap-1" @click.stop>
-              <Button type="button" variant="ghost" size="icon" class="h-7 w-7 opacity-0 group-hover/row:opacity-100 transition-opacity" @click.stop="togglePin(item.id)">
-                <Star class="h-3.5 w-3.5" :class="isPinned(item.id) ? 'text-primary fill-primary' : 'text-muted-foreground'" />
-              </Button>
-              <Button type="button" variant="ghost" size="icon" class="h-7 w-7 text-primary opacity-0 group-hover/row:opacity-100 transition-opacity" @click.stop="handleView(item.id)">
-                <Eye class="h-3.5 w-3.5" />
-              </Button>
-            </div>
+            <button type="button" class="h-7 w-7 rounded-lg flex items-center justify-center text-primary opacity-0 group-hover/row:opacity-100 transition-opacity" @click.stop="handleView(item.id)">
+              <Eye class="h-3.5 w-3.5" />
+            </button>
           </template>
           <template #item-expanded="{ item }">
-            <div class="space-y-4">
-              <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                <div class="space-y-0.5">
-                  <p class="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Owner</p>
-                  <p class="text-sm text-foreground font-medium">{{ item.user?.name ?? '—' }}</p>
+            <div class="space-y-3">
+              <div class="grid grid-cols-3 gap-3">
+                <div>
+                  <p class="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-0.5">Owner</p>
+                  <p class="text-sm font-medium">{{ item.user?.name ?? '—' }}</p>
                 </div>
-                <div class="space-y-0.5">
-                  <p class="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Created</p>
-                  <p class="text-sm text-foreground font-medium">{{ item.created_at ? formatDate(item.created_at) : '—' }}</p>
+                <div>
+                  <p class="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-0.5">Status</p>
+                  <p class="text-sm font-medium">{{ item.status ?? '—' }}</p>
                 </div>
-                <div class="space-y-0.5">
-                  <p class="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Status</p>
-                  <p class="text-sm font-medium" :class="item.is_archived ? 'text-orange-600' : 'text-emerald-600'">{{ item.is_archived ? 'Archived' : 'Active' }}</p>
+                <div>
+                  <p class="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-0.5">Created</p>
+                  <p class="text-sm font-medium">{{ formatDate(item.created_at) }}</p>
                 </div>
               </div>
-              <div v-if="item.description" class="space-y-0.5">
-                <p class="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Description</p>
-                <p class="text-sm text-foreground leading-relaxed">{{ item.description }}</p>
+              <div class="flex gap-2 pt-1">
+                <button type="button" class="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-accent transition-colors" @click="handleEdit(item.id)">
+                  <Pencil class="h-3 w-3" /> Edit
+                </button>
+                <button type="button" class="inline-flex items-center gap-1.5 rounded-lg border border-destructive/30 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors" @click="confirmDeletePrompt(item.id, item.name)">
+                  <Trash2 class="h-3 w-3" /> Delete
+                </button>
               </div>
-              <div class="flex items-center gap-2 pt-1">
-                <Button size="sm" variant="outline" class="h-7 px-3 text-xs gap-1.5" @click="handleEdit(item.id)"><Pencil class="h-3 w-3" />Edit</Button>
-                <Button size="sm" variant="outline" class="h-7 px-3 text-xs gap-1.5 text-orange-600 border-orange-500/30 hover:bg-orange-500/10" @click="toggleArchive(item.id, item.is_archived)"><Archive class="h-3 w-3" />{{ item.is_archived ? 'Unarchive' : 'Archive' }}</Button>
-                <Button size="sm" variant="outline" class="h-7 px-3 text-xs gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/10" @click="handleDelete(item.id, item.name)"><Trash2 class="h-3 w-3" />Delete</Button>
-              </div>
-            </div>
-          </template>
-          <template #skeleton>
-            <div class="flex items-center gap-3 animate-pulse">
-              <div class="h-9 w-9 rounded-xl bg-border/80 shrink-0" />
-              <div class="flex-1 space-y-2 py-0.5">
-                <div class="h-3 bg-border/80 rounded-full w-1/4" />
-                <div class="h-2.5 bg-border/60 rounded-full w-2/5" />
-              </div>
-              <div class="h-2.5 bg-border/60 rounded-full w-20 shrink-0" />
             </div>
           </template>
         </UiList>
 
-        <!-- ── Kanban View ── -->
+        <!--
+          KANBAN — Trello-style
+          ─────────────────────────────────────────────────────────────────────
+          fetchFn  = workspaceStore.fetchWorkspaces (same function as table/list)
+          stages   = kanbanStages computed from workspaceStore.statuses
+
+          UiKanban calls fetchFn({ kanbanStage: 'active', page: 1, perPage: 50 })
+          etc. for EACH column independently on mount.
+
+          No :items prop. No kanbanItems in store.
+          No per_page=500 flat fetch. No stale-cache guards.
+        -->
         <UiKanban
           v-else-if="currentView === 'kanban'"
           ref="kanbanRef"
           class="flex-1 min-h-0"
-          kanban-id="workspaces-kanban"
+          :fetch-fn="workspaceStore.fetchWorkspaces"
           :stages="kanbanStages"
-          :fetch-fn="fetchWorkspacesForKanban"
           :config="kanbanConfig"
           :features="kanbanFeatures"
-          :external-search="searchQuery"
           item-key="id"
-          @item-moved="onWorkspaceStageChanged"
+          @move="onKanbanMove"
+          @reorder="onKanbanReorder"
         >
-          <!-- Workspace-specific card body -->
           <template #card="{ item, stageMeta }">
-            <div class="space-y-2.5">
-              <div class="flex items-start gap-2.5">
-                <div class="h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center shrink-0 mt-0.5">
-                  <span class="text-primary text-xs font-bold">{{ item.name?.charAt(0).toUpperCase() ?? '?' }}</span>
-                </div>
-                <div class="min-w-0 flex-1">
-                  <div class="flex items-center gap-1.5 flex-wrap">
-                    <span class="text-sm font-semibold text-foreground truncate leading-tight">{{ item.name }}</span>
-                    <span v-if="item.is_archived" class="text-[10px] font-medium text-orange-600 bg-orange-500/10 px-1.5 py-0.5 rounded-full shrink-0">Archived</span>
-                    <span v-if="isPinned(item.id)" class="text-[10px] font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded-full shrink-0">★</span>
-                  </div>
-                  <p v-if="item.user?.name" class="text-[11px] text-muted-foreground mt-0.5 truncate">{{ item.user.name }}</p>
-                </div>
-              </div>
-              <p v-if="item.description" class="text-[11px] text-muted-foreground line-clamp-2 leading-relaxed">{{ item.description }}</p>
-              <div class="flex items-center justify-between pt-1.5 border-t border-border/50">
-                <span class="text-[10px] text-muted-foreground font-mono">{{ item.created_at ? formatDate(item.created_at) : '—' }}</span>
-                <div class="flex items-center gap-1">
-                  <span class="h-1.5 w-1.5 rounded-full" :class="stageMeta.dot" />
-                  <span class="text-[10px] text-muted-foreground">{{ stageMeta.label }}</span>
-                </div>
-              </div>
-            </div>
+            <WorkspaceKanbanCard
+              :item="item"
+              :stage-meta="stageMeta"
+              @view="handleView"
+              @edit="handleEdit"
+            />
           </template>
-
-          <!-- Card hover actions -->
           <template #card-actions="{ item }">
-            <Button type="button" variant="ghost" size="icon"
-              class="h-6 w-6 rounded-md bg-card/80 border border-border/60 hover:border-primary/40"
-              @click.stop="togglePin(item.id)">
-              <Star class="h-3 w-3" :class="isPinned(item.id) ? 'text-primary fill-primary' : 'text-muted-foreground'" />
-            </Button>
-            <Button type="button" variant="ghost" size="icon"
-              class="h-6 w-6 rounded-md bg-card/80 border border-border/60 hover:border-primary/40 text-primary"
-              @click.stop="handleView(item.id)">
-              <Eye class="h-3 w-3" />
-            </Button>
-            <Button type="button" variant="ghost" size="icon"
-              class="h-6 w-6 rounded-md bg-card/80 border border-border/60 hover:border-destructive/40 text-destructive"
-              @click.stop="handleDelete(item.id, item.name)">
+            <button
+              type="button"
+              class="h-6 w-6 rounded-md flex items-center justify-center bg-card/80 border border-border/60 hover:border-primary/40 hover:bg-primary/10 text-primary transition-colors"
+              @click.stop="handleEdit(item.id)"
+            >
+              <Pencil class="h-3 w-3" />
+            </button>
+            <button
+              type="button"
+              class="h-6 w-6 rounded-md flex items-center justify-center bg-card/80 border border-border/60 hover:border-destructive/40 hover:bg-destructive/10 text-destructive transition-colors"
+              @click.stop="confirmDeletePrompt(item.id, item.name)"
+            >
               <Trash2 class="h-3 w-3" />
-            </Button>
-          </template>
-
-          <!-- Workspace-shaped skeleton -->
-          <template #skeleton>
-            <div class="space-y-2.5 animate-pulse">
-              <div class="flex items-start gap-2.5">
-                <div class="h-8 w-8 rounded-lg bg-border/80 shrink-0" />
-                <div class="flex-1 space-y-1.5 pt-0.5">
-                  <div class="h-3 bg-border/80 rounded-full w-3/4" />
-                  <div class="h-2 bg-border/60 rounded-full w-1/2" />
-                </div>
-              </div>
-              <div class="h-2 bg-border/50 rounded-full w-full" />
-              <div class="h-2 bg-border/40 rounded-full w-4/5" />
-              <div class="flex items-center justify-between pt-1.5 border-t border-border/40">
-                <div class="h-2 bg-border/50 rounded-full w-16" />
-                <div class="h-2 bg-border/40 rounded-full w-12" />
-              </div>
-            </div>
+            </button>
           </template>
         </UiKanban>
 
       </div>
     </div>
 
-    <!-- Delete Dialog -->
+    <!-- Delete dialog -->
     <Dialog v-model:open="deleteModalOpen">
       <DialogContent class="sm:max-w-md">
         <DialogHeader>
@@ -277,11 +187,11 @@
             This cannot be undone.
           </DialogDescription>
         </DialogHeader>
-        <DialogFooter class="gap-2 sm:gap-0">
+        <DialogFooter class="gap-2">
           <Button variant="outline" @click="deleteModalOpen = false">Cancel</Button>
           <Button variant="destructive" :disabled="deleteLoading" class="gap-2" @click="confirmDelete">
             <Spinner v-if="deleteLoading" class="h-4 w-4" />
-            <span>{{ deleteLoading ? 'Deleting...' : 'Delete' }}</span>
+            {{ deleteLoading ? 'Deleting…' : 'Delete' }}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -290,170 +200,166 @@
 </template>
 
 <script setup lang="ts">
-  import type { UiHeaderStat } from '@/components/common/UiHeader.vue'
   import UiHeader from '@/components/common/UiHeader.vue'
   import Button from '@/components/ui/button/Button.vue'
   import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-  import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
   import Spinner from '@/components/ui/spinner/Spinner.vue'
   import { notify } from '@/helpers/toast'
-  import type { Workspace } from '@/stores/workspace'
-  import { useWorkspaceStore } from '@/stores/workspace'
+  import { useWorkspaceStore, type Workspace } from '@/stores/workspace'
   import { useUniversalInteractions } from '@/ui-table/composables/useUniversalInteractions'
-  import type { ApiResponse, TableColumn, ViewMode } from '@/ui-table/types/table.types'
-  import type { ListApiResponse, ListConfig, ListFeatures } from '@/ui-table/types/list.types'
-  import type { KanbanApiResponse, KanbanConfig, KanbanFeatures, KanbanFetchParams, Stage } from '@/ui-table/types/kanban.types'
+  import type { KanbanConfig, KanbanFeatures, KanbanMoveEvent, KanbanReorderEvent, KanbanStageDefinition } from '@/ui-table/types/kanban.types'
+  import type { ListConfig, ListFeatures } from '@/ui-table/types/list.types'
+  import type { TableColumn, TableConfig, TableFeatures } from '@/ui-table/types/table.types'
+  import type { ViewMode } from '@/ui-table/types/universal.types'
   import UiKanban from '@/ui-table/UiKanban.vue'
   import UiList from '@/ui-table/UiList.vue'
   import UiTable from '@/ui-table/UiTable.vue'
-  import { Archive, ArchiveIcon, Eye, MoreVertical, Pencil, Star, Trash2, Trash2Icon } from 'lucide-vue-next'
+  import WorkspaceKanbanCard from './common/WorkspaceKanbanCard.vue'
+  import { ArchiveIcon, Eye, Pencil, Trash2, Trash2Icon } from 'lucide-vue-next'
   import { computed, onMounted, ref } from 'vue'
   import { useRouter } from 'vue-router'
 
-  const router = useRouter()
+  const router         = useRouter()
   const workspaceStore = useWorkspaceStore()
 
-  // ── View state ──────────────────────────────────────────────────────────────
+  // ── View ──────────────────────────────────────────────────────────────────
+
   const currentView = ref<ViewMode>('table')
-  const isLoading = ref(false)
-  const tableRef = ref()
-  const listRef = ref()
-  const kanbanRef = ref()
-  const openRowId = ref<number | null>(null)
+  const tableRef    = ref()
+  const listRef     = ref()
+  const kanbanRef   = ref()
 
-  // ── Delete dialog ────────────────────────────────────────────────────────────
-  const deleteModalOpen = ref(false)
-  const deleteLoading = ref(false)
-  const workspaceToDelete = ref<{ id: number; name: string } | null>(null)
-
-  // ── Pin state ────────────────────────────────────────────────────────────────
-  const pinnedWorkspaceIds = ref<number[]>([])
-
-  // ── Filter panel ─────────────────────────────────────────────────────────────
-  const showFilterPanel = ref(false)
-
-  // ── Universal search / filter ─────────────────────────────────────────────────
-  const { searchQuery, activeFilterCount, handleSearch, filterItems } =
-    useUniversalInteractions({ debounceMs: 400 })
-
-  // ── Header stats ──────────────────────────────────────────────────────────────
-  const headerStats = computed<UiHeaderStat[]>(() =>
-    workspaceStore.statuses.map((s) => ({
-      label: s.label,
-      dot: s.dot,
-      value: workspaceStore.workspaces.filter((w: any) => {
-        if (s.value === 'active') return w.is_active && !w.is_archived
-        if (s.value === 'archived') return w.is_archived
-        return w.status === s.value
-      }).length,
-    })),
-  )
-
-  // ── Table columns ─────────────────────────────────────────────────────────────
-  const tableColumns: TableColumn<Workspace>[] = [
-    { key: 'name', label: 'Workspace', sortable: true, width: '35%' },
-    { key: 'user', label: 'Owner', sortable: false, width: '25%' },
-    { key: 'created_at', label: 'Created', sortable: true, width: '20%' },
-    { key: 'actions', label: 'Actions', sortable: false, align: 'center', width: '20%' },
-  ]
-
-  // ── Table features ────────────────────────────────────────────────────────────
-  const tableFeatures = {
-    selection: { enabled: true },
-    bulkActions: [
-      { label: 'Archive Selected', icon: ArchiveIcon, disabled: (rows: any[]) => rows.length === 0, onClick: async (rows: any[]) => { tableRef.value?.refresh(); tableRef.value?.clearSelection?.() } },
-      { label: 'Delete Selected', icon: Trash2Icon, disabled: (rows: any[]) => rows.length === 0, onClick: async (rows: any[]) => { tableRef.value?.refresh(); tableRef.value?.clearSelection?.() } },
-    ],
-  }
-
-  // ── List config & features ────────────────────────────────────────────────────
-  const listConfig: ListConfig = { pageSize: 25, debounceMs: 400, defaultSortBy: 'created_at', defaultSortOrder: 'desc' }
-  const listFeatures: ListFeatures = {
-    groupBy: [{ key: 'is_archived', label: 'Archive Status' }, { key: 'user.name', label: 'Owner' }],
-    sortOptions: [{ key: 'name', label: 'Name (A → Z)' }, { key: 'created_at', label: 'Created Date' }],
-  }
-
-  // ── Kanban stages — driven by backend statuses ────────────────────────────────
-  const WORKSPACE_WIP_LIMITS: Record<string, number | undefined> = {
-    active: undefined,
-    archived: undefined,
-    // Example: pending: 5
-  }
-
-  const kanbanStages = computed<Stage[]>(() =>
-    workspaceStore.statuses.map((s) => ({
-      value: s.value,
-      label: s.label,
-      dot: s.dot,
-      wipLimit: WORKSPACE_WIP_LIMITS[s.value],
-    })),
-  )
-
-  const kanbanConfig: KanbanConfig = { pageSize: 10, debounceMs: 400, defaultSortBy: 'created_at', defaultSortOrder: 'desc', columnWidth: '280px' }
-  const kanbanFeatures: KanbanFeatures = { dragDrop: true, intraStageReorder: true }
-
-  // ── Fetch functions ───────────────────────────────────────────────────────────
-
-  async function fetchWorkspacesForTable(params: { page: number; perPage: number; search: string; sortBy: string | null; sortOrder: 'asc' | 'desc' | null }): Promise<ApiResponse<Workspace>> {
-    const res = await workspaceStore.fetchWorkspaces({ page: params.page, perPage: params.perPage, search: params.search, sortBy: params.sortBy ?? undefined, sortOrder: params.sortOrder ?? undefined })
-    return { data: res.data, meta: res.meta }
-  }
-
-  async function fetchWorkspacesForList(params: { page: number; perPage: number; search: string; sortBy: string | null; sortOrder: 'asc' | 'desc' | null }): Promise<ListApiResponse<Workspace>> {
-    const res = await workspaceStore.fetchWorkspaces({ page: params.page, perPage: params.perPage, search: params.search, sortBy: params.sortBy ?? undefined, sortOrder: params.sortOrder ?? undefined })
-    return { data: res.data, meta: res.meta }
-  }
-
-  /**
-   * Kanban fetch: stage value maps to API filter.
-   * params.stage tells the backend which column to load.
-   */
-  async function fetchWorkspacesForKanban(params: KanbanFetchParams): Promise<KanbanApiResponse<Workspace>> {
-    const stageFilter: Record<string, any> =
-      params.stage === 'archived'
-        ? { is_archived: true }
-        : params.stage === 'active'
-          ? { is_archived: false, status: 'active' }
-          : { status: params.stage }
-
-    const res = await workspaceStore.fetchWorkspaces({
-      page: params.page,
-      perPage: params.perPage,
-      search: params.search,
-      sortBy: params.sortBy ?? undefined,
-      sortOrder: params.sortOrder ?? undefined,
-      ...stageFilter,
-      ...(params.filters ?? {}),
-    })
-    return { data: res.data, meta: res.meta }
-  }
-
-  // ── View handling ─────────────────────────────────────────────────────────────
-
-  function handleViewChange(view: ViewMode): void {
+  function onViewChange(view: ViewMode): void {
     currentView.value = view
-    // All three views are self-fetching via their composables — no manual fetch needed
+    // Kanban columns self-fetch on mount via the watch(stages) in UiKanban.
+    // No manual fetch call needed here.
   }
 
   function onRefresh(): void {
-    if (currentView.value === 'table') tableRef.value?.refresh?.()
-    else if (currentView.value === 'list') listRef.value?.refresh?.()
+    if      (currentView.value === 'table')  tableRef.value?.refresh?.()
+    else if (currentView.value === 'list')   listRef.value?.refresh?.()
     else if (currentView.value === 'kanban') kanbanRef.value?.refresh?.()
   }
 
-  // ── CRUD ──────────────────────────────────────────────────────────────────────
+  // ── Search ────────────────────────────────────────────────────────────────
 
-  function handleCreate(): void { router.push({ name: 'workspace-add' }) }
-  function handleView(id: number): void { router.push({ name: 'workspace-detail', params: { id } }) }
-  function handleEdit(id: number): void { router.push({ name: 'workspace-edit', params: { id } }) }
-  function handleDelete(id: number, name: string): void { workspaceToDelete.value = { id, name }; deleteModalOpen.value = true }
+  const { searchQuery, activeFilterCount, handleSearch } =
+    useUniversalInteractions({ debounceMs: 400 })
+
+  // ── Header stats ──────────────────────────────────────────────────────────
+  // Reads column counts directly from UiKanban via the exposed columnCounts map.
+
+  const headerStats = computed(() =>
+    workspaceStore.statuses.map(s => ({
+      label: s.label,
+      dot:   s.dot,
+      value: kanbanRef.value?.columnCounts?.[s.value] ?? 0,
+    })),
+  )
+
+  // ── Table ──────────────────────────────────────────────────────────────────
+
+  const tableConfig: TableConfig = {
+    defaultPerPage: 10, defaultSortBy: 'created_at', defaultSortOrder: 'desc',
+    debounceMs: 400, persistState: true,
+  }
+
+  const tableColumns: TableColumn<Workspace>[] = [
+    { key: 'name',       label: 'Workspace', sortable: true,  width: '40%' },
+    { key: 'user',       label: 'Owner',     sortable: false, width: '25%' },
+    { key: 'created_at', label: 'Created',   sortable: true,  width: '20%' },
+    { key: 'actions',    label: '',          sortable: false, align: 'center', width: '15%' },
+  ]
+
+  const tableFeatures: TableFeatures<Workspace> = {
+    selection: { enabled: true },
+    bulkActions: [
+      { label: 'Archive Selected', icon: ArchiveIcon, disabled: r => r.length === 0, onClick: () => tableRef.value?.refresh() },
+      { label: 'Delete Selected',  icon: Trash2Icon,  disabled: r => r.length === 0, onClick: () => tableRef.value?.refresh() },
+    ],
+  }
+
+  // ── List ──────────────────────────────────────────────────────────────────
+
+  const listConfig: ListConfig = {
+    pageSize: 25, debounceMs: 400,
+    defaultSortBy: 'created_at', defaultSortOrder: 'desc',
+  }
+
+  const listFeatures: ListFeatures = {
+    groupBy:     [{ key: 'status', label: 'Status' }, { key: 'user.name', label: 'Owner' }],
+    sortOptions: [{ key: 'name', label: 'Name (A → Z)' }, { key: 'created_at', label: 'Created' }],
+  }
+
+  // ── Kanban stages ─────────────────────────────────────────────────────────
+
+  const STAGE_STYLE: Record<string, Pick<KanbanStageDefinition, 'colorClass' | 'textClass' | 'borderClass' | 'dot'>> = {
+    active:    { dot: 'bg-emerald-500', colorClass: 'bg-emerald-500/10', textClass: 'text-emerald-600', borderClass: 'border-emerald-500/30' },
+    archived:  { dot: 'bg-orange-500',  colorClass: 'bg-orange-500/10',  textClass: 'text-orange-600',  borderClass: 'border-orange-500/30'  },
+    pending:   { dot: 'bg-violet-500',  colorClass: 'bg-violet-500/10',  textClass: 'text-violet-600',  borderClass: 'border-violet-500/30'  },
+    on_hold:   { dot: 'bg-amber-500',   colorClass: 'bg-amber-500/10',   textClass: 'text-amber-600',   borderClass: 'border-amber-500/30'   },
+    completed: { dot: 'bg-blue-500',    colorClass: 'bg-blue-500/10',    textClass: 'text-blue-600',    borderClass: 'border-blue-500/30'    },
+  }
+
+  const kanbanStages = computed<KanbanStageDefinition[]>(() =>
+    workspaceStore.statuses.map(s => ({
+      value: s.value,
+      label: s.label,
+      ...(STAGE_STYLE[s.value] ?? {}),
+    })),
+  )
+
+  const kanbanConfig: KanbanConfig     = { columnWidth: '300px', perPage: 50 }
+  const kanbanFeatures: KanbanFeatures = { dragDrop: true, intraStageReorder: true }
+
+  // ── Kanban events ─────────────────────────────────────────────────────────
+  //
+  // UiKanban has already done the optimistic local update before emitting.
+  // We call the store API (pure HTTP, no store state mutation).
+  // On failure we refresh the two affected columns to restore truth from server.
+
+  async function onKanbanMove(event: KanbanMoveEvent<Workspace>): Promise<void> {
+    try {
+      await workspaceStore.moveCard(event)
+      notify.success('Stage updated', `"${event.item.name}" moved to ${event.toStage}.`)
+    } catch (err: unknown) {
+      notify.error('Move failed', err instanceof Error ? err.message : 'Could not move the card.')
+      // Revert by re-fetching both affected columns
+      kanbanRef.value?.refreshColumn(event.fromStage)
+      kanbanRef.value?.refreshColumn(event.toStage)
+    }
+  }
+
+  async function onKanbanReorder(event: KanbanReorderEvent): Promise<void> {
+    try {
+      await workspaceStore.reorderCards(event)
+    } catch (err: unknown) {
+      notify.error('Reorder failed', err instanceof Error ? err.message : 'Could not save the new order.')
+      kanbanRef.value?.refreshColumn(event.stage)
+    }
+  }
+
+  // ── CRUD ──────────────────────────────────────────────────────────────────
+
+  const handleCreate = (): void => { void router.push({ name: 'workspace-add' }) }
+  const handleView   = (id: number): void => { void router.push({ name: 'workspace-detail', params: { id } }) }
+  const handleEdit   = (id: number): void => { void router.push({ name: 'workspace-edit',   params: { id } }) }
+
+  const deleteModalOpen   = ref(false)
+  const deleteLoading     = ref(false)
+  const workspaceToDelete = ref<{ id: number; name: string } | null>(null)
+
+  function confirmDeletePrompt(id: number, name: string): void {
+    workspaceToDelete.value = { id, name }
+    deleteModalOpen.value   = true
+  }
 
   async function confirmDelete(): Promise<void> {
     if (!workspaceToDelete.value) return
     deleteLoading.value = true
     try {
       await workspaceStore.deleteWorkspace(workspaceToDelete.value.id)
-      deleteModalOpen.value = false
+      deleteModalOpen.value   = false
       workspaceToDelete.value = null
       notify.success('Workspace deleted', 'The workspace was removed successfully.')
       onRefresh()
@@ -464,46 +370,20 @@
     }
   }
 
-  function togglePin(id: number): void {
-    const i = pinnedWorkspaceIds.value.indexOf(id)
-    if (i > -1) pinnedWorkspaceIds.value.splice(i, 1)
-    else pinnedWorkspaceIds.value.push(id)
-  }
-  function isPinned(id: number): boolean { return pinnedWorkspaceIds.value.includes(id) }
-  function toggleArchive(id: number, currentState: boolean): void {
-    const w = workspaceStore.workspaces.find((item) => item.id === id)
-    if (w) (w as any).is_archived = !currentState
-    if (currentView.value === 'table') tableRef.value?.refresh?.()
+  function formatDate(d: string): string {
+    if (!d) return '—'
+    return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
   }
 
-  /**
-   * Called by UiKanban after optimistic UI update when a card is dragged between stages.
-   * Wire up your store action here to persist the change, then reconcile if it fails.
-   */
-  async function onWorkspaceStageChanged(item: Workspace, fromStage: string, toStage: string): Promise<void> {
-    try {
-      // await workspaceStore.updateWorkspaceStatus(item.id, toStage)
-      console.log(`Workspace ${item.id} moved: ${fromStage} → ${toStage}`)
-      notify.success('Stage updated', `"${item.name}" moved to ${toStage}.`)
-    } catch {
-      // Reconcile on failure — reload affected columns
-      kanbanRef.value?.refreshStage(fromStage)
-      kanbanRef.value?.refreshStage(toStage)
-      notify.error('Failed to move', 'Could not update the workspace stage.')
-    }
-  }
-
-  // ── Formatting ────────────────────────────────────────────────────────────────
-
-  function formatDate(dateString: string): string {
-    if (!dateString) return '—'
-    return new Date(dateString).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
-  }
-
-  // ── Lifecycle ─────────────────────────────────────────────────────────────────
+  // ── Lifecycle ─────────────────────────────────────────────────────────────
+  //
+  // fetchStatuses() must resolve BEFORE UiKanban mounts (or before currentView
+  // switches to 'kanban'), because UiKanban's watch(stages) fires immediately
+  // and stages is empty until statuses are loaded.
+  //
+  // UiTable and UiList self-fetch via :fetch-fn — no extra calls here.
 
   onMounted(async () => {
-    // Only statuses needed upfront — all views self-fetch their data
     await workspaceStore.fetchStatuses()
   })
 </script>

@@ -1,64 +1,50 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // list.types.ts
-// All TypeScript types consumed by UiList.vue and useListInteractions.ts
 // ─────────────────────────────────────────────────────────────────────────────
+
+import type {
+  UniversalApiResponse,
+  UniversalFetchFn,
+  UniversalFetchParams,
+} from "./universal.types";
+
+// Re-export shared types under list-idiomatic names.
+export type { UniversalFetchParams as ListFetchParams };
+export type { UniversalApiResponse as ListApiResponse };
+
+/**
+ * The fetch function UiList accepts.
+ * Identical to UniversalFetchFn / TableFetchFn — same shape as all views.
+ */
+export type ListFetchFn<T = any> = UniversalFetchFn<T>;
+
+// ── Enums ──────────────────────────────────────────────────────────────────
 
 export type ListDensity = "compact" | "default" | "comfortable";
 export type ListSortOrder = "asc" | "desc" | null;
 
-// ── Fetch contract ────────────────────────────────────────────────────────────
-
-export interface ListFetchParams {
-  page: number;
-  perPage: number;
-  search: string;
-  sortBy: string | null;
-  sortOrder: ListSortOrder;
-}
-
-export interface ListApiMeta {
-  current_page: number;
-  per_page: number;
-  total: number;
-  last_page: number;
-}
-
-export interface ListApiResponse<T = any> {
-  data: T[];
-  meta: ListApiMeta;
-}
-
-export type ListFetchFn<T = any> = (
-  params: ListFetchParams,
-) => Promise<ListApiResponse<T>>;
-
-// ── Configuration ─────────────────────────────────────────────────────────────
+// ── Config ─────────────────────────────────────────────────────────────────
 
 export interface ListConfig {
-  /** Items per page fetched on each scroll trigger. Default: 20 */
+  /** Items per page. Default: 20 */
   pageSize?: number;
-  /** Debounce ms for search input. Default: 300 */
+  /** Debounce ms for search. Default: 300 */
   debounceMs?: number;
-  /** Default sort column key */
   defaultSortBy?: string | null;
-  /** Default sort direction */
   defaultSortOrder?: ListSortOrder;
-  /** Default group-by key */
   defaultGroupBy?: string | null;
-  /** Intersection threshold for infinite scroll sentinel. Default: 0.1 */
+  /** IntersectionObserver threshold for infinite scroll. Default: 0.1 */
   sentinelThreshold?: number;
 }
 
-// ── Feature toggles ───────────────────────────────────────────────────────────
+// ── Feature toggles ────────────────────────────────────────────────────────
 
 export interface ListSortOption {
-  /** Must match a key on your item objects (supports dot-notation: "user.name") */
   key: string;
   label: string;
 }
 
 export interface ListGroupOption {
-  /** Must match a key on your item objects (supports dot-notation) */
   key: string;
   label: string;
 }
@@ -68,20 +54,17 @@ export interface ListFeatures {
   sortOptions?: ListSortOption[];
 }
 
-// ── Internal grouping model ───────────────────────────────────────────────────
+// ── Internal grouping ──────────────────────────────────────────────────────
 
 export interface ListGroup<T = any> {
-  /** Unique identifier for this group (group value or '__all__') */
   key: string;
-  /** Display label; null = no grouping active */
   label: string | null;
   items: T[];
 }
 
-// ── Composable return shape ───────────────────────────────────────────────────
+// ── Composable return shape ────────────────────────────────────────────────
 
 export interface UseListInteractionsReturn<T = any> {
-  // Reactive state
   loadedItems: Readonly<T[]>;
   groupedItems: Readonly<ListGroup<T>[]>;
   hasMore: boolean;
@@ -98,7 +81,6 @@ export interface UseListInteractionsReturn<T = any> {
   sortOrder: ListSortOrder;
   groupByKey: string | null;
   newItemIndexes: Set<number>;
-  // Actions
   loadMore: () => Promise<void>;
   reload: () => Promise<void>;
   handleSearch: (val: string) => void;
