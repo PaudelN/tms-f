@@ -123,18 +123,7 @@
           </template>
         </UiList>
 
-        <!--
-          KANBAN — Trello-style
-          ─────────────────────────────────────────────────────────────────────
-          fetchFn  = workspaceStore.fetchWorkspaces (same function as table/list)
-          stages   = kanbanStages computed from workspaceStore.statuses
-
-          UiKanban calls fetchFn({ kanbanStage: 'active', page: 1, perPage: 50 })
-          etc. for EACH column independently on mount.
-
-          No :items prop. No kanbanItems in store.
-          No per_page=500 flat fetch. No stale-cache guards.
-        -->
+        <!-- KANBAN -->
         <UiKanban
           v-else-if="currentView === 'kanban'"
           ref="kanbanRef"
@@ -143,6 +132,7 @@
           :stages="kanbanStages"
           :config="kanbanConfig"
           :features="kanbanFeatures"
+          :search-query="searchQuery"
           item-key="id"
           @move="onKanbanMove"
           @reorder="onKanbanReorder"
@@ -200,190 +190,182 @@
 </template>
 
 <script setup lang="ts">
-  import UiHeader from '@/components/common/UiHeader.vue'
-  import Button from '@/components/ui/button/Button.vue'
-  import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-  import Spinner from '@/components/ui/spinner/Spinner.vue'
-  import { notify } from '@/helpers/toast'
-  import { useWorkspaceStore, type Workspace } from '@/stores/workspace'
-  import { useUniversalInteractions } from '@/ui-table/composables/useUniversalInteractions'
-  import type { KanbanConfig, KanbanFeatures, KanbanMoveEvent, KanbanReorderEvent, KanbanStageDefinition } from '@/ui-table/types/kanban.types'
-  import type { ListConfig, ListFeatures } from '@/ui-table/types/list.types'
-  import type { TableColumn, TableConfig, TableFeatures } from '@/ui-table/types/table.types'
-  import type { ViewMode } from '@/ui-table/types/universal.types'
-  import UiKanban from '@/ui-table/UiKanban.vue'
-  import UiList from '@/ui-table/UiList.vue'
-  import UiTable from '@/ui-table/UiTable.vue'
-  import WorkspaceKanbanCard from './common/WorkspaceKanbanCard.vue'
-  import { ArchiveIcon, Eye, Pencil, Trash2, Trash2Icon } from 'lucide-vue-next'
-  import { computed, onMounted, ref } from 'vue'
-  import { useRouter } from 'vue-router'
+import { computed, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { Eye, Pencil, Trash2, ArchiveIcon, Trash2Icon } from 'lucide-vue-next'
 
-  const router         = useRouter()
-  const workspaceStore = useWorkspaceStore()
+import UiHeader  from '@/components/common/UiHeader.vue'
+import UiTable   from '@/ui-table/UiTable.vue'
+import UiList    from '@/ui-table/UiList.vue'
+import UiKanban  from '@/ui-table/UiKanban.vue'
+import WorkspaceKanbanCard from './common/WorkspaceKanbanCard.vue'
 
-  // ── View ──────────────────────────────────────────────────────────────────
+import Button  from '@/components/ui/button/Button.vue'
+import Spinner from '@/components/ui/spinner/Spinner.vue'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
-  const currentView = ref<ViewMode>('table')
-  const tableRef    = ref()
-  const listRef     = ref()
-  const kanbanRef   = ref()
+import { notify } from '@/helpers/toast'
+import { useWorkspaceStore, type Workspace } from '@/stores/workspace'
+import { useUniversalInteractions }          from '@/ui-table/composables/useUniversalInteractions'
 
-  function onViewChange(view: ViewMode): void {
-    currentView.value = view
-    // Kanban columns self-fetch on mount via the watch(stages) in UiKanban.
-    // No manual fetch call needed here.
+import type { KanbanConfig, KanbanFeatures, KanbanMoveEvent, KanbanReorderEvent, KanbanStageDefinition } from '@/ui-table/types/kanban.types'
+import type { ListConfig, ListFeatures }   from '@/ui-table/types/list.types'
+import type { TableColumn, TableConfig, TableFeatures } from '@/ui-table/types/table.types'
+import type { ViewMode } from '@/ui-table/types/universal.types'
+
+// ── Core ──────────────────────────────────────────────────────────────────────
+const router         = useRouter()
+const workspaceStore = useWorkspaceStore()
+
+// ── View ──────────────────────────────────────────────────────────────────────
+const currentView = ref<ViewMode>('table')
+const tableRef    = ref()
+const listRef     = ref()
+const kanbanRef   = ref()
+
+function onViewChange(view: ViewMode) {
+  currentView.value = view
+}
+
+function onRefresh() {
+  if      (currentView.value === 'table')  tableRef.value?.refresh?.()
+  else if (currentView.value === 'list')   listRef.value?.refresh?.()
+  else if (currentView.value === 'kanban') kanbanRef.value?.refresh?.()
+}
+
+// ── Universal search — shared across Table, List, and Kanban ─────────────────
+// searchQuery is a Ref<string>.  Pass it as:
+//   :external-search="searchQuery"   → UiTable / UiList  (prop name they expect)
+//   :search-query="searchQuery"      → UiKanban           (prop name it expects)
+const { searchQuery, activeFilterCount, handleSearch } = useUniversalInteractions({
+  debounceMs: 400,
+})
+
+// ── Header stats — live column counts from UiKanban ───────────────────────────
+const headerStats = computed(() =>
+  workspaceStore.statuses.map(s => ({
+    label: s.label,
+    dot:   s.dot,
+    value: kanbanRef.value?.columnCounts?.[s.value] ?? 0,
+  }))
+)
+
+// ── Table config ──────────────────────────────────────────────────────────────
+const tableConfig: TableConfig = {
+  defaultPerPage:  10,
+  defaultSortBy:   'created_at',
+  defaultSortOrder:'desc',
+  debounceMs:      400,
+  persistState:    true,
+}
+
+const tableColumns: TableColumn<Workspace>[] = [
+  { key: 'name',       label: 'Workspace', sortable: true,  width: '40%' },
+  { key: 'user',       label: 'Owner',     sortable: false, width: '25%' },
+  { key: 'created_at', label: 'Created',   sortable: true,  width: '20%' },
+  { key: 'actions',    label: '',          sortable: false, align: 'center', width: '15%' },
+]
+
+const tableFeatures: TableFeatures<Workspace> = {
+  selection: { enabled: true },
+  bulkActions: [
+    { label: 'Archive Selected', icon: ArchiveIcon, disabled: r => r.length === 0, onClick: () => tableRef.value?.refresh() },
+    { label: 'Delete Selected',  icon: Trash2Icon,  disabled: r => r.length === 0, onClick: () => tableRef.value?.refresh() },
+  ],
+}
+
+// ── List config ───────────────────────────────────────────────────────────────
+const listConfig: ListConfig = {
+  pageSize:         25,
+  debounceMs:       400,
+  defaultSortBy:    'created_at',
+  defaultSortOrder: 'desc',
+}
+
+const listFeatures: ListFeatures = {
+  groupBy:     [{ key: 'status', label: 'Status' }, { key: 'user.name', label: 'Owner' }],
+  sortOptions: [{ key: 'name', label: 'Name (A → Z)' }, { key: 'created_at', label: 'Created' }],
+}
+
+// ── Kanban stages ─────────────────────────────────────────────────────────────
+const STAGE_STYLE: Record<string, Pick<KanbanStageDefinition, 'colorClass' | 'textClass' | 'borderClass' | 'dot'>> = {
+  active:    { dot: 'bg-emerald-500', colorClass: 'bg-emerald-500/10', textClass: 'text-emerald-600', borderClass: 'border-emerald-500/30' },
+  archived:  { dot: 'bg-orange-500',  colorClass: 'bg-orange-500/10',  textClass: 'text-orange-600',  borderClass: 'border-orange-500/30'  },
+  pending:   { dot: 'bg-violet-500',  colorClass: 'bg-violet-500/10',  textClass: 'text-violet-600',  borderClass: 'border-violet-500/30'  },
+  on_hold:   { dot: 'bg-amber-500',   colorClass: 'bg-amber-500/10',   textClass: 'text-amber-600',   borderClass: 'border-amber-500/30'   },
+  completed: { dot: 'bg-blue-500',    colorClass: 'bg-blue-500/10',    textClass: 'text-blue-600',    borderClass: 'border-blue-500/30'    },
+}
+
+const kanbanStages = computed<KanbanStageDefinition[]>(() =>
+  workspaceStore.statuses.map(s => ({
+    value: s.value,
+    label: s.label,
+    ...(STAGE_STYLE[s.value] ?? {}),
+  }))
+)
+
+const kanbanConfig: KanbanConfig     = { perPage: 50 }
+const kanbanFeatures: KanbanFeatures = { dragDrop: true, intraStageReorder: true }
+
+// ── Kanban events ─────────────────────────────────────────────────────────────
+async function onKanbanMove(event: KanbanMoveEvent<Workspace>) {
+  try {
+    await workspaceStore.moveCard(event)
+    notify.success('Stage updated', `"${event.item.name}" moved to ${event.toStage}.`)
+  } catch (err: unknown) {
+    notify.error('Move failed', err instanceof Error ? err.message : 'Could not move the card.')
+    kanbanRef.value?.refreshColumn(event.fromStage)
+    kanbanRef.value?.refreshColumn(event.toStage)
   }
+}
 
-  function onRefresh(): void {
-    if      (currentView.value === 'table')  tableRef.value?.refresh?.()
-    else if (currentView.value === 'list')   listRef.value?.refresh?.()
-    else if (currentView.value === 'kanban') kanbanRef.value?.refresh?.()
+async function onKanbanReorder(event: KanbanReorderEvent) {
+  try {
+    await workspaceStore.reorderCards(event)
+  } catch (err: unknown) {
+    notify.error('Reorder failed', err instanceof Error ? err.message : 'Could not save order.')
+    kanbanRef.value?.refreshColumn(event.stage)
   }
+}
 
-  // ── Search ────────────────────────────────────────────────────────────────
+// ── CRUD ──────────────────────────────────────────────────────────────────────
+const handleCreate = () => router.push({ name: 'workspace-add' })
+const handleView   = (id: number) => router.push({ name: 'workspace-detail', params: { id } })
+const handleEdit   = (id: number) => router.push({ name: 'workspace-edit',   params: { id } })
 
-  const { searchQuery, activeFilterCount, handleSearch } =
-    useUniversalInteractions({ debounceMs: 400 })
+const deleteModalOpen   = ref(false)
+const deleteLoading     = ref(false)
+const workspaceToDelete = ref<{ id: number; name: string } | null>(null)
 
-  // ── Header stats ──────────────────────────────────────────────────────────
-  // Reads column counts directly from UiKanban via the exposed columnCounts map.
+function confirmDeletePrompt(id: number, name: string) {
+  workspaceToDelete.value = { id, name }
+  deleteModalOpen.value   = true
+}
 
-  const headerStats = computed(() =>
-    workspaceStore.statuses.map(s => ({
-      label: s.label,
-      dot:   s.dot,
-      value: kanbanRef.value?.columnCounts?.[s.value] ?? 0,
-    })),
-  )
-
-  // ── Table ──────────────────────────────────────────────────────────────────
-
-  const tableConfig: TableConfig = {
-    defaultPerPage: 10, defaultSortBy: 'created_at', defaultSortOrder: 'desc',
-    debounceMs: 400, persistState: true,
+async function confirmDelete() {
+  if (!workspaceToDelete.value) return
+  deleteLoading.value = true
+  try {
+    await workspaceStore.deleteWorkspace(workspaceToDelete.value.id)
+    deleteModalOpen.value   = false
+    workspaceToDelete.value = null
+    notify.success('Workspace deleted', 'The workspace was removed successfully.')
+    onRefresh()
+  } catch {
+    notify.error('Delete failed', "We couldn't delete the workspace.")
+  } finally {
+    deleteLoading.value = false
   }
+}
 
-  const tableColumns: TableColumn<Workspace>[] = [
-    { key: 'name',       label: 'Workspace', sortable: true,  width: '40%' },
-    { key: 'user',       label: 'Owner',     sortable: false, width: '25%' },
-    { key: 'created_at', label: 'Created',   sortable: true,  width: '20%' },
-    { key: 'actions',    label: '',          sortable: false, align: 'center', width: '15%' },
-  ]
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function formatDate(d: string): string {
+  if (!d) return '—'
+  return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
 
-  const tableFeatures: TableFeatures<Workspace> = {
-    selection: { enabled: true },
-    bulkActions: [
-      { label: 'Archive Selected', icon: ArchiveIcon, disabled: r => r.length === 0, onClick: () => tableRef.value?.refresh() },
-      { label: 'Delete Selected',  icon: Trash2Icon,  disabled: r => r.length === 0, onClick: () => tableRef.value?.refresh() },
-    ],
-  }
-
-  // ── List ──────────────────────────────────────────────────────────────────
-
-  const listConfig: ListConfig = {
-    pageSize: 25, debounceMs: 400,
-    defaultSortBy: 'created_at', defaultSortOrder: 'desc',
-  }
-
-  const listFeatures: ListFeatures = {
-    groupBy:     [{ key: 'status', label: 'Status' }, { key: 'user.name', label: 'Owner' }],
-    sortOptions: [{ key: 'name', label: 'Name (A → Z)' }, { key: 'created_at', label: 'Created' }],
-  }
-
-  // ── Kanban stages ─────────────────────────────────────────────────────────
-
-  const STAGE_STYLE: Record<string, Pick<KanbanStageDefinition, 'colorClass' | 'textClass' | 'borderClass' | 'dot'>> = {
-    active:    { dot: 'bg-emerald-500', colorClass: 'bg-emerald-500/10', textClass: 'text-emerald-600', borderClass: 'border-emerald-500/30' },
-    archived:  { dot: 'bg-orange-500',  colorClass: 'bg-orange-500/10',  textClass: 'text-orange-600',  borderClass: 'border-orange-500/30'  },
-    pending:   { dot: 'bg-violet-500',  colorClass: 'bg-violet-500/10',  textClass: 'text-violet-600',  borderClass: 'border-violet-500/30'  },
-    on_hold:   { dot: 'bg-amber-500',   colorClass: 'bg-amber-500/10',   textClass: 'text-amber-600',   borderClass: 'border-amber-500/30'   },
-    completed: { dot: 'bg-blue-500',    colorClass: 'bg-blue-500/10',    textClass: 'text-blue-600',    borderClass: 'border-blue-500/30'    },
-  }
-
-  const kanbanStages = computed<KanbanStageDefinition[]>(() =>
-    workspaceStore.statuses.map(s => ({
-      value: s.value,
-      label: s.label,
-      ...(STAGE_STYLE[s.value] ?? {}),
-    })),
-  )
-
-  const kanbanConfig: KanbanConfig     = { columnWidth: '300px', perPage: 50 }
-  const kanbanFeatures: KanbanFeatures = { dragDrop: true, intraStageReorder: true }
-
-  // ── Kanban events ─────────────────────────────────────────────────────────
-  //
-  // UiKanban has already done the optimistic local update before emitting.
-  // We call the store API (pure HTTP, no store state mutation).
-  // On failure we refresh the two affected columns to restore truth from server.
-
-  async function onKanbanMove(event: KanbanMoveEvent<Workspace>): Promise<void> {
-    try {
-      await workspaceStore.moveCard(event)
-      notify.success('Stage updated', `"${event.item.name}" moved to ${event.toStage}.`)
-    } catch (err: unknown) {
-      notify.error('Move failed', err instanceof Error ? err.message : 'Could not move the card.')
-      // Revert by re-fetching both affected columns
-      kanbanRef.value?.refreshColumn(event.fromStage)
-      kanbanRef.value?.refreshColumn(event.toStage)
-    }
-  }
-
-  async function onKanbanReorder(event: KanbanReorderEvent): Promise<void> {
-    try {
-      await workspaceStore.reorderCards(event)
-    } catch (err: unknown) {
-      notify.error('Reorder failed', err instanceof Error ? err.message : 'Could not save the new order.')
-      kanbanRef.value?.refreshColumn(event.stage)
-    }
-  }
-
-  // ── CRUD ──────────────────────────────────────────────────────────────────
-
-  const handleCreate = (): void => { void router.push({ name: 'workspace-add' }) }
-  const handleView   = (id: number): void => { void router.push({ name: 'workspace-detail', params: { id } }) }
-  const handleEdit   = (id: number): void => { void router.push({ name: 'workspace-edit',   params: { id } }) }
-
-  const deleteModalOpen   = ref(false)
-  const deleteLoading     = ref(false)
-  const workspaceToDelete = ref<{ id: number; name: string } | null>(null)
-
-  function confirmDeletePrompt(id: number, name: string): void {
-    workspaceToDelete.value = { id, name }
-    deleteModalOpen.value   = true
-  }
-
-  async function confirmDelete(): Promise<void> {
-    if (!workspaceToDelete.value) return
-    deleteLoading.value = true
-    try {
-      await workspaceStore.deleteWorkspace(workspaceToDelete.value.id)
-      deleteModalOpen.value   = false
-      workspaceToDelete.value = null
-      notify.success('Workspace deleted', 'The workspace was removed successfully.')
-      onRefresh()
-    } catch {
-      notify.error('Delete failed', "We couldn't delete the workspace.")
-    } finally {
-      deleteLoading.value = false
-    }
-  }
-
-  function formatDate(d: string): string {
-    if (!d) return '—'
-    return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-  }
-
-  // ── Lifecycle ─────────────────────────────────────────────────────────────
-  //
-  // fetchStatuses() must resolve BEFORE UiKanban mounts (or before currentView
-  // switches to 'kanban'), because UiKanban's watch(stages) fires immediately
-  // and stages is empty until statuses are loaded.
-  //
-  // UiTable and UiList self-fetch via :fetch-fn — no extra calls here.
-
-  onMounted(async () => {
-    await workspaceStore.fetchStatuses()
-  })
+// ── Lifecycle — statuses must load before kanban stages are built ─────────────
+onMounted(async () => {
+  await workspaceStore.fetchStatuses()
+})
 </script>

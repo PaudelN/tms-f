@@ -1,377 +1,477 @@
 <template>
   <div
-    class="aurora-root flex flex-col"
-    :class="isFullscreen ? 'aurora-fullscreen' : 'aurora-normal'"
+    class="flex flex-col bg-background text-foreground"
+    :class="isFullscreen ? 'fixed inset-0 z-50 overflow-hidden' : 'relative h-full'"
   >
-    <!-- ═══════════════════════════════════════════════════════════════ -->
-    <!-- TOOLBAR                                                         -->
-    <!-- ═══════════════════════════════════════════════════════════════ -->
-    <div class="aurora-toolbar shrink-0 flex items-center gap-2 px-4 py-2 border-b border-border bg-background">
 
-      <!-- Left cluster -->
-      <div class="flex items-center gap-1 shrink-0">
-        <!-- Collapse all -->
-        <button type="button" class="aurora-btn aurora-btn-ghost" title="Collapse all columns" @click="collapseAll">
-          <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25" />
-          </svg>
-        </button>
-        <!-- Expand all -->
-        <button type="button" class="aurora-btn aurora-btn-ghost" title="Expand all columns" @click="expandAll">
-          <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
-          </svg>
-        </button>
+    <!-- ══════════════════════════════════════════════
+         TOOLBAR
+    ══════════════════════════════════════════════ -->
+    <div class="shrink-0 flex items-center gap-0.5 px-3 h-11 border-b border-border bg-card">
 
-        <div class="aurora-divider" />
-
-        <!-- Density -->
-        <button type="button" class="aurora-btn aurora-btn-ghost aurora-btn-labeled" :title="`Density: ${density}`" @click="cycleDensity">
-          <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path v-if="density === 'compact'"      stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-            <path v-else-if="density === 'default'" stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-            <path v-else                            stroke-linecap="round" stroke-linejoin="round" d="M4 8h16M4 16h16" />
-          </svg>
-          <span class="aurora-btn-label">{{ density }}</span>
-        </button>
-
-        <div class="aurora-divider" />
-
-        <!-- Filter -->
-        <button
-          type="button"
-          class="aurora-btn aurora-btn-ghost aurora-btn-labeled"
-          :class="filterActive ? 'aurora-btn-active' : ''"
-          @click="filterActive = !filterActive"
-        >
-          <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-          </svg>
-          <span class="aurora-btn-label">Filter</span>
-        </button>
-
-        <!-- Sort -->
-        <button
-          type="button"
-          class="aurora-btn aurora-btn-ghost aurora-btn-labeled"
-          :class="sortActive ? 'aurora-btn-active' : ''"
-          @click="sortActive = !sortActive"
-        >
-          <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h5.25m5.25-.75L17.25 9m0 0L21 12.75M17.25 9v12" />
-          </svg>
-          <span class="aurora-btn-label">Sort</span>
-        </button>
-
-        <!-- Group -->
-        <button
-          type="button"
-          class="aurora-btn aurora-btn-ghost aurora-btn-labeled"
-          :class="groupActive ? 'aurora-btn-active' : ''"
-          @click="groupActive = !groupActive"
-        >
-          <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 7.125C2.25 6.504 2.754 6 3.375 6h6c.621 0 1.125.504 1.125 1.125v3.75c0 .621-.504 1.125-1.125 1.125h-6a1.125 1.125 0 01-1.125-1.125v-3.75zM14.25 8.625c0-.621.504-1.125 1.125-1.125h5.25c.621 0 1.125.504 1.125 1.125v8.25c0 .621-.504 1.125-1.125 1.125h-5.25a1.125 1.125 0 01-1.125-1.125v-8.25zM3.75 16.125c0-.621.504-1.125 1.125-1.125h5.25c.621 0 1.125.504 1.125 1.125v2.25c0 .621-.504 1.125-1.125 1.125h-5.25a1.125 1.125 0 01-1.125-1.125v-2.25z" />
-          </svg>
-          <span class="aurora-btn-label">Group</span>
-        </button>
-
-        <div class="aurora-divider" />
-
-        <!-- Search toggle -->
-        <button
-          type="button"
-          class="aurora-btn aurora-btn-ghost"
-          :class="showSearch ? 'aurora-btn-active' : ''"
-          title="Search"
-          @click="showSearch = !showSearch"
-        >
-          <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 15.803a7.5 7.5 0 0010.607 0z" />
-          </svg>
-        </button>
-
-        <!-- Inline search input -->
-        <transition name="aurora-search-slide">
-          <div v-if="showSearch" class="aurora-search-wrap">
-            <svg class="aurora-search-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 15.803a7.5 7.5 0 0010.607 0z" />
-            </svg>
-            <input
-              ref="searchInput"
-              v-model="searchQuery"
-              type="text"
-              placeholder="Search cards…"
-              class="aurora-search-input"
-            />
-            <button v-if="searchQuery" type="button" class="aurora-search-clear" @click="searchQuery = ''">
-              <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-        </transition>
+      <!-- Board mark -->
+      <div class="flex items-center gap-2 mr-1 shrink-0">
+        <div class="w-6 h-6 rounded-md bg-primary flex items-center justify-center shrink-0">
+          <LayoutDashboard class="w-3.5 h-3.5 text-primary-foreground" />
+        </div>
       </div>
+
+      <Separator orientation="vertical" class="h-4 mx-1 shrink-0" />
+
+      <!-- Collapse / Expand all -->
+      <TooltipProvider :delay-duration="300">
+        <Tooltip>
+          <TooltipTrigger as-child>
+            <Button
+              variant="ghost"
+              size="icon"
+              class="h-7 w-7 text-muted-foreground"
+              @click="collapseAll"
+            >
+              <ChevronsLeft class="w-3.5 h-3.5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent><p class="text-xs">Collapse all</p></TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+
+      <TooltipProvider :delay-duration="300">
+        <Tooltip>
+          <TooltipTrigger as-child>
+            <Button
+              variant="ghost"
+              size="icon"
+              class="h-7 w-7 text-muted-foreground"
+              @click="expandAll"
+            >
+              <ChevronsRight class="w-3.5 h-3.5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent><p class="text-xs">Expand all</p></TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+
+      <Separator orientation="vertical" class="h-4 mx-1 shrink-0" />
+
+      <!-- Density -->
+      <TooltipProvider :delay-duration="300">
+        <Tooltip>
+          <TooltipTrigger as-child>
+            <Button
+              variant="ghost"
+              class="h-7 px-2.5 gap-1.5 text-muted-foreground"
+              @click="cycleDensity"
+            >
+              <Rows4      v-if="density === 'compact'"      class="w-3.5 h-3.5" />
+              <Rows3      v-else-if="density === 'default'" class="w-3.5 h-3.5" />
+              <Rows2      v-else                            class="w-3.5 h-3.5" />
+              <span class="text-[11px] font-semibold capitalize">{{ density }}</span>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent><p class="text-xs">Toggle density</p></TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
 
       <!-- Spacer -->
-      <div class="flex-1" />
+      <div class="flex-1 min-w-0" />
 
-      <!-- Right cluster -->
-      <div class="flex items-center gap-1 shrink-0">
-        <!-- Total items -->
-        <span class="aurora-total-badge">
-          {{ totalItems }} items
-        </span>
-
-        <div class="aurora-divider" />
-
-        <!-- Refresh -->
-        <button type="button" class="aurora-btn aurora-btn-ghost" title="Refresh all columns" @click="refresh">
-          <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
-            :class="refreshing ? 'animate-spin' : ''">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
-          </svg>
-        </button>
-
-        <!-- Export -->
-        <button type="button" class="aurora-btn aurora-btn-ghost" title="Export board">
-          <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-          </svg>
-        </button>
-
-        <!-- Fullscreen -->
-        <button type="button" class="aurora-btn aurora-btn-ghost" @click="isFullscreen = !isFullscreen">
-          <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round"
-              :d="isFullscreen
-                ? 'M9 9V4.5M9 9H4.5M9 15v4.5M9 15H4.5M15 9h4.5M15 9V4.5M15 15h4.5M15 15v4.5'
-                : 'M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15'"
-            />
-          </svg>
+      <!-- Stage pills (collapse toggles) -->
+      <div class="hidden sm:flex items-center gap-1.5 min-w-0 overflow-hidden">
+        <button
+          v-for="(stage, si) in stages"
+          :key="stage.value"
+          type="button"
+          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-semibold
+                 cursor-pointer whitespace-nowrap select-none shrink-0
+                 border-border bg-muted transition-all duration-150"
+          :class="collapsedStages.has(stage.value) ? 'opacity-40 line-through text-muted-foreground' : 'text-foreground'"
+          :title="collapsedStages.has(stage.value) ? `Expand ${stage.label}` : `Collapse ${stage.label}`"
+          @click="toggleStage(stage.value)"
+        >
+          <span
+            class="w-1.5 h-1.5 rounded-full shrink-0"
+            :style="{ background: stageColor(si) }"
+          />
+          <span class="truncate max-w-[68px]">{{ stage.label }}</span>
+          <span
+            class="text-[10px] font-black px-1.5 py-px rounded-full"
+            :style="{
+              background: `${stageColor(si)}1a`,
+              color: stageColor(si)
+            }"
+          >{{ col(stage.value).items.length }}</span>
         </button>
       </div>
+
+      <Separator orientation="vertical" class="h-4 mx-1 shrink-0" />
+
+      <!-- Refresh -->
+      <TooltipProvider :delay-duration="300">
+        <Tooltip>
+          <TooltipTrigger as-child>
+            <Button
+              variant="ghost"
+              size="icon"
+              class="h-7 w-7 text-muted-foreground"
+              @click="refresh"
+            >
+              <RefreshCw class="w-3.5 h-3.5" :class="refreshing ? 'animate-spin' : ''" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent><p class="text-xs">Refresh all columns</p></TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+
+      <!-- Fullscreen -->
+      <TooltipProvider :delay-duration="300">
+        <Tooltip>
+          <TooltipTrigger as-child>
+            <Button
+              variant="ghost"
+              size="icon"
+              class="h-7 w-7 text-muted-foreground"
+              @click="isFullscreen = !isFullscreen"
+            >
+              <Shrink v-if="isFullscreen" class="w-3.5 h-3.5" />
+              <Expand v-else              class="w-3.5 h-3.5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent><p class="text-xs">{{ isFullscreen ? 'Exit fullscreen' : 'Fullscreen' }}</p></TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+
     </div>
 
-    <!-- Filter bar (contextual) -->
-    <transition name="aurora-filterbar">
-      <div v-if="filterActive || sortActive" class="aurora-filterbar shrink-0 border-b border-border bg-muted px-4 py-2 flex items-center gap-3">
-        <span class="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-          {{ filterActive ? 'Filters' : 'Sort' }}
-        </span>
-        <Badge variant="outline" class="text-[10px] cursor-pointer hover:bg-accent" @click="filterActive = false; sortActive = false">
-          Clear all
-        </Badge>
+    <!-- Search context hint -->
+    <Transition
+      enter-active-class="transition-all duration-200 ease-out overflow-hidden"
+      enter-from-class="max-h-0 opacity-0"
+      enter-to-class="max-h-10 opacity-100"
+      leave-active-class="transition-all duration-150 ease-in overflow-hidden"
+      leave-from-class="max-h-10 opacity-100"
+      leave-to-class="max-h-0 opacity-0"
+    >
+      <div
+        v-if="searchQuery && searchQuery.trim()"
+        class="shrink-0 flex items-center gap-2 px-4 py-1.5 border-b border-border"
+        style="background: rgb(var(--color-primary) / 0.03)"
+      >
+        <Search class="w-3.5 h-3.5 text-primary shrink-0" />
+        <p class="text-[11px] text-muted-foreground font-medium leading-none">
+          Results for
+          <span class="font-bold text-foreground">"{{ searchQuery }}"</span>
+          <span class="mx-1.5 opacity-30">·</span>
+          <span class="font-semibold text-primary">{{ searchResultCount }} task{{ searchResultCount !== 1 ? 's' : '' }}</span>
+        </p>
       </div>
-    </transition>
+    </Transition>
 
-    <!-- ═══════════════════════════════════════════════════════════════ -->
-    <!-- BOARD                                                           -->
-    <!-- ═══════════════════════════════════════════════════════════════ -->
-    <div class="aurora-board flex gap-3 px-4 py-4 overflow-x-auto flex-1 min-h-0">
+    <!-- ══════════════════════════════════════════════
+         BOARD  — columns fill screen width evenly
+    ══════════════════════════════════════════════ -->
+    <div class="flex-1 min-h-0 flex gap-2.5 px-3 py-3 overflow-x-auto items-start">
 
       <template v-for="(stage, si) in stages" :key="stage.value">
 
-        <!-- ── COLLAPSED state → thin vertical strip ── -->
+        <!-- ── Collapsed strip ── -->
         <div
           v-if="collapsedStages.has(stage.value)"
-          class="aurora-collapsed-strip shrink-0 flex flex-col items-center gap-3 rounded-2xl border border-border bg-card cursor-pointer transition-all duration-300"
+          class="shrink-0 w-10 flex flex-col items-center rounded-xl border border-border
+                 bg-card cursor-pointer transition-colors duration-150 overflow-hidden self-stretch"
+          style="min-height: 120px"
           @click="toggleStage(stage.value)"
+          @mouseenter="(e) => (e.currentTarget as HTMLElement).style.background = 'rgb(var(--color-accent))'"
+          @mouseleave="(e) => (e.currentTarget as HTMLElement).style.background = ''"
         >
-          <!-- Stage icon -->
-          <div class="aurora-col-icon-sm" :style="{ color: `rgb(var(${stageVar(si)}))` }">
-            <component :is="'svg'" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" :d="stageIcon(si)" />
-            </component>
-          </div>
-          <!-- Rotated label -->
-          <span class="aurora-rotated-label" :style="{ color: `rgb(var(${stageVar(si)}))` }">
-            {{ stage.label }}
-          </span>
-          <!-- Count -->
-          <div class="aurora-collapsed-count" :style="{ background: `rgb(var(${stageVar(si)}))` }">
-            {{ col(stage.value).items.length }}
+          <div class="h-[3px] w-full shrink-0" :style="{ background: stageColor(si) }" />
+          <div class="flex flex-col items-center gap-2 py-3 flex-1">
+            <component :is="stageIcon(si)" class="w-3.5 h-3.5 shrink-0" :style="{ color: stageColor(si) }" />
+            <span
+              class="text-[9px] font-black uppercase tracking-widest whitespace-nowrap"
+              style="writing-mode: vertical-rl; transform: rotate(180deg)"
+              :style="{ color: stageColor(si) }"
+            >{{ stage.label }}</span>
+            <div
+              class="mt-auto mb-2 w-5 h-5 rounded-full flex items-center justify-center text-white text-[9px] font-black"
+              :style="{ background: stageColor(si) }"
+            >{{ col(stage.value).items.length }}</div>
           </div>
         </div>
 
-        <!-- ── EXPANDED column ── -->
+        <!-- ── Expanded column ── -->
         <div
           v-else
-          class="aurora-column flex flex-col shrink-0 rounded-2xl border border-border bg-card transition-all duration-200"
-          :class="isDragging && dragOverStage === stage.value ? 'aurora-col-drop-active' : ''"
-          :style="{ width: resolvedColumnWidth }"
+          class="kb-col flex flex-col rounded-xl border border-border bg-card overflow-hidden"
+          :style="{
+            '--ks': stageColor(si),
+            transition: 'box-shadow 0.2s ease',
+            boxShadow: isDragging && dragOverStage === stage.value
+              ? `0 0 0 2px ${stageColor(si)}, 0 4px 16px -4px rgba(0,0,0,0.1)`
+              : '0 1px 3px rgba(0,0,0,0.04)'
+          }"
           @dragenter.prevent="dragOverStage = stage.value"
         >
-          <!-- ── Column Header ── -->
-          <div
-            class="shrink-0 rounded-t-2xl border-b border-border"
-            :style="{ background: `rgb(var(${stageVar(si)}) / 0.06)` }"
-          >
-            <!-- Top accent line -->
-            <div class="h-1 rounded-t-2xl" :style="{ background: `rgb(var(${stageVar(si)}))` }" />
 
-            <div class="px-4 pt-3 pb-3 flex flex-col gap-2">
-              <!-- Row 1: icon + label + collapse -->
-              <div class="flex items-center gap-2.5">
-                <!-- Stage icon -->
+          <!-- Column header -->
+          <div class="shrink-0 border-b border-border">
+            <div class="h-[3px]" :style="{ background: stageColor(si) }" />
+
+            <div class="px-3 pt-2.5 pb-2 space-y-2">
+
+              <!-- Row 1: icon · label · count · wip · collapse -->
+              <div class="flex items-center gap-2 min-w-0">
+
                 <div
-                  class="h-8 w-8 rounded-xl flex items-center justify-center shrink-0 border"
+                  class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
                   :style="{
-                    background: `rgb(var(${stageVar(si)}) / 0.12)`,
-                    borderColor: `rgb(var(${stageVar(si)}) / 0.2)`,
-                    color: `rgb(var(${stageVar(si)}))`
+                    background: `${stageColor(si)}1a`,
+                    color: stageColor(si)
                   }"
                 >
-                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" :d="stageIcon(si)" />
-                  </svg>
+                  <component :is="stageIcon(si)" class="w-3.5 h-3.5" />
                 </div>
 
-                <!-- Label -->
-                <div class="flex-1 min-w-0">
-                  <p class="text-[13px] font-extrabold text-foreground truncate leading-tight">{{ stage.label }}</p>
-                  <p class="text-[10px] text-muted-foreground font-medium mt-0.5">
-                    {{ col(stage.value).loading ? 'Loading…' : `${col(stage.value).items.length} task${col(stage.value).items.length !== 1 ? 's' : ''}` }}
-                  </p>
-                </div>
+                <span class="text-[13px] font-extrabold text-foreground truncate flex-1 leading-none tracking-tight">
+                  {{ stage.label }}
+                </span>
 
-                <!-- Loading spinner -->
-                <svg v-if="col(stage.value).loading" class="animate-spin h-3.5 w-3.5 text-muted-foreground shrink-0" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3V4a8 8 0 00-8 8h4z" />
-                </svg>
+                <Loader2
+                  v-if="col(stage.value).loading"
+                  class="w-3.5 h-3.5 text-muted-foreground animate-spin shrink-0"
+                />
+
+                <span
+                  v-else
+                  class="shrink-0 text-[11px] font-black px-2 py-0.5 rounded-md leading-none"
+                  :style="{
+                    background: `${stageColor(si)}1a`,
+                    color: stageColor(si)
+                  }"
+                >{{ col(stage.value).items.length }}</span>
 
                 <!-- WIP badge -->
                 <Badge
                   v-if="stage.wipLimit"
-                  variant="outline"
-                  class="text-[10px] font-bold shrink-0 h-5 px-1.5"
-                  :class="col(stage.value).items.length >= stage.wipLimit ? 'border-destructive text-destructive' : 'text-muted-foreground'"
+                  :variant="col(stage.value).items.length >= stage.wipLimit ? 'destructive' : 'outline'"
+                  class="shrink-0 text-[9px] h-5 px-1.5 font-extrabold uppercase tracking-wide"
                 >
                   {{ col(stage.value).items.length }}/{{ stage.wipLimit }}
                 </Badge>
 
                 <!-- Collapse button -->
-                <button type="button" class="aurora-col-action-btn shrink-0" title="Collapse column" @click="toggleStage(stage.value)">
-                  <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 9V4.5M9 9H4.5M15 4.5V9m0 0h4.5M9 15v4.5M9 15H4.5M15 19.5V15m0 0h4.5" />
-                  </svg>
-                </button>
+                <TooltipProvider :delay-duration="300">
+                  <Tooltip>
+                    <TooltipTrigger as-child>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        class="h-6 w-6 shrink-0 text-muted-foreground"
+                        @click="toggleStage(stage.value)"
+                      >
+                        <PanelLeftClose class="w-3.5 h-3.5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent><p class="text-xs">Collapse column</p></TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </div>
 
-              <!-- Row 2: column action buttons -->
-              <div class="flex items-center gap-1">
-                <button type="button" class="aurora-col-chip" @click="loadColumn(stage.value)">
-                  <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
-                  </svg>
-                  Refresh
-                </button>
-                <button type="button" class="aurora-col-chip" :style="{ color: `rgb(var(${stageVar(si)}))` }">
-                  <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-                  </svg>
+              <!-- Row 2: count label + quick actions -->
+              <div class="flex items-center gap-1.5 min-w-0">
+                <span class="text-[10px] text-muted-foreground font-medium flex-1 truncate leading-none">
+                  <template v-if="col(stage.value).loading">Loading…</template>
+                  <template v-else-if="searchQuery && searchQuery.trim() && filteredItems(stage.value).length !== col(stage.value).items.length">
+                    {{ filteredItems(stage.value).length }} of {{ col(stage.value).items.length }} shown
+                  </template>
+                  <template v-else>
+                    {{ col(stage.value).items.length }} task{{ col(stage.value).items.length !== 1 ? 's' : '' }}
+                  </template>
+                </span>
+
+                <Button
+                  variant="outline"
+                  class="h-6 px-2 text-[11px] gap-1 font-semibold shrink-0"
+                  :style="{ color: stageColor(si) }"
+                >
+                  <Plus class="w-3 h-3" />
                   Add
-                </button>
-                <button type="button" class="aurora-col-chip ml-auto">
-                  <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM18.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
-                  </svg>
-                </button>
+                </Button>
+
+                <TooltipProvider :delay-duration="300">
+                  <Tooltip>
+                    <TooltipTrigger as-child>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        class="h-6 w-6 text-muted-foreground shrink-0"
+                        @click="loadColumn(stage.value)"
+                      >
+                        <RotateCw class="w-3 h-3" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent><p class="text-xs">Reload column</p></TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+
+                <Button variant="ghost" size="icon" class="h-6 w-6 text-muted-foreground shrink-0">
+                  <MoreHorizontal class="w-3 h-3" />
+                </Button>
               </div>
             </div>
           </div>
 
-          <!-- ── Scrollable Card List ── -->
-          <div class="aurora-cards-scroll flex-1 min-h-0 overflow-y-auto px-3 py-2">
+          <!-- Card scroll area -->
+          <div class="flex-1 min-h-0 overflow-y-auto px-2.5 pt-2 pb-1">
             <draggable
               :model-value="filteredItems(stage.value)"
               :item-key="itemKey"
               group="kanban"
               :animation="200"
-              ghost-class="aurora-ghost"
-              chosen-class="aurora-chosen"
-              drag-class="aurora-dragging"
+              ghost-class="kb-ghost"
+              chosen-class="kb-chosen"
+              drag-class="kb-dragging"
               :disabled="features?.dragDrop === false || col(stage.value).loading"
               :data-stage="stage.value"
-              class="aurora-drop-list flex flex-col gap-2 min-h-16"
-              :class="isDragging ? 'aurora-drop-list-active' : ''"
-              :style="{ paddingBottom: isDragging ? '96px' : '6px' }"
-              @update:model-value="(val) => setItems(stage.value, val)"
-              @start="(e) => onDragStart(e, stage.value)"
+              class="flex flex-col gap-1.5 min-h-[52px] rounded-lg transition-all duration-200"
+              :class="isDragging ? 'kb-dropzone-active' : ''"
+              :style="{ paddingBottom: isDragging ? '84px' : '4px', transition: 'padding-bottom 0.2s ease' }"
+              @update:model-value="(v: T[]) => setItems(stage.value, v)"
+              @start="(_e: Event) => onDragStart(stage.value)"
               @end="onDragEnd"
             >
-              <template #item="{ element: item }">
+              <template #item="{ element }">
                 <div
-                  class="aurora-card relative bg-background border border-border rounded-xl overflow-visible
-                         cursor-grab active:cursor-grabbing transition-all duration-200 group/card"
-                  :class="[
-                    densityPadding,
-                    landingCard?.id === item[itemKey] ? 'aurora-land' : ''
-                  ]"
-                  :style="{ '--aurora-accent': `rgb(var(${stageVar(si)}))` }"
+                  class="kb-card-wrap group/card rounded-lg"
+                  :class="landingCard !== null && landingCard.id === (element as T)[itemKey] ? 'kb-land' : ''"
+                  :style="{ '--ks': stageColor(si) }"
                 >
-                  <!-- Top accent stripe -->
-                  <div class="aurora-card-top-stripe" />
-
-                  <!-- Hover actions -->
                   <div
-                    v-if="$slots['card-actions']"
-                    class="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover/card:opacity-100 transition-opacity z-10"
-                    @click.stop @mousedown.stop @pointerdown.stop
+                    class="relative rounded-lg border border-border bg-background
+                           cursor-grab active:cursor-grabbing"
+                    :class="densityPadding"
+                    style="transition: border-color 0.15s ease, box-shadow 0.15s ease"
                   >
-                    <slot name="card-actions" :item="item" :stage="stage.value" :stage-meta="stage" />
-                  </div>
+                    <!-- Subtle left accent bar -->
+                    <div
+                      class="absolute left-0 rounded-r-sm pointer-events-none"
+                      style="
+                        width: 2.5px; top: 20%; bottom: 20%;
+                        transition: opacity 0.15s ease, top 0.15s ease, bottom 0.15s ease;
+                        opacity: 0.25;
+                      "
+                      :style="{ background: stageColor(si) }"
+                    />
+                    <div
+                      class="absolute left-0 rounded-r-sm pointer-events-none
+                             opacity-0 group-hover/card:opacity-100"
+                      style="
+                        width: 2.5px; top: 8%; bottom: 8%;
+                        transition: opacity 0.15s ease;
+                      "
+                      :style="{ background: stageColor(si) }"
+                    />
 
-                  <slot name="card" :item="item" :stage="stage.value" :stage-meta="stage">
-                    <p class="text-sm font-semibold text-foreground truncate">
-                      {{ (item as Record<string, unknown>).name ?? item.id }}
-                    </p>
-                  </slot>
+                    <!-- Hover card actions -->
+                    <div
+                      v-if="$slots['card-actions']"
+                      class="absolute top-2 right-2 flex gap-1 z-10
+                             opacity-0 group-hover/card:opacity-100 transition-opacity duration-150"
+                      @click.stop
+                      @mousedown.stop
+                      @pointerdown.stop
+                    >
+                      <slot name="card-actions" :item="element" :stage="stage.value" :stage-meta="stage" />
+                    </div>
+
+                    <div class="pl-3">
+                      <slot name="card" :item="element" :stage="stage.value" :stage-meta="stage">
+                        <p class="text-sm font-semibold text-foreground truncate">
+                          {{ (element as Record<string, unknown>).name ?? (element as T)[itemKey] }}
+                        </p>
+                      </slot>
+                    </div>
+                  </div>
                 </div>
               </template>
 
+              <!-- Loading skeletons -->
               <template #header>
-                <div v-if="col(stage.value).loading" class="flex flex-col gap-2 pb-2">
-                  <div v-for="n in 3" :key="n" class="aurora-skeleton animate-pulse rounded-xl" />
+                <div v-if="col(stage.value).loading" class="flex flex-col gap-1.5 pb-1">
+                  <div
+                    v-for="n in 3"
+                    :key="n"
+                    class="rounded-lg bg-muted border border-border animate-pulse"
+                    :style="{
+                      height: density === 'compact' ? '56px' : density === 'comfortable' ? '92px' : '72px',
+                      animationDelay: `${n * 80}ms`
+                    }"
+                  />
                 </div>
               </template>
 
+              <!-- Footer: empty / error / add -->
               <template #footer>
-                <div
-                  v-if="!col(stage.value).loading && filteredItems(stage.value).length === 0 && !col(stage.value).error"
-                  class="aurora-empty-state"
+
+                <!-- Empty state -->
+                <Transition
+                  enter-active-class="transition-opacity duration-150"
+                  enter-from-class="opacity-0"
+                  enter-to-class="opacity-100"
                 >
-                  <div class="aurora-empty-icon" :style="{ color: `rgb(var(${stageVar(si)}))` }">
-                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                    </svg>
+                  <div
+                    v-if="!col(stage.value).loading && filteredItems(stage.value).length === 0 && !col(stage.value).error"
+                    class="flex flex-col items-center gap-2 py-8 px-3 mb-1
+                           border-2 border-dashed border-border rounded-lg"
+                  >
+                    <div
+                      class="w-9 h-9 rounded-xl flex items-center justify-center"
+                      :style="{
+                        background: `${stageColor(si)}14`,
+                        color: stageColor(si)
+                      }"
+                    >
+                      <component :is="stageIcon(si)" class="w-4.5 h-4.5" />
+                    </div>
+                    <p class="text-[11px] font-semibold text-muted-foreground text-center">
+                      {{ searchQuery && searchQuery.trim() ? 'No matching tasks' : 'Nothing here yet' }}
+                    </p>
+                    <p
+                      v-if="!(searchQuery && searchQuery.trim())"
+                      class="text-[10px] text-muted-foreground/60 text-center"
+                    >Drop a card or add a new task</p>
                   </div>
-                  <p class="text-[11px] text-muted-foreground font-semibold">
-                    {{ searchQuery ? 'No matches' : `No tasks in ${stage.label}` }}
-                  </p>
-                  <p v-if="!searchQuery" class="text-[10px] text-muted-foreground">Drag tasks here or add new</p>
+                </Transition>
+
+                <!-- Error state -->
+                <div
+                  v-if="col(stage.value).error"
+                  class="flex items-center gap-2 px-3 py-2.5 rounded-lg mb-1.5
+                         border border-destructive/25 bg-destructive/5"
+                >
+                  <AlertCircle class="w-3.5 h-3.5 text-destructive shrink-0" />
+                  <p class="text-[11px] text-destructive font-semibold flex-1 truncate">{{ col(stage.value).error }}</p>
+                  <button
+                    type="button"
+                    class="text-[10px] font-bold text-destructive hover:underline shrink-0"
+                    @click="loadColumn(stage.value)"
+                  >Retry</button>
                 </div>
 
-                <div v-if="col(stage.value).error" class="aurora-error-state">
-                  <p class="text-[11px] text-destructive font-semibold">{{ col(stage.value).error }}</p>
-                  <button type="button" class="aurora-col-chip text-destructive border-destructive" @click="loadColumn(stage.value)">Retry</button>
-                </div>
-
-                <!-- Add task button at bottom of list -->
+                <!-- Add task button -->
                 <button
                   type="button"
-                  class="aurora-add-task-btn w-full"
-                  :style="{ '--aurora-accent': `rgb(var(${stageVar(si)}))` }"
+                  class="kb-add-btn group/add"
                 >
-                  <svg class="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-                  </svg>
+                  <Plus class="w-3.5 h-3.5 shrink-0 transition-transform duration-200 group-hover/add:rotate-90" />
                   Add task
                 </button>
+
+                <slot name="column-footer" :stage="stage.value" :stage-meta="stage" />
               </template>
             </draggable>
           </div>
+
+          <slot name="column-action" :stage="stage.value" :stage-meta="stage" />
         </div>
 
       </template>
@@ -380,27 +480,63 @@
 </template>
 
 <script setup lang="ts" generic="T extends { id: number | string; [key: string]: any }">
-import { computed, nextTick, reactive, ref, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import draggable from 'vuedraggable'
-import type { KanbanConfig, KanbanFeatures, KanbanMoveEvent, KanbanReorderEvent, KanbanStageDefinition } from './types/kanban.types'
+
+import Button    from '@/components/ui/button/Button.vue'
+import Badge     from '@/components/ui/badge/Badge.vue'
+import Separator from '@/components/ui/separator/Separator.vue'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+
+import {
+  LayoutDashboard,
+  ChevronsLeft, ChevronsRight,
+  Rows4, Rows3, Rows2,
+  RefreshCw, Expand, Shrink, Search,
+  Loader2, Plus, RotateCw, MoreHorizontal,
+  PanelLeftClose, AlertCircle,
+  ClipboardList, Zap, Settings2, CheckCircle2, CircleCheck,
+} from 'lucide-vue-next'
+
+import type { Component } from 'vue'
+import type {
+  KanbanConfig,
+  KanbanFeatures,
+  KanbanMoveEvent,
+  KanbanReorderEvent,
+  KanbanStageDefinition,
+} from './types/kanban.types'
 import type { UniversalApiResponse, UniversalFetchParams } from './types/universal.types'
-import Button from '@/components/ui/button/Button.vue'
-import Badge from '@/components/ui/badge/Badge.vue'
 
-interface SortableEvent { from: Element; to: Element; newIndex: number; oldIndex: number }
-interface ColumnState { items: T[]; loading: boolean; error: string | null }
-
-interface Props {
-  fetchFn:   (params: UniversalFetchParams) => Promise<UniversalApiResponse<T>>
-  stages:    KanbanStageDefinition[]
-  config?:   KanbanConfig
-  features?: KanbanFeatures
-  itemKey?:  string
+// ── Local types ───────────────────────────────────────────────────────────────
+interface SortableEvent {
+  from: Element
+  to:   Element
+  newIndex: number
+  oldIndex: number
 }
 
+interface ColumnState {
+  items:   T[]
+  loading: boolean
+  error:   string | null
+}
+
+interface Props {
+  fetchFn:      (params: UniversalFetchParams) => Promise<UniversalApiResponse<T>>
+  stages:       KanbanStageDefinition[]
+  config?:      KanbanConfig
+  features?:    KanbanFeatures
+  itemKey?:     string
+  /** From useUniversalInteractions().searchQuery — drives client-side filtering. */
+  searchQuery?: string
+}
+
+// ── Props / emits ─────────────────────────────────────────────────────────────
 const props = withDefaults(defineProps<Props>(), {
-  itemKey: 'id',
-  features: () => ({ dragDrop: true, intraStageReorder: true }),
+  itemKey:     'id',
+  searchQuery: '',
+  features:    () => ({ dragDrop: true, intraStageReorder: true }),
 })
 
 const emit = defineEmits<{
@@ -408,86 +544,122 @@ const emit = defineEmits<{
   (e: 'reorder', event: KanbanReorderEvent): void
 }>()
 
-const resolvedColumnWidth = computed(() => props.config?.columnWidth ?? '300px')
-const resolvedPerPage     = computed(() => props.config?.perPage     ?? 50)
+// ── Column state ──────────────────────────────────────────────────────────────
+const columnData      = reactive<Record<string, ColumnState>>({})
+const resolvedPerPage = computed<number>(() => props.config?.perPage ?? 50)
 
-// ── Column data ──
-const columnData = reactive<Record<string, ColumnState>>({})
 function col(sv: string): ColumnState {
-  if (!columnData[sv]) columnData[sv] = { items: [], loading: false, error: null }
-  return columnData[sv]
-}
-function setItems(sv: string, items: T[]) { col(sv).items = items }
-
-async function loadColumn(sv: string) {
-  const s = col(sv); s.loading = true; s.error = null
-  try {
-    const r = await props.fetchFn({ page: 1, perPage: resolvedPerPage.value, search: '', sortBy: null, sortOrder: null, kanbanStage: sv })
-    s.items = Array.isArray(r.data) ? r.data : []
-  } catch { s.error = 'Failed to load.' } finally { s.loading = false }
-}
-
-watch(() => props.stages, (ns) => {
-  for (const st of ns) {
-    const ex = columnData[st.value]
-    if (!ex || (!ex.loading && ex.items.length === 0 && !ex.error)) loadColumn(st.value)
+  if (!columnData[sv]) {
+    columnData[sv] = { items: [], loading: false, error: null }
   }
-}, { immediate: true })
-
-// ── UI state ──
-type Density = 'compact' | 'default' | 'comfortable'
-const density         = ref<Density>('default')
-const isFullscreen    = ref(false)
-const collapsedStages = ref(new Set<string>())
-const isDragging      = ref(false)
-const dragOverStage   = ref<string | null>(null)
-const landingCard     = ref<{ id: string | number } | null>(null)
-const searchQuery     = ref('')
-const showSearch      = ref(false)
-const filterActive    = ref(false)
-const sortActive      = ref(false)
-const refreshing      = ref(false)
-const searchInput     = ref<HTMLInputElement | null>(null)
-
-const densityPadding = computed(() => ({
-  compact:     'px-3 py-2.5',
-  default:     'px-4 py-3',
-  comfortable: 'px-5 py-4',
-}[density.value]))
-
-function cycleDensity() {
-  const o: Density[] = ['compact', 'default', 'comfortable']
-  density.value = o[(o.indexOf(density.value) + 1) % o.length]
+  return columnData[sv] as ColumnState
 }
 
-function toggleStage(sv: string) {
-  collapsedStages.value.has(sv) ? collapsedStages.value.delete(sv) : collapsedStages.value.add(sv)
+function setItems(sv: string, items: T[]): void {
+  col(sv).items = items
 }
 
-function collapseAll() {
-  props.stages.forEach(s => collapsedStages.value.add(s.value))
+async function loadColumn(sv: string): Promise<void> {
+  const s = col(sv)
+  s.loading = true
+  s.error   = null
+  try {
+    const r = await props.fetchFn({
+      page: 1, perPage: resolvedPerPage.value,
+      // Pass the external searchQuery so the server filters by it too
+      search: props.searchQuery ?? '', sortBy: null, sortOrder: null, kanbanStage: sv,
+    })
+    s.items = Array.isArray(r.data) ? (r.data as T[]) : []
+  } catch {
+    s.error = 'Failed to load.'
+  } finally {
+    s.loading = false
+  }
 }
 
-function expandAll() {
-  collapsedStages.value.clear()
-}
+// Reload all columns when stages list changes (e.g. on mount)
+watch(
+  () => props.stages,
+  (stages: KanbanStageDefinition[]) => {
+    for (const st of stages) {
+      const ex = columnData[st.value]
+      if (!ex || (!ex.loading && ex.items.length === 0 && !ex.error)) {
+        loadColumn(st.value)
+      }
+    }
+  },
+  { immediate: true },
+)
 
-// ── Search filter (client-side only, no store mutation) ──
+// Debounced server-side reload when external searchQuery changes
+let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null
+watch(
+  () => props.searchQuery,
+  () => {
+    if (searchDebounceTimer) clearTimeout(searchDebounceTimer)
+    searchDebounceTimer = setTimeout(() => {
+      for (const st of props.stages) loadColumn(st.value)
+    }, props.config?.debounceMs ?? 400)
+  },
+)
+
+// ── Search ────────────────────────────────────────────────────────────────────
 function filteredItems(sv: string): T[] {
-  if (!searchQuery.value.trim()) return col(sv).items
-  const q = searchQuery.value.toLowerCase()
-  return col(sv).items.filter(item =>
-    Object.values(item).some(v => String(v).toLowerCase().includes(q))
+  const q = (props.searchQuery ?? '').trim().toLowerCase()
+  if (!q) return col(sv).items
+  return col(sv).items.filter((item: T) =>
+    Object.values(item as Record<string, unknown>).some((v) =>
+      String(v ?? '').toLowerCase().includes(q)
+    )
   )
 }
 
-watch(showSearch, async (v) => {
-  if (v) { await nextTick(); searchInput.value?.focus() }
+const searchResultCount = computed<number>(() =>
+  props.stages.reduce((n, s) => n + filteredItems(s.value).length, 0)
+)
+
+// ── UI state ──────────────────────────────────────────────────────────────────
+type Density = 'compact' | 'default' | 'comfortable'
+
+const density         = ref<Density>('default')
+const isFullscreen    = ref<boolean>(false)
+const collapsedStages = ref<Set<string>>(new Set<string>())
+const isDragging      = ref<boolean>(false)
+const dragOverStage   = ref<string | null>(null)
+const landingCard     = ref<{ id: string | number } | null>(null)
+const refreshing      = ref<boolean>(false)
+
+const densityPadding = computed<string>(() => {
+  const map: Record<Density, string> = {
+    compact:     'px-3 py-2',
+    default:     'px-3.5 py-3',
+    comfortable: 'px-4 py-4',
+  }
+  return map[density.value]
 })
 
-// ── Stage theming using CSS variables (no hardcoded colors) ──
-// Maps stage index to --color-* CSS variable names from their tailwind.css
-const stageVars = [
+function cycleDensity(): void {
+  const order: Density[] = ['compact', 'default', 'comfortable']
+  density.value = order[(order.indexOf(density.value) + 1) % order.length]
+}
+
+function toggleStage(sv: string): void {
+  const next = new Set(collapsedStages.value)
+  next.has(sv) ? next.delete(sv) : next.add(sv)
+  collapsedStages.value = next
+}
+
+function collapseAll(): void {
+  collapsedStages.value = new Set(props.stages.map((s) => s.value))
+}
+
+function expandAll(): void {
+  collapsedStages.value = new Set<string>()
+}
+
+// ── Stage theming ─────────────────────────────────────────────────────────────
+// Returns a resolved rgb() string so it can be used in hex-alpha hacks (#RRGGBB1a)
+const cssVarNames: string[] = [
   '--color-primary',
   '--color-ring',
   '--color-primary',
@@ -496,40 +668,45 @@ const stageVars = [
 ]
 
 function stageVar(i: number): string {
-  // Use stage colorClass if it contains a meaningful hint, otherwise cycle
-  const stage = props.stages[i]
-  if (stage?.dot?.includes('violet') || stage?.dot?.includes('purple')) return '--color-primary'
-  if (stage?.dot?.includes('red') || stage?.dot?.includes('destructive')) return '--color-destructive'
-  return stageVars[i % stageVars.length]
+  const st = props.stages[i]
+  if (st?.dot?.includes('violet') || st?.dot?.includes('purple'))   return '--color-primary'
+  if (st?.dot?.includes('red')    || st?.dot?.includes('destruct')) return '--color-destructive'
+  return cssVarNames[i % cssVarNames.length]
 }
 
-// ── Stage icons (per column index) ──
-const icons = [
-  'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2',
-  'M13 10V3L4 14h7v7l9-11h-7z',
-  'M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4',
-  'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
-  'M5 13l4 4L19 7',
-]
-function stageIcon(i: number): string { return icons[i % icons.length] }
+/** Returns `rgb(var(--color-*))` string for inline style binding */
+function stageColor(i: number): string {
+  return `rgb(var(${stageVar(i)}))`
+}
 
-// ── Drag ──
+// Stage icons (Lucide components)
+const iconList: Component[] = [ClipboardList, Zap, Settings2, CheckCircle2, CircleCheck]
+
+function stageIcon(i: number): Component {
+  return iconList[i % iconList.length]
+}
+
+// ── Drag ──────────────────────────────────────────────────────────────────────
 let dragFromStage: string | null = null
 
-function onDragStart(_e: DragEvent, sv: string) {
-  dragFromStage = sv; isDragging.value = true; dragOverStage.value = sv
+function onDragStart(sv: string): void {
+  dragFromStage       = sv
+  isDragging.value    = true
+  dragOverStage.value = sv
 }
 
-function onDragEnd(event: SortableEvent) {
-  const from = event.from.getAttribute('data-stage') ?? dragFromStage
-  const to   = event.to.getAttribute('data-stage')   ?? from
-  dragFromStage = null; isDragging.value = false
+function onDragEnd(ev: SortableEvent): void {
+  const from = ev.from.getAttribute('data-stage') ?? dragFromStage
+  const to   = ev.to.getAttribute('data-stage')   ?? from
+
+  dragFromStage = null
+  isDragging.value = false
 
   if (to) {
-    const item = col(to).items[event.newIndex] as T | undefined
-    if (item) {
-      landingCard.value = { id: item[props.itemKey] }
-      setTimeout(() => { landingCard.value = null }, 450)
+    const dropped = col(to).items[ev.newIndex] as T | undefined
+    if (dropped) {
+      landingCard.value = { id: dropped[props.itemKey] as string | number }
+      setTimeout(() => { landingCard.value = null }, 380)
     }
   }
 
@@ -537,314 +714,166 @@ function onDragEnd(event: SortableEvent) {
   if (!from || !to) return
 
   if (from !== to) {
-    const item = col(to).items[event.newIndex] as T | undefined
-    if (!item) return
-    const meta = props.stages.find(s => s.value === to)
-    if (meta?.wipLimit && col(to).items.length > meta.wipLimit) { loadColumn(from); loadColumn(to); return }
-    emit('move', { item, fromStage: from, toStage: to, newIndex: event.newIndex })
+    const moved = col(to).items[ev.newIndex] as T | undefined
+    if (!moved) return
+    const meta = props.stages.find((s) => s.value === to)
+    if (meta?.wipLimit && col(to).items.length > meta.wipLimit) {
+      loadColumn(from)
+      loadColumn(to)
+      return
+    }
+    emit('move', { item: moved, fromStage: from, toStage: to, newIndex: ev.newIndex })
   } else if (props.features?.intraStageReorder !== false) {
-    emit('reorder', { stage: to, orderedIds: col(to).items.map(i => i[props.itemKey]) })
+    emit('reorder', {
+      stage:      to,
+      orderedIds: col(to).items.map((i: T) => i[props.itemKey] as string | number),
+    })
   }
 }
 
-// ── Public API ──
-const totalItems    = computed(() => props.stages.reduce((n, s) => n + col(s.value).items.length, 0))
-const columnCounts  = computed(() => {
+// ── Public API ────────────────────────────────────────────────────────────────
+const totalItems   = computed<number>(() => props.stages.reduce((n, s) => n + col(s.value).items.length, 0))
+const columnCounts = computed<Record<string, number>>(() => {
   const c: Record<string, number> = {}
   for (const s of props.stages) c[s.value] = col(s.value).items.length
   return c
 })
-function refreshColumn(sv: string) { loadColumn(sv) }
-async function refresh() {
+
+function refreshColumn(sv: string): void { loadColumn(sv) }
+
+async function refresh(): Promise<void> {
   refreshing.value = true
-  await Promise.all(props.stages.map(s => loadColumn(s.value)))
+  await Promise.all(props.stages.map((s) => loadColumn(s.value)))
   refreshing.value = false
 }
-defineExpose({ refresh, refreshColumn, columnCounts })
+
+defineExpose({ refresh, refreshColumn, columnCounts, totalItems })
 </script>
 
 <style>
-/* ══════════════════════════════════════════════════════════════════════
-   AURORA KANBAN — Theme-adaptive, uses --color-* CSS variables only
-   ══════════════════════════════════════════════════════════════════════ */
+/*
+  UIKANBAN — pure CSS, zero @apply.
+  Only rules that Tailwind cannot express at runtime belong here:
+    1. Fluid column sizing
+    2. Card-wrap hover (uses CSS custom property --ks set inline)
+    3. Add-task button hover (uses --ks)
+    4. SortableJS drag clone classes (appended to <body>, must be global + !important)
+    5. Landing keyframe
+*/
 
-.aurora-root { background: rgb(var(--color-background)); color: rgb(var(--color-foreground)); }
-.aurora-fullscreen { position: fixed; inset: 0; z-index: 50; overflow: hidden; }
-.aurora-normal { position: relative; height: 100%; }
-
-/* ── Toolbar ── */
-.aurora-toolbar { background: rgb(var(--color-background)); }
-
-.aurora-btn {
-  display: inline-flex; align-items: center; justify-content: center; gap: 5px;
-  padding: 4px 7px; border-radius: 7px; border: none; cursor: pointer;
-  font-size: 11px; font-weight: 600;
-  transition: all 0.15s ease;
-}
-.aurora-btn-ghost {
-  background: transparent;
-  color: rgb(var(--color-muted-foreground));
-}
-.aurora-btn-ghost:hover {
-  background: rgb(var(--color-accent));
-  color: rgb(var(--color-foreground));
-}
-.aurora-btn-active {
-  background: rgb(var(--color-primary));
-  color: rgb(var(--color-primary-foreground));
-}
-.aurora-btn-label {
-  font-size: 11px; font-weight: 600; text-transform: capitalize;
-}
-.aurora-btn-labeled { padding: 4px 9px; }
-
-.aurora-divider { width: 1px; height: 18px; background: rgb(var(--color-border)); margin: 0 2px; flex-shrink: 0; }
-
-.aurora-total-badge {
-  font-size: 11px; font-weight: 700;
-  padding: 3px 10px; border-radius: 9999px;
-  background: rgb(var(--color-muted));
-  color: rgb(var(--color-muted-foreground));
-}
-
-/* ── Search ── */
-.aurora-search-wrap {
-  display: flex; align-items: center; gap: 5px;
-  background: rgb(var(--color-muted));
-  border: 1.5px solid rgb(var(--color-border));
-  border-radius: 8px;
-  padding: 3px 8px;
-  min-width: 180px; max-width: 260px;
-  overflow: hidden;
-}
-.aurora-search-icon { width: 13px; height: 13px; color: rgb(var(--color-muted-foreground)); flex-shrink: 0; }
-.aurora-search-input {
-  flex: 1; border: none; outline: none; background: transparent;
-  font-size: 12px; color: rgb(var(--color-foreground));
-  font-weight: 500;
-}
-.aurora-search-input::placeholder { color: rgb(var(--color-muted-foreground)); }
-.aurora-search-clear {
-  border: none; background: none; cursor: pointer; padding: 1px;
-  color: rgb(var(--color-muted-foreground)); border-radius: 4px;
-  display: flex; align-items: center; justify-content: center;
-}
-.aurora-search-clear:hover { color: rgb(var(--color-foreground)); }
-
-.aurora-search-slide-enter-active,
-.aurora-search-slide-leave-active { transition: all 0.2s ease; }
-.aurora-search-slide-enter-from,
-.aurora-search-slide-leave-to { opacity: 0; transform: scaleX(0.8); transform-origin: left; }
-
-/* ── Filter bar ── */
-.aurora-filterbar { background: rgb(var(--color-muted)); }
-.aurora-filterbar-enter-active,
-.aurora-filterbar-leave-active { transition: all 0.2s ease; max-height: 48px; }
-.aurora-filterbar-enter-from,
-.aurora-filterbar-leave-to { max-height: 0; opacity: 0; overflow: hidden; }
-
-/* ── Board layout ── */
-.aurora-board { align-items: flex-start; }
-
-/* ── Column ── */
-.aurora-column {
+/* ── Column: flex-grow evenly, constrained ── */
+.kb-col {
+  flex: 1 0 220px;
+  max-width: 370px;
   height: 100%;
-  max-height: calc(100vh - 8.5rem);
+  max-height: calc(100vh - 7.5rem);
+}
+
+/* ── Card wrap: vertical lift on hover, zero rotation ── */
+.kb-card-wrap {
+  will-change: transform;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.kb-card-wrap:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px -3px rgba(0,0,0,0.08), 0 2px 5px -2px rgba(0,0,0,0.05);
+}
+.kb-card-wrap:hover > div {
+  border-color: var(--ks);
+}
+
+/* ── Add task button: uses column --ks variable ── */
+.kb-add-btn {
+  width: 100%;
   display: flex;
-  flex-direction: column;
-  background: rgb(var(--color-card));
-  box-shadow: 0 1px 3px 0 rgba(0,0,0,0.04), 0 1px 2px -1px rgba(0,0,0,0.04);
-}
-
-.aurora-col-drop-active {
-  box-shadow:
-    0 0 0 2px rgb(var(--color-primary)),
-    0 8px 32px -8px rgba(0,0,0,0.15) !important;
-  transform: scale(1.006);
-  transition: all 0.15s ease-out;
-}
-
-/* ── Column header actions ── */
-.aurora-col-action-btn {
-  display: flex; align-items: center; justify-content: center;
-  width: 26px; height: 26px; border-radius: 7px; border: none; cursor: pointer;
-  background: transparent; color: rgb(var(--color-muted-foreground));
-  transition: all 0.15s ease; flex-shrink: 0;
-}
-.aurora-col-action-btn:hover {
-  background: rgb(var(--color-accent));
-  color: rgb(var(--color-foreground));
-}
-
-.aurora-col-chip {
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 2px 8px; border-radius: 5px; border: none; cursor: pointer;
-  font-size: 11px; font-weight: 600;
-  background: rgb(var(--color-muted));
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 2px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1.5px dashed rgb(var(--color-border));
+  font-size: 11px;
+  font-weight: 700;
   color: rgb(var(--color-muted-foreground));
-  transition: all 0.15s ease;
+  background: transparent;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
 }
-.aurora-col-chip:hover {
-  background: rgb(var(--color-accent));
-  color: rgb(var(--color-foreground));
+.kb-add-btn:hover {
+  border-color: var(--ks);
+  color: var(--ks);
+  background: rgb(var(--color-muted));
 }
 
-/* ── Scrollable cards ── */
-.aurora-cards-scroll {
-  overflow-y: auto; scroll-behavior: smooth;
-  scrollbar-width: thin; scrollbar-color: transparent transparent;
+/* Dropzone: dotted background activates on the list while any drag is in progress */
+.kb-dropzone-active {
+  background-image: radial-gradient(
+    circle,
+    rgb(var(--color-border)) 1px,
+    transparent 1px
+  );
+  background-size: 16px 16px;
+  background-position: center;
 }
-.aurora-cards-scroll:hover { scrollbar-color: rgba(var(--color-muted-foreground),0.25) transparent; }
-.aurora-cards-scroll::-webkit-scrollbar { width: 4px; }
-.aurora-cards-scroll::-webkit-scrollbar-track { background: transparent; }
-.aurora-cards-scroll::-webkit-scrollbar-thumb { background: transparent; border-radius: 9999px; }
-.aurora-cards-scroll:hover::-webkit-scrollbar-thumb { background: rgb(var(--color-muted-foreground) / 0.2); }
 
-/* ── Drop list ── */
-.aurora-drop-list { transition: padding-bottom 0.2s ease; }
-.aurora-drop-list-active {
+/* ══════════════════════════════════════════════════════
+   SORTABLEJS DRAG CLASSES
+   Applied to the clone SortableJS appends to <body>.
+   Must be global-scoped and use !important.
+══════════════════════════════════════════════════════ */
+
+/* Ghost: hatch placeholder at the original position */
+.kb-ghost {
+  opacity: 1 !important;
   background-image: repeating-linear-gradient(
     -45deg,
-    transparent 0, transparent 6px,
-    rgb(var(--color-muted)) 6px, rgb(var(--color-muted)) 7px
-  );
-  border-radius: 10px;
-  padding: 6px;
-}
-
-/* ── Cards ── */
-.aurora-card {
-  will-change:auto;
-  background: rgb(var(--color-background));
-}
-
-.aurora-card-top-stripe {
-  position: absolute; top: 0; left: 12%; right: 12%;
-  height: 2px; border-radius: 0 0 4px 4px;
-  background: var(--aurora-accent, rgb(var(--color-primary)));
-  opacity: 0; transition: opacity 0.15s ease;
-}
-.aurora-card:hover .aurora-card-top-stripe { opacity: 1; }
-
-.aurora-card:hover {
-  transform: translateY(-2px) !important;
-  box-shadow: 0 8px 24px -6px rgba(0,0,0,0.1), 0 2px 6px -2px rgba(0,0,0,0.06) !important;
-  border-color: var(--aurora-accent, rgb(var(--color-primary))) !important;
-}
-
-/* ── Skeleton ── */
-.aurora-skeleton {
-  height: 80px;
-  background: rgb(var(--color-muted));
-  border: 1px solid rgb(var(--color-border));
-}
-
-/* ── Empty / Error states ── */
-.aurora-empty-state {
-  display: flex; flex-direction: column; align-items: center; gap: 6px;
-  padding: 32px 16px;
-  border: 2px dashed rgb(var(--color-border));
-  border-radius: 12px; margin-bottom: 4px;
-}
-.aurora-empty-icon {
-  width: 40px; height: 40px; border-radius: 12px;
-  background: rgb(var(--color-muted));
-  display: flex; align-items: center; justify-content: center;
-}
-.aurora-error-state {
-  display: flex; flex-direction: column; align-items: center; gap: 6px;
-  padding: 20px 16px;
-  border: 2px dashed rgb(var(--color-destructive));
-  border-radius: 12px; margin-bottom: 4px;
-  opacity: 0.7;
-}
-
-/* ── Add task button ── */
-.aurora-add-task-btn {
-  display: flex; align-items: center; justify-content: center; gap: 6px;
-  width: 100%; padding: 10px 12px; border-radius: 10px;
-  font-size: 12px; font-weight: 700;
-  color: rgb(var(--color-muted-foreground));
-  background: transparent;
-  border: 2px dashed rgb(var(--color-border));
-  cursor: pointer; transition: all 0.15s ease;
-}
-.aurora-add-task-btn:hover {
-  border-color: var(--aurora-accent, rgb(var(--color-primary)));
-  color: var(--aurora-accent, rgb(var(--color-primary)));
-  background: rgb(var(--color-muted));
-}
-
-/* ── Collapsed strip ── */
-.aurora-collapsed-strip {
-  width: 48px; padding: 14px 0 14px;
-  display: flex; flex-direction: column; align-items: center;
-  height: 100%; max-height: calc(100vh - 8.5rem);
-  gap: 10px;
-  background: rgb(var(--color-card));
-}
-.aurora-collapsed-strip:hover { background: rgb(var(--color-accent)); }
-.aurora-col-icon-sm { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; }
-.aurora-rotated-label {
-  writing-mode: vertical-rl; text-orientation: mixed;
-  transform: rotate(180deg);
-  font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em;
-  white-space: nowrap;
-}
-.aurora-collapsed-count {
-  width: 22px; height: 22px; border-radius: 9999px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 10px; font-weight: 800; color: white;
-  margin-top: auto; margin-bottom: 4px;
-}
-
-/* ══════════════════════
-   45° DRAG STATES
-   ══════════════════════ */
-
-/* Ghost: dashed dotted placeholder — VISIBLE with pattern */
-.aurora-ghost {
-  opacity: 1 !important;
-  background: repeating-linear-gradient(
-    -45deg,
-    transparent 0, transparent 5px,
+    transparent 0px, transparent 5px,
     rgb(var(--color-muted)) 5px, rgb(var(--color-muted)) 6px
   ) !important;
-  border: 2px dashed rgb(var(--color-border)) !important;
-  border-radius: 12px !important;
+  border: 1.5px dashed rgb(var(--color-border)) !important;
+  border-radius: 8px !important;
   box-shadow: none !important;
 }
-.aurora-ghost > * { opacity: 0 !important; }
+.kb-ghost > * { opacity: 0 !important; }
 
-/* Chosen: the moment of grabbing */
-.aurora-chosen {
-  transform: rotate(3deg) scale(1.03) !important;
-  box-shadow: 0 12px 32px -6px rgba(0,0,0,0.2) !important;
+/* Chosen: subtle lift on mousedown, before drag threshold */
+.kb-chosen {
+  opacity: 0.97 !important;
+  transform: scale(1.012) translateY(-1px) rotate(1deg) !important;
+  box-shadow:
+    0 8px 20px -4px rgba(0,0,0,0.1),
+    0 3px 8px  -2px rgba(0,0,0,0.06) !important;
   cursor: grabbing !important;
   z-index: 200 !important;
-  transition: transform 0.1s ease-out, box-shadow 0.1s ease-out !important;
+  border-radius: 8px !important;
+  background: rgb(var(--color-background)) !important;
+  transition: transform 0.12s ease, box-shadow 0.12s ease !important;
 }
 
-/* Dragging: FULL 45-DEGREE TILT as requested */
-.aurora-dragging {
-  transform: rotate(45deg) scale(0.85) !important;
+/* Dragging: floating clone — elevated, 2.5° tilt (calm, not aggressive) */
+.kb-dragging {
+  transform: scale(0.975) translateY(-3px) rotate(2.5deg) !important;
   box-shadow:
-    0 32px 64px -12px rgba(0,0,0,0.3),
-    0 16px 32px -8px rgba(0,0,0,0.15),
-    0 0 0 2px rgb(var(--color-primary)) !important;
+    0 24px 48px -10px rgba(0,0,0,0.16),
+    0  8px 20px  -5px rgba(0,0,0,0.1),
+    0  0   0  1.5px rgb(var(--color-primary) / 0.35) !important;
+  opacity: 0.95 !important;
   z-index: 9999 !important;
-  opacity: 0.94 !important;
   cursor: grabbing !important;
-  border-radius: 12px !important;
+  border-radius: 8px !important;
+  background: rgb(var(--color-background)) !important;
   transition: none !important;
+  will-change: transform !important;
 }
 
-/* Landing: spring snap animation */
-@keyframes aurora-land {
-  0%   { transform: rotate(-4deg) scale(1.04) translateY(-4px); }
-  35%  { transform: rotate(1.5deg) scale(0.97) translateY(2px); }
-  65%  { transform: rotate(-0.5deg) scale(1.01) translateY(0); }
-  100% { transform: rotate(0deg) scale(1) translateY(0); }
+/* Landing: smooth settle on drop — gentle ease back to rest */
+@keyframes kb-settle {
+  0%   { transform: translateY(-4px) scale(1.018) rotate(1.5deg); }
+  55%  { transform: translateY(1px)  scale(0.993) rotate(-0.3deg); }
+  100% { transform: translateY(0)    scale(1)     rotate(0deg); }
 }
-.aurora-land { animation: aurora-land 0.45s cubic-bezier(0.34,1.56,0.64,1) forwards !important; }
+.kb-land {
+  animation: kb-settle 0.28s cubic-bezier(0.34, 1.4, 0.64, 1) forwards !important;
+}
 </style>

@@ -1,10 +1,19 @@
 // composables/useKanbanInteractions.ts
 //
-// Per-stage reactive state. Accepts UniversalFetchFn — the same type as
-// UiTable and UiList. Internally adds kanbanStage to params, so the caller
+// Per-stage reactive state.  Accepts UniversalFetchFn — the same type as
+// UiTable and UiList.  Internally adds kanbanStage to params, so the caller
 // (the page) never has to know about kanban-specific fetch logic.
+//
+// ── SEARCH ──────────────────────────────────────────────────────────────────
+// Search is now EXTERNAL: pass the `searchQuery` ref from
+// `useUniversalInteractions()` as `externalSearch`.
+//
+// When `externalSearch` changes the composable debounces a full reload so the
+// server receives the updated ?search= param.  There is no internal search bar
+// inside UiKanban — the UiHeader search bar drives everything.
 
-import { reactive, ref } from "vue";
+import { ref, watch, type Ref } from "vue";
+import { reactive } from "vue";
 import type { UniversalFetchFn } from "../types/universal.types";
 import type { KanbanConfig, KanbanStageState } from "../types/kanban.types";
 
@@ -12,13 +21,21 @@ export function useKanbanInteractions<T extends Record<string, any>>(
   stageValues: string[],
   fetchFn: UniversalFetchFn<T>,
   config?: KanbanConfig,
+  /**
+   * Pass `searchQuery` from `useUniversalInteractions()` here.
+   * The composable watches it and triggers a debounced server reload.
+   * If omitted, search is ignored (kanban shows all items).
+   */
+  externalSearch?: Ref<string>,
 ) {
   const pageSize = config?.pageSize ?? 10;
   const debounceMs = config?.debounceMs ?? 350;
 
-  // Plain Record — NOT Map. Fixes UnwrapRefSimple<T> TypeScript error with reactive Maps.
+  // Internal mirror of the external search so we can read it in fetchPage
+  const searchQuery = ref(externalSearch?.value ?? "");
+
+  // Plain Record — NOT Map.  Fixes UnwrapRefSimple<T> TypeScript error.
   const stageStates = reactive<Record<string, KanbanStageState<T>>>({});
-  const searchQuery = ref("");
   const inFlight = new Set<string>();
   let searchTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -39,6 +56,7 @@ export function useKanbanInteractions<T extends Record<string, any>>(
     };
   }
 
+  // ── Core fetch ──────────────────────────────────────────────────────────
   async function fetchPage(
     stage: string,
     page: number,
@@ -61,8 +79,6 @@ export function useKanbanInteractions<T extends Record<string, any>>(
         state.error = null;
       }
 
-      // Same fetchFn the table/list use — just adds kanbanStage.
-      // This results in GET /api/{entity}?kanban_stage={stage}&page={page}&per_page={perPage}
       const res = await fetchFn({
         page,
         perPage: pageSize,
@@ -88,6 +104,7 @@ export function useKanbanInteractions<T extends Record<string, any>>(
     }
   }
 
+  // ── Public helpers ──────────────────────────────────────────────────────
   async function loadMore(stage: string): Promise<void> {
     const state = stageStates[stage];
     if (
@@ -109,6 +126,10 @@ export function useKanbanInteractions<T extends Record<string, any>>(
     await Promise.all(targets.map((sv) => fetchPage(sv, 1, false)));
   }
 
+  /**
+   * @deprecated — kept for backwards compatibility only.
+   * Prefer passing `externalSearch` and letting the watcher drive reloads.
+   */
   function handleSearch(value: string): void {
     searchQuery.value = value;
     if (searchTimer) clearTimeout(searchTimer);
@@ -119,12 +140,23 @@ export function useKanbanInteractions<T extends Record<string, any>>(
     await Promise.all(stageValues.map((sv) => fetchPage(sv, 1, false)));
   }
 
+  // ── Watch externalSearch ────────────────────────────────────────────────
+  // When the UiHeader search query changes, debounce a full server reload
+  // so every stage re-fetches with the new ?search= parameter.
+  if (externalSearch) {
+    watch(externalSearch, (value) => {
+      searchQuery.value = value;
+      if (searchTimer) clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => reload(), debounceMs);
+    });
+  }
+
   return {
     stageStates,
-    searchQuery,
+    searchQuery, // still exposed so callers can read it
     loadMore,
     reload,
-    handleSearch,
+    handleSearch, // deprecated but non-breaking
     initialize,
   };
 }
