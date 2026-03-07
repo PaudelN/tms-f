@@ -1,5 +1,6 @@
 import { useAuthStore } from "@/stores/auth";
 import router from "@/router";
+import { notify } from "@/helpers/toast";
 import axios, {
   type AxiosError,
   type AxiosInstance,
@@ -43,6 +44,19 @@ const api: AxiosInstance = axios.create({
   },
   timeout: 10000,
 });
+
+const getErrorMessage = (error: AxiosError): string => {
+  const data = error.response?.data as
+    | { message?: string; error?: string }
+    | undefined;
+
+  return (
+    data?.message ||
+    data?.error ||
+    error.message ||
+    "Something went wrong while processing your request."
+  );
+};
 
 let csrfTokenFetched = false;
 let csrfTokenRequest: Promise<void> | null = null;
@@ -101,34 +115,39 @@ api.interceptors.response.use(
   },
   async (error: AxiosError) => {
     const auth = useAuthStore();
+    const status = error.response?.status;
 
-    if (error.response?.status === 419) {
+    if (status === 419) {
       csrfTokenFetched = false;
       auth.cleanAuthState();
       router.push({ name: "login" });
       console.error("CSRF token mismatch. Please refresh and try again.");
     }
 
-    if (error.response?.status === 401) {
+    if (status === 401) {
       csrfTokenFetched = false;
       auth.cleanAuthState();
       router.push({ name: "login" });
       console.error("Unauthenticated. Redirecting to login...");
     }
 
-    if (error.response?.status === 422) {
+    if (status === 422) {
       router.push({ name: "login" });
-      console.error("Validation errors:", error.response.data);
+      console.error("Validation errors:", error.response?.data);
     }
 
-    if (error.response?.status === 404) {
+    if (status === 404) {
       router.push({ name: "not-found" });
-      console.error("Not found errors:", error.response.data);
+      console.error("Not found errors:", error.response?.data);
     }
 
-    if (error.response?.status === 500) {
+    if (status === 500) {
       router.push({ name: "server-error" });
-      console.error("Server errors:", error.response.data);
+      console.error("Server errors:", error.response?.data);
+    }
+
+    if (status && ![401, 404].includes(status)) {
+      notify.error("Request failed", getErrorMessage(error));
     }
 
     return Promise.reject(error);
