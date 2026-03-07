@@ -590,10 +590,17 @@
         model_id: event.item.id,
         column_id: event.toStage,
       });
-      notify.success(
-        "Stage updated",
-        `"${event.item.name}" moved to ${event.toStage}.`,
-      );
+      if (event.toStage === "completed") {
+        notify.success(
+          "Workspace completed",
+          `"${event.item.name}" has been marked as completed.`,
+        );
+      } else {
+        notify.info(
+          "Stage updated",
+          `"${event.item.name}" moved to ${event.toStage}.`,
+        );
+      }
       // Refresh counts so table/list header stats also reflect the move
       workspaceStore.fetchStatusCounts();
     } catch (err: unknown) {
@@ -644,13 +651,13 @@
       await workspaceStore.deleteWorkspace(workspaceToDelete.value.id);
       deleteModalOpen.value = false;
       workspaceToDelete.value = null;
-      notify.success(
+      notify.deletionSuccess(
         "Workspace deleted",
         "The workspace was removed successfully.",
       );
       onRefresh();
     } catch {
-      notify.error("Delete failed", "We couldn't delete the workspace.");
+      notify.deletionError("Delete failed", "We couldn't delete the workspace.");
     } finally {
       deleteLoading.value = false;
     }

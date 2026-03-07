@@ -67,6 +67,7 @@
 </template>
 
 <script setup lang="ts">
+import { notify } from "@/helpers/toast";
 import { useWorkspaceStore } from "@/stores/workspace";
 import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
@@ -238,9 +239,10 @@ async function confirmDelete() {
   deleteLoading.value = true;
   try {
     await workspaceStore.deleteWorkspace(workspace.value.id);
+    notify.deletionSuccess("Workspace deleted", "The workspace was removed successfully.");
     router.push({ name: "workspace" });
   } catch {
-    // error handled by store
+    notify.deletionError("Delete failed", "We couldn't delete the workspace.");
   } finally {
     deleteLoading.value = false;
   }

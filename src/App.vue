@@ -4,5 +4,5 @@ import { Toaster } from "@/components/ui/sonner";
 
 <template>
   <router-view />
-  <Toaster />
+  <Toaster position="top-right" :close-button="false" :offset="16" />
 </template>
