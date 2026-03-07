@@ -1,5 +1,6 @@
-import { useAuthStore } from "@/stores/auth";
+import { notify } from "@/helpers/toast";
 import router from "@/router";
+import { useAuthStore } from "@/stores/auth";
 import axios, {
   type AxiosError,
   type AxiosInstance,
@@ -99,8 +100,16 @@ api.interceptors.response.use(
   (response: AxiosResponse) => {
     return response;
   },
-  async (error: AxiosError) => {
+  async (error: AxiosError<{ message?: string }>) => {
     const auth = useAuthStore();
+    const config = error.config as (InternalAxiosRequestConfig & {
+      metadata?: { suppressErrorToast?: boolean };
+    }) | undefined;
+    const suppressErrorToast = !!config?.metadata?.suppressErrorToast;
+    const status = error.response?.status;
+    if (!suppressErrorToast && (!status || status >= 500)) {
+      notify.error("Something went wrong.", "Please try again.");
+    }
 
     if (error.response?.status === 419) {
       csrfTokenFetched = false;
