@@ -241,7 +241,7 @@ const onSubmit = handleSubmit(async (formValues) => {
     notify.success("Workspace created successfully.");
     router.push({ name: "workspace-detail", params: { id: ws.id } });
   } catch (e) {
-    notify.error("Failed to create workspace", "Please check the form and try again.");
+    notify.error("Could not create workspace.", "Please try again.");
     console.error(e);
   }
 });

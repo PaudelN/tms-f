@@ -288,7 +288,7 @@ const onSubmit = handleSubmit(async (formValues) => {
     notify.success("Workspace updated successfully.");
     router.push({ name: "workspace-detail", params: { id: workspace.value.id } });
   } catch (e) {
-    notify.error("Update failed", "An error occurred. Please try again.");
+    notify.error("Could not update workspace.", "Please try again.");
     console.error(e);
   }
 });

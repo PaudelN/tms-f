@@ -94,7 +94,7 @@ export const useAuthStore = defineStore(
 
         notify.error(
           "Signup failed",
-          registrationErrors.value.general || "Please check your details and try again.",
+          "Please check your details and try again.",
         );
       } finally {
         isLoading.value = false;
@@ -144,7 +144,7 @@ export const useAuthStore = defineStore(
 
         notify.error(
           "Login failed",
-          loginErrors.value.general || "Please check your credentials and try again.",
+          "Please check your credentials and try again.",
         );
       } finally {
         isLoading.value = false;

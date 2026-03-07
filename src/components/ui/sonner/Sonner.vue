@@ -25,8 +25,8 @@ const delegatedProps = computed(() => {
     :toast-options="{
       classes: {
         toast:
-          'group toast group-[.toaster]:border-border group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:shadow-lg',
-        description: 'group-[.toast]:text-muted-foreground',
+          'group toast rounded-lg border border-border bg-background p-4 text-sm text-foreground shadow-lg',
+        description: 'text-xs text-muted-foreground leading-relaxed',
         actionButton:
           'group-[.toast]:bg-primary group-[.toast]:text-primary-foreground',
         cancelButton:
