@@ -5,6 +5,7 @@ import type { Errors, RegisterForm } from "@/types/registerForm";
 import { User } from "@/types/user";
 import { defineStore } from "pinia";
 import { ref } from "vue";
+import { notify } from "@/helpers/toast";
 
 export const useAuthStore = defineStore(
   "auth",
@@ -70,6 +71,7 @@ export const useAuthStore = defineStore(
         await api.post("/register", formData);
         await getUser();
         successMessage.value = "Account created successfully! Redirecting...";
+        notify.success("Account created", "Welcome aboard!");
 
         setTimeout(() => {
           router.push({ name: "dashboard" });
@@ -85,6 +87,11 @@ export const useAuthStore = defineStore(
           registrationErrors.value.general =
             "Registration failed. Please try again.";
         }
+
+        notify.error(
+          "Registration failed",
+          registrationErrors.value.general || "Please try again.",
+        );
       } finally {
         isLoading.value = false;
       }
@@ -113,6 +120,7 @@ export const useAuthStore = defineStore(
 
         await getUser();
         successMessage.value = "Login successful! Redirecting...";
+        notify.success("Login successful", "Welcome back.");
         setTimeout(() => {
           router.push({ name: "dashboard" });
         }, 1000);
@@ -127,6 +135,11 @@ export const useAuthStore = defineStore(
           loginErrors.value.general =
             "Login failed. Please check your credentials.";
         }
+
+        notify.error(
+          "Login failed",
+          loginErrors.value.general || "Please check your credentials.",
+        );
       } finally {
         isLoading.value = false;
       }
@@ -146,8 +159,10 @@ export const useAuthStore = defineStore(
     const logout = async () => {
       try {
         await api.post("/logout");
+        notify.info("Logged out", "You have been signed out.");
       } catch (error) {
         console.error("Logout request failed:", error);
+        notify.warning("Logout warning", "Session cleanup continued locally.");
       } finally {
         cleanAuthState(true);
 
