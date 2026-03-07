@@ -1,21 +1,15 @@
 import { toast, type ExternalToast } from "vue-sonner";
 
-const defaultOptions: ExternalToast = {
-  position: "top-right",
-};
-
-const deleteOptions: ExternalToast = {
-  position: "bottom-right",
-};
-
 const buildOptions = (
   description?: string,
   options?: ExternalToast,
-): ExternalToast => ({
-  ...defaultOptions,
-  ...(description ? { description } : {}),
-  ...options,
-});
+): ExternalToast | undefined => {
+  if (!description && !options) return undefined;
+  return {
+    ...(description ? { description } : {}),
+    ...options,
+  };
+};
 
 export const notify = {
   success(message: string, description?: string, options?: ExternalToast) {
@@ -32,12 +26,6 @@ export const notify = {
   },
   loading(message: string, description?: string, options?: ExternalToast) {
     return toast.loading(message, buildOptions(description, options));
-  },
-  deleteSuccess(message: string, description?: string, options?: ExternalToast) {
-    return toast.success(message, buildOptions(description, { ...deleteOptions, ...options }));
-  },
-  deleteError(message: string, description?: string, options?: ExternalToast) {
-    return toast.error(message, buildOptions(description, { ...deleteOptions, ...options }));
   },
   dismiss(id?: string | number) {
     toast.dismiss(id);

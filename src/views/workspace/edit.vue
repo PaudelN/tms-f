@@ -285,7 +285,7 @@ const onSubmit = handleSubmit(async (formValues) => {
     });
     // Re-sync the form's baseline so dirty tracking resets
     resetForm({ values: formValues });
-    notify.success("Changes saved", `"${formValues.name}" has been updated successfully.`);
+    notify.success("Workspace updated", "Workspace updated successfully.");
     router.push({ name: "workspace-detail", params: { id: workspace.value.id } });
   } catch (e) {
     notify.error("Update failed", "An error occurred. Please try again.");

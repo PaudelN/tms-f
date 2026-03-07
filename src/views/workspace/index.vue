@@ -592,7 +592,7 @@
       });
       notify.success(
         "Stage updated",
-        `"${event.item.name}" moved to ${event.toStage}.`,
+        "Card moved successfully.",
       );
       // Refresh counts so table/list header stats also reflect the move
       workspaceStore.fetchStatusCounts();
@@ -645,13 +645,13 @@
       await workspaceStore.deleteWorkspace(workspaceToDelete.value.id);
       deleteModalOpen.value = false;
       workspaceToDelete.value = null;
-      notify.deleteSuccess(
+      notify.success(
         "Workspace deleted",
-        "The workspace was removed successfully.",
+        "The workspace was deleted successfully.",
       );
       onRefresh();
     } catch {
-      notify.deleteError("Delete failed", "We couldn't delete the workspace.");
+      notify.error("Delete failed", "The workspace could not be deleted.");
     } finally {
       deleteLoading.value = false;
     }

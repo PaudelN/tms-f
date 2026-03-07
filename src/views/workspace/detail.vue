@@ -217,7 +217,14 @@ function handleEdit() {
 
 async function handleRefresh() {
   const id = Number(route.params.id);
-  if (id) await workspaceStore.fetchWorkspace(id);
+  if (!id) return;
+
+  try {
+    await workspaceStore.fetchWorkspace(id);
+    notify.info("Workspace refreshed", "Latest workspace details loaded.");
+  } catch {
+    notify.error("Refresh failed", "Could not refresh workspace details.");
+  }
 }
 
 async function handleArchive() {
@@ -229,8 +236,9 @@ async function handleArchive() {
       status: nextStatus,
     });
     await workspaceStore.fetchWorkspace(workspace.value.id);
+    notify.success("Workspace updated", "Workspace status was updated successfully.");
   } catch {
-    // error is set on the store; UiDetail will surface it if wired
+    notify.error("Update failed", "Could not update workspace status.");
   }
 }
 
@@ -238,12 +246,11 @@ async function confirmDelete() {
   if (!workspace.value) return;
   deleteLoading.value = true;
   try {
-    const workspaceName = workspace.value.name;
     await workspaceStore.deleteWorkspace(workspace.value.id);
-    notify.deleteSuccess("Workspace deleted", `"${workspaceName}" was removed successfully.`);
+    notify.success("Workspace deleted", "The workspace was deleted successfully.");
     router.push({ name: "workspace" });
   } catch {
-    notify.deleteError("Delete failed", "We couldn't delete the workspace.");
+    notify.error("Delete failed", "The workspace could not be deleted.");
   } finally {
     deleteLoading.value = false;
   }
