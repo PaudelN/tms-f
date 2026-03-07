@@ -590,17 +590,11 @@
         model_id: event.item.id,
         column_id: event.toStage,
       });
-      notify.success(
-        "Stage updated",
-        `"${event.item.name}" moved to ${event.toStage}.`,
-      );
+      notify.success("Card moved.", "The board has been updated.");
       // Refresh counts so table/list header stats also reflect the move
       workspaceStore.fetchStatusCounts();
-    } catch (err: unknown) {
-      notify.error(
-        "Move failed",
-        err instanceof Error ? err.message : "Could not move the card.",
-      );
+    } catch {
+      notify.error("Could not move card.", "Please try again.");
       kanbanRef.value?.refreshColumn(event.fromStage);
       kanbanRef.value?.refreshColumn(event.toStage);
     }
@@ -612,11 +606,9 @@
         stage_value: event.stage,
         ordered_ids: event.orderedIds,
       });
-    } catch (err: unknown) {
-      notify.error(
-        "Reorder failed",
-        err instanceof Error ? err.message : "Could not save order.",
-      );
+      notify.info("Card order saved.");
+    } catch {
+      notify.error("Could not save card order.", "Please try again.");
       kanbanRef.value?.refreshColumn(event.stage);
     }
   }
@@ -644,13 +636,10 @@
       await workspaceStore.deleteWorkspace(workspaceToDelete.value.id);
       deleteModalOpen.value = false;
       workspaceToDelete.value = null;
-      notify.success(
-        "Workspace deleted",
-        "The workspace was removed successfully.",
-      );
+      notify.success("Workspace deleted successfully.");
       onRefresh();
     } catch {
-      notify.error("Delete failed", "We couldn't delete the workspace.");
+      notify.error("Failed to delete workspace.", "Please try again.");
     } finally {
       deleteLoading.value = false;
     }
