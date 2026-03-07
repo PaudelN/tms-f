@@ -174,7 +174,7 @@ import {
 import { useForm } from "vee-validate";
 import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
-import { toast } from "vue-sonner";
+import { notify } from "@/helpers/toast";
 import { z } from "zod";
 
 import type { FormBreadcrumb } from "@/components/common/UiForm.vue";
@@ -238,14 +238,10 @@ const onSubmit = handleSubmit(async (formValues) => {
       status: formValues.status,
       description: formValues.description || undefined,
     });
-    toast.success("Workspace created", {
-      description: `"${ws.name}" is now ready to use.`,
-    });
+    notify.success("Workspace created", "Your changes were saved.");
     router.push({ name: "workspace-detail", params: { id: ws.id } });
   } catch (e) {
-    toast.error("Failed to create workspace", {
-      description: "Please check the form and try again.",
-    });
+    notify.error("Could not create workspace", "Please try again.");
     console.error(e);
   }
 });

@@ -181,7 +181,7 @@ import { Activity, FileText, Info, SquarePen, Tag } from "lucide-vue-next";
 import { useForm } from "vee-validate";
 import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { toast } from "vue-sonner";
+import { notify } from "@/helpers/toast";
 import { z } from "zod";
 
 import type { FormBreadcrumb } from "@/components/common/UiForm.vue";
@@ -285,14 +285,10 @@ const onSubmit = handleSubmit(async (formValues) => {
     });
     // Re-sync the form's baseline so dirty tracking resets
     resetForm({ values: formValues });
-    toast.success("Changes saved", {
-      description: `"${formValues.name}" has been updated successfully.`,
-    });
+    notify.success("Workspace updated", "Your changes were saved.");
     router.push({ name: "workspace-detail", params: { id: workspace.value.id } });
   } catch (e) {
-    toast.error("Update failed", {
-      description: "An error occurred. Please try again.",
-    });
+    notify.error("Could not update workspace", "Please try again.");
     console.error(e);
   }
 });

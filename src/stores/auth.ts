@@ -1,3 +1,4 @@
+import { notify } from "@/helpers/toast";
 import api, { resetCsrfToken } from "@/lib/axios";
 import router from "@/router";
 import type { LoginForm } from "@/types/loginForm";
@@ -47,20 +48,24 @@ export const useAuthStore = defineStore(
 
       if (!formData.name.trim()) {
         registrationErrors.value.name = "Name is required";
+        notify.warning("Name is required", "Please enter your name.");
         return;
       }
       if (!formData.email.trim()) {
         registrationErrors.value.email = "Email is required";
+        notify.warning("Email is required", "Please enter your email.");
         return;
       }
       if (formData.password.length < 8) {
         registrationErrors.value.password =
           "Password must be at least 8 characters";
+        notify.warning("Password is too short", "Use at least 8 characters.");
         return;
       }
       if (formData.password !== formData.password_confirmation) {
         registrationErrors.value.password_confirmation =
           "Passwords do not match";
+        notify.warning("Passwords do not match", "Please check and try again.");
         return;
       }
 
@@ -70,6 +75,7 @@ export const useAuthStore = defineStore(
         await api.post("/register", formData);
         await getUser();
         successMessage.value = "Account created successfully! Redirecting...";
+        notify.success("Account created", "You are now signed in.");
 
         setTimeout(() => {
           router.push({ name: "dashboard" });
@@ -85,6 +91,8 @@ export const useAuthStore = defineStore(
           registrationErrors.value.general =
             "Registration failed. Please try again.";
         }
+
+        notify.error("Could not create account", "Please check your details.");
       } finally {
         isLoading.value = false;
       }
@@ -96,10 +104,12 @@ export const useAuthStore = defineStore(
 
       if (!formData.email.trim()) {
         loginErrors.value.email = "Email is required";
+        notify.warning("Email is required", "Please enter your email.");
         return;
       }
       if (!formData.password) {
         loginErrors.value.password = "Password is required";
+        notify.warning("Password is required", "Please enter your password.");
         return;
       }
 
@@ -113,6 +123,7 @@ export const useAuthStore = defineStore(
 
         await getUser();
         successMessage.value = "Login successful! Redirecting...";
+        notify.success("Signed in", "Welcome back.");
         setTimeout(() => {
           router.push({ name: "dashboard" });
         }, 1000);
@@ -127,6 +138,8 @@ export const useAuthStore = defineStore(
           loginErrors.value.general =
             "Login failed. Please check your credentials.";
         }
+
+        notify.error("Could not sign in", "Please check your credentials.");
       } finally {
         isLoading.value = false;
       }
@@ -146,8 +159,10 @@ export const useAuthStore = defineStore(
     const logout = async () => {
       try {
         await api.post("/logout");
+        notify.info("Signed out", "You have been logged out.");
       } catch (error) {
         console.error("Logout request failed:", error);
+        notify.warning("Signed out", "Your local session was cleared.");
       } finally {
         cleanAuthState(true);
 
