@@ -592,7 +592,7 @@
       });
       notify.success(
         "Stage updated",
-        `"${event.item.name}" moved to ${event.toStage}.`,
+        "Workspace stage has been updated.",
       );
       // Refresh counts so table/list header stats also reflect the move
       workspaceStore.fetchStatusCounts();
@@ -612,6 +612,7 @@
         stage_value: event.stage,
         ordered_ids: event.orderedIds,
       });
+      notify.info("Order updated", "Card order has been saved.");
     } catch (err: unknown) {
       notify.error(
         "Reorder failed",
