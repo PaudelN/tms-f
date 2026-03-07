@@ -1,5 +1,7 @@
 import axios from "@/lib/axios";
 import type {
+  KanbanBoardFetchParams,
+  KanbanBoardResponse,
   KanbanMoveEvent,
   KanbanMovePayload,
   KanbanReorderEvent,
@@ -12,7 +14,7 @@ import type { AxiosError } from "axios";
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
 
-// ── Entity ────────────────────────────────────────────────────────────────────
+// ── Entity ─────────────────────────────────────────────────────────────────────
 
 export interface Workspace {
   id: number;
@@ -53,7 +55,7 @@ export interface WorkspaceFormData {
   status?: string;
 }
 
-// ── Store ─────────────────────────────────────────────────────────────────────
+// ── Store ──────────────────────────────────────────────────────────────────────
 
 export const useWorkspaceStore = defineStore("workspace", () => {
   const workspaces = ref<Workspace[]>([]);
@@ -70,26 +72,30 @@ export const useWorkspaceStore = defineStore("workspace", () => {
   const statuses = ref<WorkspaceStatus[]>([]);
   const statusCounts = ref<Record<string, number>>({});
 
-  // ── Computed aliases used by CRUD pages ───────────────────────────────────
+  // ── Computed aliases ────────────────────────────────────────────────────────
   const activeWorkspace = computed(() => currentWorkspace.value);
   const isLoading = computed(() => loading.value);
   const isDetailLoading = computed(() => detailLoading.value);
   const hasError = computed(() => !!error.value);
   const errorMessage = computed(() => error.value ?? "");
 
-  // ── Table / List / Kanban fetch ───────────────────────────────────────────
+  // ── Helpers ─────────────────────────────────────────────────────────────────
 
-  async function fetchWorkspaces(
-    params: UniversalFetchParams,
-  ): Promise<UniversalApiResponse<Workspace>> {
-    const filterParams = Object.fromEntries(
-      Object.entries(params.filters ?? {}).filter(([, v]) => {
+  function buildFilterParams(filters?: Record<string, any> | null) {
+    return Object.fromEntries(
+      Object.entries(filters ?? {}).filter(([, v]) => {
         if (v == null || v === "") return false;
         if (Array.isArray(v) && v.length === 0) return false;
         return true;
       }),
     );
+  }
 
+  // ── Table / List fetch ──────────────────────────────────────────────────────
+
+  async function fetchWorkspaces(
+    params: UniversalFetchParams,
+  ): Promise<UniversalApiResponse<Workspace>> {
     const { data } = await axios.get<UniversalApiResponse<Workspace>>(
       "/workspaces",
       {
@@ -100,17 +106,34 @@ export const useWorkspaceStore = defineStore("workspace", () => {
           sort_by: params.sortBy || undefined,
           sort_order: params.sortOrder || undefined,
           kanban_stage: params.kanbanStage || undefined,
-          ...filterParams,
+          ...buildFilterParams(params.filters),
         },
       },
     );
     return data;
   }
 
-  // ── Status counts — single API call ──────────────────────────────────────
-  // Backend: GET /workspaces/counts → { data: { active: 5, pending: 2, … } }
-  // Called once on mount and fire-and-forget after any mutation so the
-  // header stats bar stays accurate across all three views without a full refresh.
+  // ── Kanban board fetch (Option B) ───────────────────────────────────────────
+  // One HTTP call → all columns.
+  // UiKanban calls this on mount, on search, and on filter change.
+
+  async function fetchKanbanBoard(
+    params: KanbanBoardFetchParams,
+  ): Promise<KanbanBoardResponse<Workspace>> {
+    const { data } = await axios.get<KanbanBoardResponse<Workspace>>(
+      "/workspaces/kanban/board",
+      {
+        params: {
+          search: params.search || undefined,
+          per_page: params.perPage ?? 50,
+          ...buildFilterParams(params.filters),
+        },
+      },
+    );
+    return data;
+  }
+
+  // ── Status counts (for header stats bar) ───────────────────────────────────
 
   async function fetchStatusCounts(): Promise<void> {
     try {
@@ -123,14 +146,13 @@ export const useWorkspaceStore = defineStore("workspace", () => {
     }
   }
 
-  // ── Kanban move / reorder ─────────────────────────────────────────────────
+  // ── Kanban move / reorder ───────────────────────────────────────────────────
 
   async function moveCard(event: KanbanMoveEvent<Workspace>): Promise<void> {
     await axios.post("/workspaces/kanban/move", {
       model_id: event.item.id,
       column_id: event.toStage,
     } satisfies KanbanMovePayload);
-    // Fire-and-forget so header stats update without blocking the UI
     fetchStatusCounts();
   }
 
@@ -141,7 +163,7 @@ export const useWorkspaceStore = defineStore("workspace", () => {
     });
   }
 
-  // ── CRUD ──────────────────────────────────────────────────────────────────
+  // ── CRUD ────────────────────────────────────────────────────────────────────
 
   async function fetchWorkspace(id: number): Promise<Workspace> {
     detailLoading.value = true;
@@ -173,7 +195,7 @@ export const useWorkspaceStore = defineStore("workspace", () => {
       );
       workspaces.value.unshift(data.data);
       meta.value.total += 1;
-      fetchStatusCounts(); // keep header stats fresh
+      fetchStatusCounts();
       return data.data;
     } catch (err) {
       const e = err as AxiosError<{ message: string }>;
@@ -198,7 +220,7 @@ export const useWorkspaceStore = defineStore("workspace", () => {
       const idx = workspaces.value.findIndex((w) => w.id === id);
       if (idx !== -1) workspaces.value[idx] = data.data;
       if (currentWorkspace.value?.id === id) currentWorkspace.value = data.data;
-      fetchStatusCounts(); // keep header stats fresh
+      fetchStatusCounts();
       return data.data;
     } catch (err) {
       const e = err as AxiosError<{ message: string }>;
@@ -217,7 +239,7 @@ export const useWorkspaceStore = defineStore("workspace", () => {
       workspaces.value = workspaces.value.filter((w) => w.id !== id);
       meta.value.total -= 1;
       if (currentWorkspace.value?.id === id) currentWorkspace.value = null;
-      fetchStatusCounts(); // keep header stats fresh
+      fetchStatusCounts();
     } catch (err) {
       const e = err as AxiosError<{ message: string }>;
       error.value = e.response?.data?.message ?? "Failed to delete workspace";
@@ -227,7 +249,7 @@ export const useWorkspaceStore = defineStore("workspace", () => {
     }
   }
 
-  // ── Statuses ──────────────────────────────────────────────────────────────
+  // ── Statuses ────────────────────────────────────────────────────────────────
 
   async function fetchStatuses(): Promise<WorkspaceStatus[]> {
     if (statuses.value.length > 0) return statuses.value;
@@ -268,15 +290,14 @@ export const useWorkspaceStore = defineStore("workspace", () => {
     statuses,
     statusCounts,
 
-    // Computed aliases
     activeWorkspace,
     isLoading,
     isDetailLoading,
     hasError,
     errorMessage,
 
-    // Actions
     fetchWorkspaces,
+    fetchKanbanBoard, // ← new
     fetchStatusCounts,
     moveCard,
     reorderCards,

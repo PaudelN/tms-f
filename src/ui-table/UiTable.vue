@@ -8,7 +8,7 @@
     "
   >
     <div
-      class="flex flex-wrap items-center justify-between gap-3 px-5 py-3 border-b border-border bg-primary-20"
+      class="flex flex-wrap items-center justify-between gap-3 px-5 py-3 border-b border-border bg-background"
     >
       <div class="flex items-center gap-3">
         <div class="relative group/info">
@@ -372,7 +372,7 @@
 
     <!-- ── Footer ── -->
     <div
-      class="flex flex-wrap items-center justify-between gap-2 px-5 py-3 border-t border-border bg-primary-20"
+      class="flex flex-wrap items-center justify-between gap-2 px-5 py-3 border-t border-border bg-background"
     >
       <div
         v-if="

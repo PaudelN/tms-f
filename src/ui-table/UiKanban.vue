@@ -398,23 +398,38 @@
 import { computed, reactive, ref, watch } from 'vue'
 import draggable from 'vuedraggable'
 
-import Button    from '@/components/ui/button/Button.vue'
-import Badge     from '@/components/ui/badge/Badge.vue'
+import Badge from '@/components/ui/badge/Badge.vue'
+import Button from '@/components/ui/button/Button.vue'
 import Separator from '@/components/ui/separator/Separator.vue'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
 import {
-  LayoutDashboard,
+  AlertCircle,
+  CheckCircle2,
   ChevronsLeft, ChevronsRight,
-  Rows4, Rows3, Rows2,
-  RefreshCw, Expand, Shrink, Search,
-  Loader2, Plus, RotateCw, MoreHorizontal,
-  PanelLeftClose, AlertCircle,
-  ClipboardList, Zap, Settings2, CheckCircle2, CircleCheck,
+  CircleCheck,
+  ClipboardList,
+  Expand,
+  LayoutDashboard,
+  Loader2,
+  MoreHorizontal,
+  PanelLeftClose,
+  Plus,
+  RefreshCw,
+  RotateCw,
+  Rows2,
+  Rows3,
+  Rows4,
+  Search,
+  Settings2,
+  Shrink,
+  Zap,
 } from 'lucide-vue-next'
 
 import type { Component } from 'vue'
 import type {
+  KanbanBoardFetchFn,
+  KanbanBoardFetchParams,
   KanbanConfig,
   KanbanFeatures,
   KanbanMoveEvent,
@@ -432,17 +447,32 @@ interface SortableEvent {
   oldIndex: number
 }
 
-// Items kept as unknown[] internally to avoid Vue reactive unwrap fighting generics.
-// Every read/write casts back to T[].
+// items stored as unknown[] to avoid Vue reactive UnwrapRefSimple<T> fighting generics.
 interface ColumnState {
-  items:   unknown[]
-  loading: boolean
-  error:   string | null
+  items:       unknown[]
+  loading:     boolean
+  error:       string | null
+  hasMore:     boolean   // true when backend has more pages for this column
+  currentPage: number
+  totalPages:  number
+  total:       number
 }
 
 interface Props {
-  fetchFn:         (params: UniversalFetchParams) => Promise<UniversalApiResponse<T>>
-  stages:          KanbanStageDefinition[]
+  // ── Required for all modes ──────────────────────────────────────────────────
+  stages:   KanbanStageDefinition[]
+
+  // ── Board mode (Option B — recommended) ────────────────────────────────────
+  // Single call that returns all columns at once.
+  // When provided, UiKanban uses this for all initial loads and full refreshes.
+  boardFetchFn?: KanbanBoardFetchFn<T>
+
+  // ── Per-column fetch (always required) ─────────────────────────────────────
+  // Used for: single-column error recovery, load-more within a column.
+  // In board mode this is only called reactively — never on initial mount.
+  fetchFn:  (params: UniversalFetchParams) => Promise<UniversalApiResponse<T>>
+
+  // ── Optional config ─────────────────────────────────────────────────────────
   config?:         KanbanConfig
   features?:       KanbanFeatures
   itemKey?:        string
@@ -464,80 +494,196 @@ const emit = defineEmits<{
 }>()
 
 // ── Column state ──────────────────────────────────────────────────────────────
-// Using unknown[] for items inside reactive() sidesteps Vue's UnwrapRefSimple<T>
-// generic constraint error. All public helpers cast to T[] at the boundary.
 
-const columnData      = reactive<Record<string, ColumnState>>({})
-const resolvedPerPage = computed<number>(() => props.config?.perPage ?? 50)
+const columnData = reactive<Record<string, ColumnState>>({})
 
 function col(sv: string): ColumnState {
   if (!columnData[sv]) {
-    columnData[sv] = { items: [], loading: false, error: null }
+    columnData[sv] = {
+      items: [], loading: false, error: null,
+      hasMore: false, currentPage: 1, totalPages: 1, total: 0,
+    }
   }
   return columnData[sv] as ColumnState
 }
 
-// Read items cast to T[]
 function colItems(sv: string): T[] {
   return col(sv).items as T[]
 }
 
-// Write items — always cast to unknown[] for storage
 function setItems(sv: string, items: T[]): void {
   col(sv).items = items as unknown[]
 }
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function markAllLoading(): void {
+  for (const st of props.stages) {
+    const c   = col(st.value)
+    c.loading = true
+    c.error   = null
+    // Don't clear items — keeps stale content visible while reloading
+  }
+}
+
+// ── BOARD LOAD ────────────────────────────────────────────────────────────────
+// One HTTP call → split all columns.
+// Called on: initial mount, search change, filter change, full refresh.
+
+async function boardLoad(): Promise<void> {
+  if (!props.boardFetchFn) {
+    console.warn('[UiKanban] boardFetchFn not provided — falling back to per-column fetch')
+    await perColumnLoad()
+    return
+  }
+
+  markAllLoading()
+
+  try {
+    const res = await props.boardFetchFn({
+      search:  props.searchQuery ?? '',
+      perPage: props.config?.perPage ?? 50,
+      filters: props.externalFilter ?? undefined,
+    } satisfies KanbanBoardFetchParams)
+
+    const board = res.data   // Record<stageValue, { data: T[], meta: ColumnMeta }>
+
+    for (const st of props.stages) {
+      const c       = col(st.value)
+      const payload = board[st.value]
+
+      if (payload) {
+        c.items       = (payload.data ?? []) as unknown[]
+        c.currentPage = payload.meta.current_page
+        c.totalPages  = payload.meta.last_page
+        c.total       = payload.meta.total
+        c.hasMore     = payload.meta.current_page < payload.meta.last_page
+      } else {
+        // Stage exists in frontend but backend returned no key for it
+        // (can happen with dynamic statuses — just show empty)
+        c.items       = []
+        c.currentPage = 1
+        c.totalPages  = 1
+        c.total       = 0
+        c.hasMore     = false
+      }
+
+      c.loading = false
+      c.error   = null
+    }
+  } catch (err: any) {
+    const msg = err?.response?.data?.message ?? err?.message ?? 'Failed to load board'
+    for (const st of props.stages) {
+      const c   = col(st.value)
+      c.loading = false
+      c.error   = msg
+    }
+  }
+}
+
+// ── PER-COLUMN LOAD ───────────────────────────────────────────────────────────
+// Used for:
+//   • fallback when boardFetchFn is absent
+//   • error recovery on a single column (refreshColumn)
+//   • load-more within a column (appendColumn)
+
 async function loadColumn(sv: string): Promise<void> {
-  const s = col(sv)
-  s.loading = true
-  s.error   = null
+  const c   = col(sv)
+  c.loading = true
+  c.error   = null
   try {
     const r = await props.fetchFn({
       page:        1,
-      perPage:     resolvedPerPage.value,
+      perPage:     props.config?.perPage ?? 50,
       search:      props.searchQuery ?? '',
       sortBy:      null,
       sortOrder:   null,
       kanbanStage: sv,
-      // null → undefined: UniversalFetchParams.filters is typed as | undefined
       filters:     props.externalFilter ?? undefined,
     })
-    s.items = Array.isArray(r.data) ? (r.data as unknown[]) : []
-  } catch {
-    s.error = 'Failed to load.'
-  } finally {
-    s.loading = false
+    c.items       = Array.isArray(r.data) ? (r.data as unknown[]) : []
+    c.currentPage = r.meta.current_page
+    c.totalPages  = r.meta.last_page
+    c.total       = r.meta.total
+    c.hasMore     = r.meta.current_page < r.meta.last_page
+    c.loading     = false
+  } catch (err: any) {
+    c.error   = err?.response?.data?.message ?? err?.message ?? 'Failed to load.'
+    c.loading = false
   }
 }
 
-// Reload all columns when stages list changes (e.g. on mount)
+// Append next page to an existing column (infinite scroll within a column)
+async function appendColumn(sv: string): Promise<void> {
+  const c = col(sv)
+  if (!c.hasMore || c.loading) return
+  c.loading = true
+  try {
+    const r = await props.fetchFn({
+      page:        c.currentPage + 1,
+      perPage:     props.config?.perPage ?? 50,
+      search:      props.searchQuery ?? '',
+      sortBy:      null,
+      sortOrder:   null,
+      kanbanStage: sv,
+      filters:     props.externalFilter ?? undefined,
+    })
+    c.items       = [...c.items, ...(r.data as unknown[])]
+    c.currentPage = r.meta.current_page
+    c.totalPages  = r.meta.last_page
+    c.hasMore     = r.meta.current_page < r.meta.last_page
+    c.loading     = false
+  } catch (err: any) {
+    c.error   = err?.response?.data?.message ?? err?.message ?? 'Failed to load more.'
+    c.loading = false
+  }
+}
+
+async function perColumnLoad(): Promise<void> {
+  markAllLoading()
+  await Promise.all(props.stages.map((st) => loadColumn(st.value)))
+}
+
+// ── Unified entry point ───────────────────────────────────────────────────────
+
+async function loadAll(): Promise<void> {
+  if (props.boardFetchFn) {
+    await boardLoad()
+  } else {
+    await perColumnLoad()
+  }
+}
+
+// ── Boot when stages become available ────────────────────────────────────────
+// stages arrives async (computed from store.statuses), so we watch for it.
+
 watch(
   () => props.stages,
   (stages: KanbanStageDefinition[]) => {
-    for (const st of stages) {
-      const ex = columnData[st.value]
-      if (!ex || (!ex.loading && ex.items.length === 0 && !ex.error)) {
-        loadColumn(st.value)
-      }
-    }
+    if (stages.length === 0) return
+    // Only auto-load once (avoids double-load if parent re-renders stages ref)
+    const alreadyLoaded = stages.some((st) => {
+      const c = col(st.value)
+      return c.items.length > 0 || c.loading
+    })
+    if (!alreadyLoaded) loadAll()
   },
   { immediate: true },
 )
 
-// Shared debounce timer for both search and filter watchers
-let reloadDebounceTimer: ReturnType<typeof setTimeout> | null = null
+// ── Debounced reload on search / filter ───────────────────────────────────────
+
+let reloadTimer: ReturnType<typeof setTimeout> | null = null
 
 function scheduleReload(): void {
-  if (reloadDebounceTimer) clearTimeout(reloadDebounceTimer)
-  reloadDebounceTimer = setTimeout(() => {
-    for (const st of props.stages) loadColumn(st.value)
-  }, props.config?.debounceMs ?? 400)
+  if (reloadTimer) clearTimeout(reloadTimer)
+  reloadTimer = setTimeout(() => loadAll(), props.config?.debounceMs ?? 400)
 }
 
-watch(() => props.searchQuery, scheduleReload)
+watch(() => props.searchQuery,    scheduleReload)
 watch(() => props.externalFilter, scheduleReload, { deep: true })
 
-// ── Search (client-side pass) ─────────────────────────────────────────────────
+// ── Client-side search filter (instant feedback between debounce ticks) ───────
 
 function filteredItems(sv: string): T[] {
   const q = (props.searchQuery ?? '').trim().toLowerCase()
@@ -605,7 +751,7 @@ const cssVarNames: string[] = [
 
 function stageVar(i: number): string {
   const st = props.stages[i]
-  if (st?.dot?.includes('violet') || st?.dot?.includes('purple'))   return '--color-primary'
+  if (st?.dot?.includes('violet') || st?.dot?.includes('purple')) return '--color-primary'
   if (st?.dot?.includes('red')    || st?.dot?.includes('destruct')) return '--color-destructive'
   return cssVarNames[i % cssVarNames.length]
 }
@@ -651,8 +797,8 @@ function onDragEnd(ev: SortableEvent): void {
   if (from !== to) {
     const moved = colItems(to)[ev.newIndex]
     if (!moved) return
-    const meta = props.stages.find((s) => s.value === to)
-    if (meta?.wipLimit && colItems(to).length > meta.wipLimit) {
+    const stageMeta = props.stages.find((s) => s.value === to)
+    if (stageMeta?.wipLimit && colItems(to).length > stageMeta.wipLimit) {
       loadColumn(from)
       loadColumn(to)
       return
@@ -678,15 +824,24 @@ const columnCounts = computed<Record<string, number>>(() => {
   return c
 })
 
-function refreshColumn(sv: string): void { loadColumn(sv) }
+// refreshColumn → targeted single-column recovery (error retry, post-move)
+function refreshColumn(sv: string): void {
+  loadColumn(sv)
+}
 
+// refresh → full board reload
 async function refresh(): Promise<void> {
   refreshing.value = true
-  await Promise.all(props.stages.map((s) => loadColumn(s.value)))
+  await loadAll()
   refreshing.value = false
 }
 
-defineExpose({ refresh, refreshColumn, columnCounts, totalItems })
+// loadMore → append next page for a specific column
+async function loadMore(sv: string): Promise<void> {
+  await appendColumn(sv)
+}
+
+defineExpose({ refresh, refreshColumn, loadMore, columnCounts, totalItems })
 </script>
 
 <style>

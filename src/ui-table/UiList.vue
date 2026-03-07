@@ -12,7 +12,7 @@
     <!-- HEADER                                                                 -->
     <!-- ══════════════════════════════════════════════════════════════════════ -->
     <div
-      class="flex flex-wrap items-center justify-between gap-3 px-5 py-3 border-b border-border bg-primary-20 shrink-0"
+      class="flex flex-wrap items-center justify-between gap-3 px-5 py-3 border-b border-border bg-background shrink-0"
     >
       <!-- Left: info icon + scroll-progress bar -->
       <div class="flex items-center gap-3 flex-1 min-w-0">

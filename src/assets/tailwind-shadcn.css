@@ -113,6 +113,10 @@
     background-color: rgb(var(--color-primary) / 0.2);
   }
 
+  .bg-primary-30 {
+    background-color: rgb(var(--color-primary) / 0.3);
+  }
+
   .border-primary-thin {
     border: 0.1px solid rgb(var(--color-primary));
   }

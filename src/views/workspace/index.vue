@@ -277,6 +277,7 @@
           ref="kanbanRef"
           class="flex-1 min-h-0"
           :fetch-fn="workspaceStore.fetchWorkspaces"
+          :board-fetch-fn="workspaceStore.fetchKanbanBoard"
           :stages="kanbanStages"
           :config="kanbanConfig"
           :features="kanbanFeatures"
