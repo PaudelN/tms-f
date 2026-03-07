@@ -77,6 +77,7 @@ import type {
   MetaField,
 } from "@/components/common/UiDetail.vue";
 import UiDetail from "@/components/common/UiDetail.vue";
+import { notify } from "@/helpers/toast";
 
 import {
   AlignLeft,
@@ -222,14 +223,19 @@ async function handleRefresh() {
 async function handleArchive() {
   if (!workspace.value) return;
   try {
-    const nextStatus = workspace.value.is_archived ? "active" : "archived";
+    const wasArchived = workspace.value.is_archived;
+    const nextStatus = wasArchived ? "active" : "archived";
     await workspaceStore.updateWorkspace(workspace.value.id, {
       name:   workspace.value.name,
       status: nextStatus,
     });
     await workspaceStore.fetchWorkspace(workspace.value.id);
+    notify.info(
+      wasArchived ? "Workspace restored" : "Workspace archived",
+      `"${workspace.value.name}" status has been updated.`,
+    );
   } catch {
-    // error is set on the store; UiDetail will surface it if wired
+    notify.error("Status update failed", "Unable to update workspace status.");
   }
 }
 
@@ -237,10 +243,18 @@ async function confirmDelete() {
   if (!workspace.value) return;
   deleteLoading.value = true;
   try {
+    const deletedWorkspaceName = workspace.value.name;
     await workspaceStore.deleteWorkspace(workspace.value.id);
+    notify.success(
+      "Workspace deleted",
+      `"${deletedWorkspaceName}" was removed successfully.`,
+      { position: "bottom-right" },
+    );
     router.push({ name: "workspace" });
   } catch {
-    // error handled by store
+    notify.error("Delete failed", "We couldn't delete this workspace.", {
+      position: "bottom-right",
+    });
   } finally {
     deleteLoading.value = false;
   }

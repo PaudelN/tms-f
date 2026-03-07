@@ -647,10 +647,11 @@
       notify.success(
         "Workspace deleted",
         "The workspace was removed successfully.",
+        { position: "bottom-right" },
       );
       onRefresh();
     } catch {
-      notify.error("Delete failed", "We couldn't delete the workspace.");
+      notify.error("Delete failed", "We couldn't delete the workspace.", { position: "bottom-right" });
     } finally {
       deleteLoading.value = false;
     }
