@@ -743,10 +743,10 @@ function expandAll(): void {
 
 const cssVarNames: string[] = [
   '--color-primary',
-  '--color-ring',
   '--color-primary',
-  '--color-destructive',
-  '--color-ring',
+  '--color-primary',
+  '--color-primary',
+  '--color-primary',
 ]
 
 function stageVar(i: number): string {
