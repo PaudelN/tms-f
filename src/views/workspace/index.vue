@@ -612,6 +612,7 @@
         stage_value: event.stage,
         ordered_ids: event.orderedIds,
       });
+      notify.info("Order updated", "Card order has been saved.");
     } catch (err: unknown) {
       notify.error(
         "Reorder failed",
@@ -644,13 +645,13 @@
       await workspaceStore.deleteWorkspace(workspaceToDelete.value.id);
       deleteModalOpen.value = false;
       workspaceToDelete.value = null;
-      notify.success(
+      notify.deleteSuccess(
         "Workspace deleted",
         "The workspace was removed successfully.",
       );
       onRefresh();
     } catch {
-      notify.error("Delete failed", "We couldn't delete the workspace.");
+      notify.deleteError("Delete failed", "We couldn't delete the workspace.");
     } finally {
       deleteLoading.value = false;
     }

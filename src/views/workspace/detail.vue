@@ -67,6 +67,7 @@
 </template>
 
 <script setup lang="ts">
+import { notify } from "@/helpers/toast";
 import { useWorkspaceStore } from "@/stores/workspace";
 import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
@@ -228,6 +229,7 @@ async function handleArchive() {
       status: nextStatus,
     });
     await workspaceStore.fetchWorkspace(workspace.value.id);
+    notify.info("Workspace updated", "Archive state has been changed.");
   } catch {
     // error is set on the store; UiDetail will surface it if wired
   }
@@ -238,8 +240,10 @@ async function confirmDelete() {
   deleteLoading.value = true;
   try {
     await workspaceStore.deleteWorkspace(workspace.value.id);
+    notify.deleteSuccess("Workspace deleted", "The workspace was removed successfully.");
     router.push({ name: "workspace" });
   } catch {
+    notify.deleteError("Delete failed", "We couldn't delete the workspace.");
     // error handled by store
   } finally {
     deleteLoading.value = false;

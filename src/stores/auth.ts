@@ -1,3 +1,4 @@
+import { notify } from "@/helpers/toast";
 import api, { resetCsrfToken } from "@/lib/axios";
 import router from "@/router";
 import type { LoginForm } from "@/types/loginForm";
@@ -70,6 +71,7 @@ export const useAuthStore = defineStore(
         await api.post("/register", formData);
         await getUser();
         successMessage.value = "Account created successfully! Redirecting...";
+        notify.success("Signup successful", "Your account has been created.");
 
         setTimeout(() => {
           router.push({ name: "dashboard" });
@@ -85,6 +87,8 @@ export const useAuthStore = defineStore(
           registrationErrors.value.general =
             "Registration failed. Please try again.";
         }
+
+        notify.error("Signup failed", registrationErrors.value.general ?? "Please check your details and try again.");
       } finally {
         isLoading.value = false;
       }
@@ -113,6 +117,7 @@ export const useAuthStore = defineStore(
 
         await getUser();
         successMessage.value = "Login successful! Redirecting...";
+        notify.success("Login successful", "Welcome back.");
         setTimeout(() => {
           router.push({ name: "dashboard" });
         }, 1000);
@@ -127,6 +132,8 @@ export const useAuthStore = defineStore(
           loginErrors.value.general =
             "Login failed. Please check your credentials.";
         }
+
+        notify.error("Login failed", loginErrors.value.general ?? "Please check your credentials and try again.");
       } finally {
         isLoading.value = false;
       }
@@ -144,12 +151,19 @@ export const useAuthStore = defineStore(
     };
 
     const logout = async () => {
+      let logoutFailed = false;
       try {
         await api.post("/logout");
       } catch (error) {
+        logoutFailed = true;
         console.error("Logout request failed:", error);
+        notify.warning("Logout issue", "Session was cleared locally.");
       } finally {
         cleanAuthState(true);
+
+        if (!logoutFailed) {
+          notify.info("Logged out", "You have been signed out.");
+        }
 
         router.push({ name: "login" });
       }

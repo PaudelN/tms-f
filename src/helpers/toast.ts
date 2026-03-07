@@ -7,8 +7,22 @@ export const notify = {
   success(message: string, description?: string, options?: ExternalToast) {
     return toast.success(message, { ...buildOptions(description), ...options });
   },
+  deleteSuccess(message: string, description?: string, options?: ExternalToast) {
+    return toast.success(message, {
+      position: "bottom-right",
+      ...buildOptions(description),
+      ...options,
+    });
+  },
   error(message: string, description?: string, options?: ExternalToast) {
     return toast.error(message, { ...buildOptions(description), ...options });
+  },
+  deleteError(message: string, description?: string, options?: ExternalToast) {
+    return toast.error(message, {
+      position: "bottom-right",
+      ...buildOptions(description),
+      ...options,
+    });
   },
   warning(message: string, description?: string, options?: ExternalToast) {
     return toast.warning(message, { ...buildOptions(description), ...options });
