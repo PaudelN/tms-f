@@ -91,25 +91,25 @@ import {
   User,
 } from "lucide-vue-next";
 
-const route = useRoute();
+const route  = useRoute();
 const router = useRouter();
 const workspaceStore = useWorkspaceStore();
 
 const deleteModalOpen = ref(false);
-const deleteLoading = ref(false);
+const deleteLoading   = ref(false);
 
+// activeWorkspace is a computed alias for currentWorkspace in the store
 const workspace = computed(() => workspaceStore.activeWorkspace);
 
-// Resolve the full status object from the enums store for badge/dot
 const currentStatusObj = computed(() =>
-  workspaceStore.statuses.find((s) => s.value === workspace.value?.status)
+  workspaceStore.statuses.find((s) => s.value === workspace.value?.status),
 );
 
 const statusBadge = computed(() => {
   if (!currentStatusObj.value) return undefined;
   return {
     label: currentStatusObj.value.label,
-    dot: currentStatusObj.value.dot,
+    dot:   currentStatusObj.value.dot,
     class: currentStatusObj.value.badge,
   };
 });
@@ -121,68 +121,80 @@ const breadcrumbs = computed<BreadcrumbItem[]>(() => [
 
 const actions = computed<ActionButton[]>(() => [
   {
-    id: "refresh",
-    label: "Refresh",
-    icon: RefreshCcw,
+    id:      "refresh",
+    label:   "Refresh",
+    icon:    RefreshCcw,
     onClick: handleRefresh,
   },
   {
-    id: "archive",
-    label: workspace.value?.is_archived ? "Unarchive" : "Archive",
-    icon: ArchiveRestore,
-    onClick: () => {},
+    id:      "archive",
+    label:   workspace.value?.is_archived ? "Unarchive" : "Archive",
+    icon:    ArchiveRestore,
+    onClick: handleArchive,
   },
   {
-    id: "edit",
-    label: "Edit",
-    icon: SquarePen,
+    id:      "edit",
+    label:   "Edit",
+    icon:    SquarePen,
     onClick: handleEdit,
   },
   {
-    id: "delete",
-    label: "Delete",
-    icon: Trash2,
+    id:      "delete",
+    label:   "Delete",
+    icon:    Trash2,
     variant: "destructive",
     onClick: () => { deleteModalOpen.value = true; },
   },
 ]);
 
+function formatDate(d: string | null | undefined): string {
+  if (!d) return "—";
+  return new Date(d).toLocaleDateString("en-US", {
+    month: "short", day: "numeric", year: "numeric",
+  });
+}
+
 const metaFields = computed<MetaField[]>(() => [
   {
-    label: "Owner",
-    type: "avatar",
+    label:      "Owner",
+    type:       "avatar",
     avatarData: workspace.value?.user
       ? {
           initials: workspace.value.user.name.charAt(0).toUpperCase(),
-          name: workspace.value.user.name,
-          sub: workspace.value.user.email,
+          name:     workspace.value.user.name,
+          sub:      workspace.value.user.email,
         }
       : undefined,
   },
   {
-    label: "Status",
-    type: "badge",
-    icon: Radio,
-    value: currentStatusObj.value?.label ?? workspace.value?.status ?? "—",
+    label:      "Status",
+    type:       "badge",
+    icon:       Radio,
+    value:      currentStatusObj.value?.label ?? workspace.value?.status ?? "—",
     badgeClass: currentStatusObj.value?.badge,
-    dot: currentStatusObj.value?.dot,
+    dot:        currentStatusObj.value?.dot,
   },
   {
     label: "Created At",
-    value: workspace.value?.created_at ?? "—",
-    icon: CalendarDays,
+    value: formatDate(workspace.value?.created_at),
+    icon:  CalendarDays,
   },
   {
     label: "Last Updated",
-    value: workspace.value?.updated_at ?? "—",
-    icon: Clock,
+    value: formatDate(workspace.value?.updated_at),
+    icon:  Clock,
+  },
+  {
+    label: "Owner ID",
+    value: workspace.value?.user_id ? `#${workspace.value.user_id}` : "—",
+    icon:  User,
   },
 ]);
 
 const deleteDialog = {
-  title: "Delete Workspace",
-  description: "This action cannot be undone.",
-  confirmLabel: "Delete Workspace",
+  title:         "Delete Workspace",
+  description:   "This action cannot be undone.",
+  confirmLabel:  "Delete Workspace",
 };
 
 onMounted(async () => {
@@ -191,8 +203,7 @@ onMounted(async () => {
     router.push({ name: "workspace" });
     return;
   }
-
-  // Load statuses (cached) and workspace in parallel
+  // Load statuses (cached after first fetch) and workspace detail in parallel
   await Promise.all([
     workspaceStore.fetchStatuses(),
     workspaceStore.fetchWorkspace(id),
@@ -205,7 +216,21 @@ function handleEdit() {
 
 async function handleRefresh() {
   const id = Number(route.params.id);
-  await workspaceStore.fetchWorkspace(id);
+  if (id) await workspaceStore.fetchWorkspace(id);
+}
+
+async function handleArchive() {
+  if (!workspace.value) return;
+  try {
+    const nextStatus = workspace.value.is_archived ? "active" : "archived";
+    await workspaceStore.updateWorkspace(workspace.value.id, {
+      name:   workspace.value.name,
+      status: nextStatus,
+    });
+    await workspaceStore.fetchWorkspace(workspace.value.id);
+  } catch {
+    // error is set on the store; UiDetail will surface it if wired
+  }
 }
 
 async function confirmDelete() {
@@ -214,6 +239,8 @@ async function confirmDelete() {
   try {
     await workspaceStore.deleteWorkspace(workspace.value.id);
     router.push({ name: "workspace" });
+  } catch {
+    // error handled by store
   } finally {
     deleteLoading.value = false;
   }

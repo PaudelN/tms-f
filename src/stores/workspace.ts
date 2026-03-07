@@ -1,5 +1,3 @@
-// stores/workspace.store.ts
-
 import axios from "@/lib/axios";
 import type {
   KanbanMoveEvent,
@@ -12,7 +10,7 @@ import type {
 } from "@/ui-table/types/universal.types";
 import type { AxiosError } from "axios";
 import { defineStore } from "pinia";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 
 // ── Entity ────────────────────────────────────────────────────────────────────
 
@@ -70,21 +68,20 @@ export const useWorkspaceStore = defineStore("workspace", () => {
     last_page: 0,
   });
   const statuses = ref<WorkspaceStatus[]>([]);
+  const statusCounts = ref<Record<string, number>>({});
+
+  // ── Computed aliases used by CRUD pages ───────────────────────────────────
+  const activeWorkspace = computed(() => currentWorkspace.value);
+  const isLoading = computed(() => loading.value);
+  const isDetailLoading = computed(() => detailLoading.value);
+  const hasError = computed(() => !!error.value);
+  const errorMessage = computed(() => error.value ?? "");
 
   // ── Table / List / Kanban fetch ───────────────────────────────────────────
-  //
-  // ONE fetch function used by ALL three views.
-  // UiTable and UiList call it with standard params.
-  // UiKanban calls it per-column with { kanbanStage: 'active' } etc.
-  // The kanbanStage field maps to ?kanban_stage= on the backend.
 
   async function fetchWorkspaces(
     params: UniversalFetchParams,
   ): Promise<UniversalApiResponse<Workspace>> {
-    // Build a clean filter object: omit null, empty string, and empty arrays.
-    // Each key maps to a BaseFilter method on the backend (creator, created_from,
-    // created_to, tags, sort, etc.).  They are spread directly into axios params
-    // so the backend receives them as normal query string parameters.
     const filterParams = Object.fromEntries(
       Object.entries(params.filters ?? {}).filter(([, v]) => {
         if (v == null || v === "") return false;
@@ -103,8 +100,6 @@ export const useWorkspaceStore = defineStore("workspace", () => {
           sort_by: params.sortBy || undefined,
           sort_order: params.sortOrder || undefined,
           kanban_stage: params.kanbanStage || undefined,
-          // Spread filter params last so they override nothing above.
-          // Example output: ?creator=1&created_from=2024-01-01&sort=desc
           ...filterParams,
         },
       },
@@ -112,17 +107,31 @@ export const useWorkspaceStore = defineStore("workspace", () => {
     return data;
   }
 
-  // ── Kanban move / reorder — pure API, no local state ─────────────────────
-  //
-  // UiKanban owns all kanban item state (per-column, Trello-style).
-  // These methods only hit the API. Optimistic updates are in UiKanban.
-  // On failure the caller (WorkspaceIndex) calls kanbanRef.refreshColumn().
+  // ── Status counts — single API call ──────────────────────────────────────
+  // Backend: GET /workspaces/counts → { data: { active: 5, pending: 2, … } }
+  // Called once on mount and fire-and-forget after any mutation so the
+  // header stats bar stays accurate across all three views without a full refresh.
+
+  async function fetchStatusCounts(): Promise<void> {
+    try {
+      const { data } = await axios.get<{ data: Record<string, number> }>(
+        "/workspaces/counts",
+      );
+      statusCounts.value = data.data ?? {};
+    } catch (err) {
+      console.error("[WorkspaceStore] fetchStatusCounts failed:", err);
+    }
+  }
+
+  // ── Kanban move / reorder ─────────────────────────────────────────────────
 
   async function moveCard(event: KanbanMoveEvent<Workspace>): Promise<void> {
     await axios.post("/workspaces/kanban/move", {
       model_id: event.item.id,
       column_id: event.toStage,
     } satisfies KanbanMovePayload);
+    // Fire-and-forget so header stats update without blocking the UI
+    fetchStatusCounts();
   }
 
   async function reorderCards(event: KanbanReorderEvent): Promise<void> {
@@ -164,6 +173,7 @@ export const useWorkspaceStore = defineStore("workspace", () => {
       );
       workspaces.value.unshift(data.data);
       meta.value.total += 1;
+      fetchStatusCounts(); // keep header stats fresh
       return data.data;
     } catch (err) {
       const e = err as AxiosError<{ message: string }>;
@@ -188,6 +198,7 @@ export const useWorkspaceStore = defineStore("workspace", () => {
       const idx = workspaces.value.findIndex((w) => w.id === id);
       if (idx !== -1) workspaces.value[idx] = data.data;
       if (currentWorkspace.value?.id === id) currentWorkspace.value = data.data;
+      fetchStatusCounts(); // keep header stats fresh
       return data.data;
     } catch (err) {
       const e = err as AxiosError<{ message: string }>;
@@ -206,6 +217,7 @@ export const useWorkspaceStore = defineStore("workspace", () => {
       workspaces.value = workspaces.value.filter((w) => w.id !== id);
       meta.value.total -= 1;
       if (currentWorkspace.value?.id === id) currentWorkspace.value = null;
+      fetchStatusCounts(); // keep header stats fresh
     } catch (err) {
       const e = err as AxiosError<{ message: string }>;
       error.value = e.response?.data?.message ?? "Failed to delete workspace";
@@ -231,6 +243,10 @@ export const useWorkspaceStore = defineStore("workspace", () => {
     }
   }
 
+  function clearError(): void {
+    error.value = null;
+  }
+
   function $reset(): void {
     workspaces.value = [];
     currentWorkspace.value = null;
@@ -238,6 +254,7 @@ export const useWorkspaceStore = defineStore("workspace", () => {
     detailLoading.value = false;
     error.value = null;
     statuses.value = [];
+    statusCounts.value = {};
     meta.value = { current_page: 1, per_page: 10, total: 0, last_page: 0 };
   }
 
@@ -249,7 +266,18 @@ export const useWorkspaceStore = defineStore("workspace", () => {
     error,
     meta,
     statuses,
+    statusCounts,
+
+    // Computed aliases
+    activeWorkspace,
+    isLoading,
+    isDetailLoading,
+    hasError,
+    errorMessage,
+
+    // Actions
     fetchWorkspaces,
+    fetchStatusCounts,
     moveCard,
     reorderCards,
     fetchWorkspace,
@@ -257,6 +285,7 @@ export const useWorkspaceStore = defineStore("workspace", () => {
     updateWorkspace,
     deleteWorkspace,
     fetchStatuses,
+    clearError,
     $reset,
   };
 });
