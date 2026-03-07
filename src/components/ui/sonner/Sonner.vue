@@ -1,22 +1,61 @@
 <script lang="ts" setup>
 import type { ToasterProps } from "vue-sonner"
-import { CircleCheckIcon, InfoIcon, Loader2Icon, OctagonXIcon, TriangleAlertIcon, XIcon } from "lucide-vue-next"
+import { CircleCheckIcon, InfoIcon, Loader2Icon, OctagonXIcon, TriangleAlertIcon } from "lucide-vue-next"
+import { computed } from "vue"
 import { Toaster as Sonner } from "vue-sonner"
 import { cn } from "@/lib/utils"
 
-const props = defineProps<ToasterProps>()
+const props = withDefaults(defineProps<ToasterProps>(), {
+  position: "top-right",
+  closeButton: false,
+  richColors: true,
+  offset: "1rem",
+})
+
+const defaultToastOptions = {
+  classes: {
+    toast:
+      "group toast group-[.toaster]:border-border group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:shadow-lg",
+    description: "group-[.toast]:text-muted-foreground",
+    actionButton:
+      "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground",
+    cancelButton:
+      "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground",
+  },
+} satisfies NonNullable<ToasterProps["toastOptions"]>
+
+const mergedToastOptions = computed(() => ({
+  ...defaultToastOptions,
+  ...props.toastOptions,
+  classes: {
+    ...defaultToastOptions.classes,
+    ...props.toastOptions?.classes,
+  },
+}))
+
+const delegatedProps = computed(() => {
+  const { toastOptions, class: _className, ...rest } = props
+  return rest
+})
 </script>
 
 <template>
   <Sonner
-    :class="cn('toaster group', props.class)"
+    :class="
+      cn(
+        'toaster group',
+        '[--width:360px] data-[y-position=top]:top-4 data-[y-position=bottom]:bottom-4 data-[x-position=right]:right-4 data-[x-position=left]:left-4',
+        props.class,
+      )
+    "
     :style="{
-      '--normal-bg': 'var(--popover)',
-      '--normal-text': 'var(--popover-foreground)',
+      '--normal-bg': 'var(--background)',
+      '--normal-text': 'var(--foreground)',
       '--normal-border': 'var(--border)',
       '--border-radius': 'var(--radius)',
     }"
-    v-bind="props"
+    :toast-options="mergedToastOptions"
+    v-bind="delegatedProps"
   >
     <template #success-icon>
       <CircleCheckIcon class="size-4" />
@@ -31,12 +70,7 @@ const props = defineProps<ToasterProps>()
       <OctagonXIcon class="size-4" />
     </template>
     <template #loading-icon>
-      <div>
-        <Loader2Icon class="size-4 animate-spin" />
-      </div>
-    </template>
-    <template #close-icon>
-      <XIcon class="size-4" />
+      <Loader2Icon class="size-4 animate-spin" />
     </template>
   </Sonner>
 </template>
