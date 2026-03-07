@@ -486,6 +486,7 @@
     features?: TableFeatures;
     searchPlaceholder?: string;
     externalSearch?: string;
+    externalFilter?: Record<string, any>;
   }
   const props = withDefaults(defineProps<Props>(), {
     config: () => ({}),
@@ -518,6 +519,7 @@
     handleRefresh,
     handleSortingChange,
     setColumnVisibility,
+    setExternalFilter,
   } = useTableInteractions(
     props.tableId,
     props.columns,
@@ -530,6 +532,14 @@
     (val) => {
       if (val !== undefined) handleSearch(val);
     },
+  );
+
+  watch(
+    () => props.externalFilter,
+    (val) => {
+      setExternalFilter(val ?? {});
+    },
+    { deep: true },
   );
 
   // Density

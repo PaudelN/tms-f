@@ -9,7 +9,6 @@
     ══════════════════════════════════════════════ -->
     <div class="shrink-0 flex items-center gap-0.5 px-3 h-11 border-b border-border bg-card">
 
-      <!-- Board mark -->
       <div class="flex items-center gap-2 mr-1 shrink-0">
         <div class="w-6 h-6 rounded-md bg-primary flex items-center justify-center shrink-0">
           <LayoutDashboard class="w-3.5 h-3.5 text-primary-foreground" />
@@ -18,16 +17,10 @@
 
       <Separator orientation="vertical" class="h-4 mx-1 shrink-0" />
 
-      <!-- Collapse / Expand all -->
       <TooltipProvider :delay-duration="300">
         <Tooltip>
           <TooltipTrigger as-child>
-            <Button
-              variant="ghost"
-              size="icon"
-              class="h-7 w-7 text-muted-foreground"
-              @click="collapseAll"
-            >
+            <Button variant="ghost" size="icon" class="h-7 w-7 text-muted-foreground" @click="collapseAll">
               <ChevronsLeft class="w-3.5 h-3.5" />
             </Button>
           </TooltipTrigger>
@@ -38,12 +31,7 @@
       <TooltipProvider :delay-duration="300">
         <Tooltip>
           <TooltipTrigger as-child>
-            <Button
-              variant="ghost"
-              size="icon"
-              class="h-7 w-7 text-muted-foreground"
-              @click="expandAll"
-            >
+            <Button variant="ghost" size="icon" class="h-7 w-7 text-muted-foreground" @click="expandAll">
               <ChevronsRight class="w-3.5 h-3.5" />
             </Button>
           </TooltipTrigger>
@@ -53,15 +41,10 @@
 
       <Separator orientation="vertical" class="h-4 mx-1 shrink-0" />
 
-      <!-- Density -->
       <TooltipProvider :delay-duration="300">
         <Tooltip>
           <TooltipTrigger as-child>
-            <Button
-              variant="ghost"
-              class="h-7 px-2.5 gap-1.5 text-muted-foreground"
-              @click="cycleDensity"
-            >
+            <Button variant="ghost" class="h-7 px-2.5 gap-1.5 text-muted-foreground" @click="cycleDensity">
               <Rows4      v-if="density === 'compact'"      class="w-3.5 h-3.5" />
               <Rows3      v-else-if="density === 'default'" class="w-3.5 h-3.5" />
               <Rows2      v-else                            class="w-3.5 h-3.5" />
@@ -72,10 +55,8 @@
         </Tooltip>
       </TooltipProvider>
 
-      <!-- Spacer -->
       <div class="flex-1 min-w-0" />
 
-      <!-- Stage pills (collapse toggles) -->
       <div class="hidden sm:flex items-center gap-1.5 min-w-0 overflow-hidden">
         <button
           v-for="(stage, si) in stages"
@@ -88,33 +69,21 @@
           :title="collapsedStages.has(stage.value) ? `Expand ${stage.label}` : `Collapse ${stage.label}`"
           @click="toggleStage(stage.value)"
         >
-          <span
-            class="w-1.5 h-1.5 rounded-full shrink-0"
-            :style="{ background: stageColor(si) }"
-          />
+          <span class="w-1.5 h-1.5 rounded-full shrink-0" :style="{ background: stageColor(si) }" />
           <span class="truncate max-w-[68px]">{{ stage.label }}</span>
           <span
             class="text-[10px] font-black px-1.5 py-px rounded-full"
-            :style="{
-              background: `${stageColor(si)}1a`,
-              color: stageColor(si)
-            }"
+            :style="{ background: `${stageColor(si)}1a`, color: stageColor(si) }"
           >{{ col(stage.value).items.length }}</span>
         </button>
       </div>
 
       <Separator orientation="vertical" class="h-4 mx-1 shrink-0" />
 
-      <!-- Refresh -->
       <TooltipProvider :delay-duration="300">
         <Tooltip>
           <TooltipTrigger as-child>
-            <Button
-              variant="ghost"
-              size="icon"
-              class="h-7 w-7 text-muted-foreground"
-              @click="refresh"
-            >
+            <Button variant="ghost" size="icon" class="h-7 w-7 text-muted-foreground" @click="refresh">
               <RefreshCw class="w-3.5 h-3.5" :class="refreshing ? 'animate-spin' : ''" />
             </Button>
           </TooltipTrigger>
@@ -122,16 +91,10 @@
         </Tooltip>
       </TooltipProvider>
 
-      <!-- Fullscreen -->
       <TooltipProvider :delay-duration="300">
         <Tooltip>
           <TooltipTrigger as-child>
-            <Button
-              variant="ghost"
-              size="icon"
-              class="h-7 w-7 text-muted-foreground"
-              @click="isFullscreen = !isFullscreen"
-            >
+            <Button variant="ghost" size="icon" class="h-7 w-7 text-muted-foreground" @click="isFullscreen = !isFullscreen">
               <Shrink v-if="isFullscreen" class="w-3.5 h-3.5" />
               <Expand v-else              class="w-3.5 h-3.5" />
             </Button>
@@ -167,7 +130,7 @@
     </Transition>
 
     <!-- ══════════════════════════════════════════════
-         BOARD  — columns fill screen width evenly
+         BOARD
     ══════════════════════════════════════════════ -->
     <div class="flex-1 min-h-0 flex gap-2.5 px-3 py-3 overflow-x-auto items-start">
 
@@ -217,16 +180,10 @@
             <div class="h-[3px]" :style="{ background: stageColor(si) }" />
 
             <div class="px-3 pt-2.5 pb-2 space-y-2">
-
-              <!-- Row 1: icon · label · count · wip · collapse -->
               <div class="flex items-center gap-2 min-w-0">
-
                 <div
                   class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                  :style="{
-                    background: `${stageColor(si)}1a`,
-                    color: stageColor(si)
-                  }"
+                  :style="{ background: `${stageColor(si)}1a`, color: stageColor(si) }"
                 >
                   <component :is="stageIcon(si)" class="w-3.5 h-3.5" />
                 </div>
@@ -243,13 +200,9 @@
                 <span
                   v-else
                   class="shrink-0 text-[11px] font-black px-2 py-0.5 rounded-md leading-none"
-                  :style="{
-                    background: `${stageColor(si)}1a`,
-                    color: stageColor(si)
-                  }"
+                  :style="{ background: `${stageColor(si)}1a`, color: stageColor(si) }"
                 >{{ col(stage.value).items.length }}</span>
 
-                <!-- WIP badge -->
                 <Badge
                   v-if="stage.wipLimit"
                   :variant="col(stage.value).items.length >= stage.wipLimit ? 'destructive' : 'outline'"
@@ -258,16 +211,10 @@
                   {{ col(stage.value).items.length }}/{{ stage.wipLimit }}
                 </Badge>
 
-                <!-- Collapse button -->
                 <TooltipProvider :delay-duration="300">
                   <Tooltip>
                     <TooltipTrigger as-child>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        class="h-6 w-6 shrink-0 text-muted-foreground"
-                        @click="toggleStage(stage.value)"
-                      >
+                      <Button variant="ghost" size="icon" class="h-6 w-6 shrink-0 text-muted-foreground" @click="toggleStage(stage.value)">
                         <PanelLeftClose class="w-3.5 h-3.5" />
                       </Button>
                     </TooltipTrigger>
@@ -276,7 +223,6 @@
                 </TooltipProvider>
               </div>
 
-              <!-- Row 2: count label + quick actions -->
               <div class="flex items-center gap-1.5 min-w-0">
                 <span class="text-[10px] text-muted-foreground font-medium flex-1 truncate leading-none">
                   <template v-if="col(stage.value).loading">Loading…</template>
@@ -300,12 +246,7 @@
                 <TooltipProvider :delay-duration="300">
                   <Tooltip>
                     <TooltipTrigger as-child>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        class="h-6 w-6 text-muted-foreground shrink-0"
-                        @click="loadColumn(stage.value)"
-                      >
+                      <Button variant="ghost" size="icon" class="h-6 w-6 text-muted-foreground shrink-0" @click="loadColumn(stage.value)">
                         <RotateCw class="w-3 h-3" />
                       </Button>
                     </TooltipTrigger>
@@ -351,27 +292,17 @@
                     :class="densityPadding"
                     style="transition: border-color 0.15s ease, box-shadow 0.15s ease"
                   >
-                    <!-- Subtle left accent bar -->
                     <div
                       class="absolute left-0 rounded-r-sm pointer-events-none"
-                      style="
-                        width: 2.5px; top: 20%; bottom: 20%;
-                        transition: opacity 0.15s ease, top 0.15s ease, bottom 0.15s ease;
-                        opacity: 0.25;
-                      "
+                      style="width: 2.5px; top: 20%; bottom: 20%; transition: opacity 0.15s ease, top 0.15s ease, bottom 0.15s ease; opacity: 0.25;"
                       :style="{ background: stageColor(si) }"
                     />
                     <div
-                      class="absolute left-0 rounded-r-sm pointer-events-none
-                             opacity-0 group-hover/card:opacity-100"
-                      style="
-                        width: 2.5px; top: 8%; bottom: 8%;
-                        transition: opacity 0.15s ease;
-                      "
+                      class="absolute left-0 rounded-r-sm pointer-events-none opacity-0 group-hover/card:opacity-100"
+                      style="width: 2.5px; top: 8%; bottom: 8%; transition: opacity 0.15s ease;"
                       :style="{ background: stageColor(si) }"
                     />
 
-                    <!-- Hover card actions -->
                     <div
                       v-if="$slots['card-actions']"
                       class="absolute top-2 right-2 flex gap-1 z-10
@@ -394,7 +325,6 @@
                 </div>
               </template>
 
-              <!-- Loading skeletons -->
               <template #header>
                 <div v-if="col(stage.value).loading" class="flex flex-col gap-1.5 pb-1">
                   <div
@@ -409,10 +339,7 @@
                 </div>
               </template>
 
-              <!-- Footer: empty / error / add -->
               <template #footer>
-
-                <!-- Empty state -->
                 <Transition
                   enter-active-class="transition-opacity duration-150"
                   enter-from-class="opacity-0"
@@ -425,10 +352,7 @@
                   >
                     <div
                       class="w-9 h-9 rounded-xl flex items-center justify-center"
-                      :style="{
-                        background: `${stageColor(si)}14`,
-                        color: stageColor(si)
-                      }"
+                      :style="{ background: `${stageColor(si)}14`, color: stageColor(si) }"
                     >
                       <component :is="stageIcon(si)" class="w-4.5 h-4.5" />
                     </div>
@@ -442,7 +366,6 @@
                   </div>
                 </Transition>
 
-                <!-- Error state -->
                 <div
                   v-if="col(stage.value).error"
                   class="flex items-center gap-2 px-3 py-2.5 rounded-lg mb-1.5
@@ -450,18 +373,10 @@
                 >
                   <AlertCircle class="w-3.5 h-3.5 text-destructive shrink-0" />
                   <p class="text-[11px] text-destructive font-semibold flex-1 truncate">{{ col(stage.value).error }}</p>
-                  <button
-                    type="button"
-                    class="text-[10px] font-bold text-destructive hover:underline shrink-0"
-                    @click="loadColumn(stage.value)"
-                  >Retry</button>
+                  <button type="button" class="text-[10px] font-bold text-destructive hover:underline shrink-0" @click="loadColumn(stage.value)">Retry</button>
                 </div>
 
-                <!-- Add task button -->
-                <button
-                  type="button"
-                  class="kb-add-btn group/add"
-                >
+                <button type="button" class="kb-add-btn group/add">
                   <Plus class="w-3.5 h-3.5 shrink-0 transition-transform duration-200 group-hover/add:rotate-90" />
                   Add task
                 </button>
@@ -509,30 +424,34 @@ import type {
 import type { UniversalApiResponse, UniversalFetchParams } from './types/universal.types'
 
 // ── Local types ───────────────────────────────────────────────────────────────
+
 interface SortableEvent {
-  from: Element
-  to:   Element
+  from:     Element
+  to:       Element
   newIndex: number
   oldIndex: number
 }
 
+// Items kept as unknown[] internally to avoid Vue reactive unwrap fighting generics.
+// Every read/write casts back to T[].
 interface ColumnState {
-  items:   T[]
+  items:   unknown[]
   loading: boolean
   error:   string | null
 }
 
 interface Props {
-  fetchFn:      (params: UniversalFetchParams) => Promise<UniversalApiResponse<T>>
-  stages:       KanbanStageDefinition[]
-  config?:      KanbanConfig
-  features?:    KanbanFeatures
-  itemKey?:     string
-  /** From useUniversalInteractions().searchQuery — drives client-side filtering. */
-  searchQuery?: string
+  fetchFn:         (params: UniversalFetchParams) => Promise<UniversalApiResponse<T>>
+  stages:          KanbanStageDefinition[]
+  config?:         KanbanConfig
+  features?:       KanbanFeatures
+  itemKey?:        string
+  searchQuery?:    string
+  externalFilter?: Record<string, any> | null
 }
 
 // ── Props / emits ─────────────────────────────────────────────────────────────
+
 const props = withDefaults(defineProps<Props>(), {
   itemKey:     'id',
   searchQuery: '',
@@ -545,6 +464,9 @@ const emit = defineEmits<{
 }>()
 
 // ── Column state ──────────────────────────────────────────────────────────────
+// Using unknown[] for items inside reactive() sidesteps Vue's UnwrapRefSimple<T>
+// generic constraint error. All public helpers cast to T[] at the boundary.
+
 const columnData      = reactive<Record<string, ColumnState>>({})
 const resolvedPerPage = computed<number>(() => props.config?.perPage ?? 50)
 
@@ -555,8 +477,14 @@ function col(sv: string): ColumnState {
   return columnData[sv] as ColumnState
 }
 
+// Read items cast to T[]
+function colItems(sv: string): T[] {
+  return col(sv).items as T[]
+}
+
+// Write items — always cast to unknown[] for storage
 function setItems(sv: string, items: T[]): void {
-  col(sv).items = items
+  col(sv).items = items as unknown[]
 }
 
 async function loadColumn(sv: string): Promise<void> {
@@ -565,11 +493,16 @@ async function loadColumn(sv: string): Promise<void> {
   s.error   = null
   try {
     const r = await props.fetchFn({
-      page: 1, perPage: resolvedPerPage.value,
-      // Pass the external searchQuery so the server filters by it too
-      search: props.searchQuery ?? '', sortBy: null, sortOrder: null, kanbanStage: sv,
+      page:        1,
+      perPage:     resolvedPerPage.value,
+      search:      props.searchQuery ?? '',
+      sortBy:      null,
+      sortOrder:   null,
+      kanbanStage: sv,
+      // null → undefined: UniversalFetchParams.filters is typed as | undefined
+      filters:     props.externalFilter ?? undefined,
     })
-    s.items = Array.isArray(r.data) ? (r.data as T[]) : []
+    s.items = Array.isArray(r.data) ? (r.data as unknown[]) : []
   } catch {
     s.error = 'Failed to load.'
   } finally {
@@ -591,23 +524,25 @@ watch(
   { immediate: true },
 )
 
-// Debounced server-side reload when external searchQuery changes
-let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null
-watch(
-  () => props.searchQuery,
-  () => {
-    if (searchDebounceTimer) clearTimeout(searchDebounceTimer)
-    searchDebounceTimer = setTimeout(() => {
-      for (const st of props.stages) loadColumn(st.value)
-    }, props.config?.debounceMs ?? 400)
-  },
-)
+// Shared debounce timer for both search and filter watchers
+let reloadDebounceTimer: ReturnType<typeof setTimeout> | null = null
 
-// ── Search ────────────────────────────────────────────────────────────────────
+function scheduleReload(): void {
+  if (reloadDebounceTimer) clearTimeout(reloadDebounceTimer)
+  reloadDebounceTimer = setTimeout(() => {
+    for (const st of props.stages) loadColumn(st.value)
+  }, props.config?.debounceMs ?? 400)
+}
+
+watch(() => props.searchQuery, scheduleReload)
+watch(() => props.externalFilter, scheduleReload, { deep: true })
+
+// ── Search (client-side pass) ─────────────────────────────────────────────────
+
 function filteredItems(sv: string): T[] {
   const q = (props.searchQuery ?? '').trim().toLowerCase()
-  if (!q) return col(sv).items
-  return col(sv).items.filter((item: T) =>
+  if (!q) return colItems(sv)
+  return colItems(sv).filter((item) =>
     Object.values(item as Record<string, unknown>).some((v) =>
       String(v ?? '').toLowerCase().includes(q)
     )
@@ -619,6 +554,7 @@ const searchResultCount = computed<number>(() =>
 )
 
 // ── UI state ──────────────────────────────────────────────────────────────────
+
 type Density = 'compact' | 'default' | 'comfortable'
 
 const density         = ref<Density>('default')
@@ -658,7 +594,7 @@ function expandAll(): void {
 }
 
 // ── Stage theming ─────────────────────────────────────────────────────────────
-// Returns a resolved rgb() string so it can be used in hex-alpha hacks (#RRGGBB1a)
+
 const cssVarNames: string[] = [
   '--color-primary',
   '--color-ring',
@@ -674,12 +610,10 @@ function stageVar(i: number): string {
   return cssVarNames[i % cssVarNames.length]
 }
 
-/** Returns `rgb(var(--color-*))` string for inline style binding */
 function stageColor(i: number): string {
   return `rgb(var(${stageVar(i)}))`
 }
 
-// Stage icons (Lucide components)
 const iconList: Component[] = [ClipboardList, Zap, Settings2, CheckCircle2, CircleCheck]
 
 function stageIcon(i: number): Component {
@@ -687,6 +621,7 @@ function stageIcon(i: number): Component {
 }
 
 // ── Drag ──────────────────────────────────────────────────────────────────────
+
 let dragFromStage: string | null = null
 
 function onDragStart(sv: string): void {
@@ -699,11 +634,11 @@ function onDragEnd(ev: SortableEvent): void {
   const from = ev.from.getAttribute('data-stage') ?? dragFromStage
   const to   = ev.to.getAttribute('data-stage')   ?? from
 
-  dragFromStage = null
-  isDragging.value = false
+  dragFromStage       = null
+  isDragging.value    = false
 
   if (to) {
-    const dropped = col(to).items[ev.newIndex] as T | undefined
+    const dropped = colItems(to)[ev.newIndex]
     if (dropped) {
       landingCard.value = { id: dropped[props.itemKey] as string | number }
       setTimeout(() => { landingCard.value = null }, 380)
@@ -714,10 +649,10 @@ function onDragEnd(ev: SortableEvent): void {
   if (!from || !to) return
 
   if (from !== to) {
-    const moved = col(to).items[ev.newIndex] as T | undefined
+    const moved = colItems(to)[ev.newIndex]
     if (!moved) return
     const meta = props.stages.find((s) => s.value === to)
-    if (meta?.wipLimit && col(to).items.length > meta.wipLimit) {
+    if (meta?.wipLimit && colItems(to).length > meta.wipLimit) {
       loadColumn(from)
       loadColumn(to)
       return
@@ -726,16 +661,20 @@ function onDragEnd(ev: SortableEvent): void {
   } else if (props.features?.intraStageReorder !== false) {
     emit('reorder', {
       stage:      to,
-      orderedIds: col(to).items.map((i: T) => i[props.itemKey] as string | number),
+      orderedIds: colItems(to).map((i) => i[props.itemKey] as string | number),
     })
   }
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
-const totalItems   = computed<number>(() => props.stages.reduce((n, s) => n + col(s.value).items.length, 0))
+
+const totalItems = computed<number>(() =>
+  props.stages.reduce((n, s) => n + colItems(s.value).length, 0)
+)
+
 const columnCounts = computed<Record<string, number>>(() => {
   const c: Record<string, number> = {}
-  for (const s of props.stages) c[s.value] = col(s.value).items.length
+  for (const s of props.stages) c[s.value] = colItems(s.value).length
   return c
 })
 
@@ -751,17 +690,6 @@ defineExpose({ refresh, refreshColumn, columnCounts, totalItems })
 </script>
 
 <style>
-/*
-  UIKANBAN — pure CSS, zero @apply.
-  Only rules that Tailwind cannot express at runtime belong here:
-    1. Fluid column sizing
-    2. Card-wrap hover (uses CSS custom property --ks set inline)
-    3. Add-task button hover (uses --ks)
-    4. SortableJS drag clone classes (appended to <body>, must be global + !important)
-    5. Landing keyframe
-*/
-
-/* ── Column: flex-grow evenly, constrained ── */
 .kb-col {
   flex: 1 0 220px;
   max-width: 370px;
@@ -769,7 +697,6 @@ defineExpose({ refresh, refreshColumn, columnCounts, totalItems })
   max-height: calc(100vh - 7.5rem);
 }
 
-/* ── Card wrap: vertical lift on hover, zero rotation ── */
 .kb-card-wrap {
   will-change: transform;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
@@ -782,7 +709,6 @@ defineExpose({ refresh, refreshColumn, columnCounts, totalItems })
   border-color: var(--ks);
 }
 
-/* ── Add task button: uses column --ks variable ── */
 .kb-add-btn {
   width: 100%;
   display: flex;
@@ -806,24 +732,12 @@ defineExpose({ refresh, refreshColumn, columnCounts, totalItems })
   background: rgb(var(--color-muted));
 }
 
-/* Dropzone: dotted background activates on the list while any drag is in progress */
 .kb-dropzone-active {
-  background-image: radial-gradient(
-    circle,
-    rgb(var(--color-border)) 1px,
-    transparent 1px
-  );
+  background-image: radial-gradient(circle, rgb(var(--color-border)) 1px, transparent 1px);
   background-size: 16px 16px;
   background-position: center;
 }
 
-/* ══════════════════════════════════════════════════════
-   SORTABLEJS DRAG CLASSES
-   Applied to the clone SortableJS appends to <body>.
-   Must be global-scoped and use !important.
-══════════════════════════════════════════════════════ */
-
-/* Ghost: hatch placeholder at the original position */
 .kb-ghost {
   opacity: 1 !important;
   background-image: repeating-linear-gradient(
@@ -837,7 +751,6 @@ defineExpose({ refresh, refreshColumn, columnCounts, totalItems })
 }
 .kb-ghost > * { opacity: 0 !important; }
 
-/* Chosen: subtle lift on mousedown, before drag threshold */
 .kb-chosen {
   opacity: 0.97 !important;
   transform: scale(1.012) translateY(-1px) rotate(1deg) !important;
@@ -851,7 +764,6 @@ defineExpose({ refresh, refreshColumn, columnCounts, totalItems })
   transition: transform 0.12s ease, box-shadow 0.12s ease !important;
 }
 
-/* Dragging: floating clone — elevated, 2.5° tilt (calm, not aggressive) */
 .kb-dragging {
   transform: scale(0.975) translateY(-3px) rotate(2.5deg) !important;
   box-shadow:
@@ -867,7 +779,6 @@ defineExpose({ refresh, refreshColumn, columnCounts, totalItems })
   will-change: transform !important;
 }
 
-/* Landing: smooth settle on drop — gentle ease back to rest */
 @keyframes kb-settle {
   0%   { transform: translateY(-4px) scale(1.018) rotate(1.5deg); }
   55%  { transform: translateY(1px)  scale(0.993) rotate(-0.3deg); }

@@ -81,6 +81,18 @@ export const useWorkspaceStore = defineStore("workspace", () => {
   async function fetchWorkspaces(
     params: UniversalFetchParams,
   ): Promise<UniversalApiResponse<Workspace>> {
+    // Build a clean filter object: omit null, empty string, and empty arrays.
+    // Each key maps to a BaseFilter method on the backend (creator, created_from,
+    // created_to, tags, sort, etc.).  They are spread directly into axios params
+    // so the backend receives them as normal query string parameters.
+    const filterParams = Object.fromEntries(
+      Object.entries(params.filters ?? {}).filter(([, v]) => {
+        if (v == null || v === "") return false;
+        if (Array.isArray(v) && v.length === 0) return false;
+        return true;
+      }),
+    );
+
     const { data } = await axios.get<UniversalApiResponse<Workspace>>(
       "/workspaces",
       {
@@ -91,6 +103,9 @@ export const useWorkspaceStore = defineStore("workspace", () => {
           sort_by: params.sortBy || undefined,
           sort_order: params.sortOrder || undefined,
           kanban_stage: params.kanbanStage || undefined,
+          // Spread filter params last so they override nothing above.
+          // Example output: ?creator=1&created_from=2024-01-01&sort=desc
+          ...filterParams,
         },
       },
     );

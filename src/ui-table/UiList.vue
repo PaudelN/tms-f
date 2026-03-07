@@ -57,12 +57,10 @@
           <div
             class="flex-1 h-0.75 bg-border rounded-full overflow-hidden relative"
           >
-            <!-- track fill -->
             <div
               class="absolute inset-y-0 left-0 bg-primary rounded-full transition-all duration-100 ease-linear"
               :style="{ width: `${scrollProgress}%` }"
             />
-            <!-- subtle glow at leading edge -->
             <div
               class="absolute inset-y-0 w-4 bg-linear-to-r from-primary/60 to-transparent rounded-full transition-all duration-100 ease-linear"
               :style="{ left: `calc(${scrollProgress}% - 8px)` }"
@@ -430,7 +428,6 @@
                 ]"
                 @click="toggleExpand(resolveItemKey(item, localIdx))"
               >
-                <!-- Summary slot -->
                 <div class="flex-1 min-w-0">
                   <slot
                     name="item-summary"
@@ -441,14 +438,12 @@
                       expandedItems.has(resolveItemKey(item, localIdx))
                     "
                   >
-                    <!-- Default summary if no slot provided -->
                     <span class="text-sm text-foreground truncate">
                       {{ getDefaultLabel(item) }}
                     </span>
                   </slot>
                 </div>
 
-                <!-- Expand chevron -->
                 <div class="flex items-center gap-2 shrink-0 ml-3">
                   <slot name="item-actions" :item="item" :index="localIdx" />
                   <ChevronDown
@@ -477,7 +472,6 @@
                 >
                   <div :class="itemPaddingClass">
                     <slot name="item-expanded" :item="item" :index="localIdx">
-                      <!-- Default expanded content: formatted JSON -->
                       <pre
                         class="text-xs text-muted-foreground font-mono whitespace-pre-wrap leading-relaxed overflow-x-auto"
                         >{{ JSON.stringify(item, null, 2) }}</pre
@@ -492,7 +486,6 @@
 
         <!-- ── Infinite scroll sentinel ────────────────────────────────────── -->
         <div ref="sentinel" class="w-full">
-          <!-- Load-more skeletons -->
           <template v-if="isLoadingMore">
             <div
               v-for="i in 4"
@@ -506,7 +499,6 @@
             </div>
           </template>
 
-          <!-- End-of-list indicator -->
           <template v-else-if="!hasMore && loadedCount > 0">
             <div class="sticky bottom-0 z-10 bg-background">
               <div class="flex items-center gap-3 px-5 py-4">
@@ -570,83 +562,67 @@
     ListSortOrder,
   } from "./types/list.types";
 
-  // ── Default skeleton sub-component (inline) ────────────────────────────────
+  // ── Default skeleton ───────────────────────────────────────────────────────
   const DefaultSkeleton = defineComponent({
     setup() {
       return () =>
         h("div", { class: "flex items-center gap-3 animate-pulse" }, [
-          h("div", {
-            class: "h-10 w-10 rounded-xl bg-border/80 shrink-0",
-          }),
+          h("div", { class: "h-10 w-10 rounded-xl bg-border/80 shrink-0" }),
           h("div", { class: "flex-1 space-y-2 py-0.5" }, [
             h("div", { class: "h-3 bg-border/80 rounded-full w-2/5" }),
             h("div", { class: "h-2.5 bg-border/60 rounded-full w-3/5" }),
           ]),
-          h("div", {
-            class: "h-2.5 bg-border/60 rounded-full w-14 shrink-0",
-          }),
+          h("div", { class: "h-2.5 bg-border/60 rounded-full w-14 shrink-0" }),
         ]);
     },
   });
 
   // ── Props ──────────────────────────────────────────────────────────────────
-
   interface Props {
-    listId: string;
-    fetchFn: ListFetchFn;
-    config?: ListConfig;
-    features?: ListFeatures;
+    listId:          string;
+    fetchFn:         ListFetchFn;
+    config?:         ListConfig;
+    features?:       ListFeatures;
     externalSearch?: string;
-    /** Property name (or dot-path) used as the unique key. Defaults to 'id'. */
-    itemKey?: string | ((item: any) => string | number);
+    externalFilter?: Record<string, any> | null;
+    itemKey?:        string | ((item: any) => string | number);
   }
 
   const props = withDefaults(defineProps<Props>(), {
-    config: () => ({}),
+    config:  () => ({}),
     itemKey: "id",
   });
 
   // ── Composable ─────────────────────────────────────────────────────────────
+  // Use computed instead of toRef so we get Ref<... | null> not Ref<... | null | undefined>
+  // Both satisfy the widened signature in useListInteractions.
+  import { computed as _computed } from "vue";
+  const externalFilterRef = _computed(() => props.externalFilter);
 
   const {
-    loadedItems,
-    groupedItems,
-    hasMore,
-    isInitialLoading,
-    isLoadingMore,
-    error,
-    totalCount,
-    loadedCount,
-    isEmpty,
-    groupByKey,
-    sortKey,
-    sortOrder,
-    newItemIndexes,
-    loadMore,
-    reload,
-    handleSearch,
-    handleSort,
-    setGroupBy,
-  } = useListInteractions(props.listId, props.fetchFn, props.config);
+    loadedItems, groupedItems, hasMore, isInitialLoading, isLoadingMore,
+    error, totalCount, loadedCount, isEmpty, groupByKey, sortKey, sortOrder,
+    newItemIndexes, loadMore, reload, handleSearch, handleSort, setGroupBy,
+  } = useListInteractions(
+    props.listId,
+    props.fetchFn,
+    props.config,
+    externalFilterRef,
+  );
 
   // ── External search sync ───────────────────────────────────────────────────
-
   watch(
     () => props.externalSearch,
-    (val) => {
-      if (val !== undefined) handleSearch(val);
-    },
+    (val) => { if (val !== undefined) handleSearch(val); },
   );
 
   // ── Fullscreen ─────────────────────────────────────────────────────────────
-
-  const rootEl = ref<HTMLElement | null>(null);
+  const rootEl       = ref<HTMLElement | null>(null);
   const isFullscreen = ref(false);
 
-  // ── Scroll progress (position in scroll container, 0–100) ──────────────────
-
+  // ── Scroll progress ────────────────────────────────────────────────────────
   const scrollContainer = ref<HTMLElement | null>(null);
-  const scrollProgress = ref(0);
+  const scrollProgress  = ref(0);
 
   function onScroll(): void {
     if (!scrollContainer.value) return;
@@ -656,29 +632,19 @@
   }
 
   // ── Infinite scroll sentinel ───────────────────────────────────────────────
-
   const sentinel = ref<HTMLElement | null>(null);
 
   useIntersectionObserver(
     sentinel,
     ([entry]) => {
-      if (
-        entry.isIntersecting &&
-        hasMore.value &&
-        !isLoadingMore.value &&
-        !isInitialLoading.value
-      ) {
+      if (entry.isIntersecting && hasMore.value && !isLoadingMore.value && !isInitialLoading.value) {
         loadMore();
       }
     },
-    {
-      root: scrollContainer,
-      threshold: props.config?.sentinelThreshold ?? 0.1,
-    },
+    { root: scrollContainer, threshold: props.config?.sentinelThreshold ?? 0.1 },
   );
 
-  // ── Accordion expand / collapse ────────────────────────────────────────────
-
+  // ── Accordion ──────────────────────────────────────────────────────────────
   const expandedItems = ref<Set<string | number>>(new Set());
 
   function resolveItemKey(item: any, fallbackIndex: number): string | number {
@@ -688,49 +654,36 @@
   }
 
   function toggleExpand(key: string | number): void {
-    if (expandedItems.value.has(key)) {
-      expandedItems.value.delete(key);
-    } else {
-      expandedItems.value.add(key);
-    }
-    // Trigger reactivity
+    if (expandedItems.value.has(key)) expandedItems.value.delete(key);
+    else expandedItems.value.add(key);
     expandedItems.value = new Set(expandedItems.value);
   }
 
   // ── Group collapse ─────────────────────────────────────────────────────────
-
   const collapsedGroups = ref<Set<string>>(new Set());
 
   function toggleGroup(key: string): void {
-    if (collapsedGroups.value.has(key)) {
-      collapsedGroups.value.delete(key);
-    } else {
-      collapsedGroups.value.add(key);
-    }
+    if (collapsedGroups.value.has(key)) collapsedGroups.value.delete(key);
+    else collapsedGroups.value.add(key);
     collapsedGroups.value = new Set(collapsedGroups.value);
   }
 
-  // ── New-item detection (for fade-in) ───────────────────────────────────────
-
+  // ── New-item detection ─────────────────────────────────────────────────────
   function isNewItem(item: any, localIdx: number, group: ListGroup): boolean {
-    // Map local group index → global loaded index
     const globalOffset = loadedItems.value.indexOf(group.items[localIdx]);
     return newItemIndexes.value.has(globalOffset);
   }
-
-  // ── Default label fallback ─────────────────────────────────────────────────
 
   function getDefaultLabel(item: any): string {
     return item?.name ?? item?.title ?? item?.label ?? JSON.stringify(item);
   }
 
   // ── Density ────────────────────────────────────────────────────────────────
-
   const densities: ListDensity[] = ["default", "compact", "comfortable"];
   const density = ref<ListDensity>("default");
 
   const densityIcon = computed(() => {
-    if (density.value === "compact") return Minimize2;
+    if (density.value === "compact")     return Minimize2;
     if (density.value === "comfortable") return Maximize2;
     return GalleryVertical;
   });
@@ -741,13 +694,12 @@
   }
 
   const itemPaddingClass = computed(() => {
-    if (density.value === "compact") return "px-5 py-2";
+    if (density.value === "compact")     return "px-5 py-2";
     if (density.value === "comfortable") return "px-5 py-5";
     return "px-5 py-3.5";
   });
 
   // ── Copy as JSON ───────────────────────────────────────────────────────────
-
   const copyDone = ref(false);
 
   function copyItems(): void {
@@ -759,38 +711,29 @@
   }
 
   // ── Sort cycling ───────────────────────────────────────────────────────────
-
   const sortOpen = ref(false);
 
   function cycleSort(key: string): void {
     let order: ListSortOrder;
-
     if (sortKey.value !== key) {
       order = "asc";
     } else if (sortOrder.value === "asc") {
       order = "desc";
     } else {
-      // desc → reset
       handleSort(null, null);
       sortOpen.value = false;
       return;
     }
-
     handleSort(key, order);
     sortOpen.value = false;
   }
 
-  // ── Group by UI ────────────────────────────────────────────────────────────
-
   const groupByOpen = ref(false);
-
-  // ── Expose public surface ──────────────────────────────────────────────────
 
   defineExpose({ refresh: reload, loadMore });
 </script>
 
 <style scoped>
-  /* Fade-in animation for newly loaded items */
   .list-item-enter {
     animation: listItemReveal 0.4s ease-out both;
   }

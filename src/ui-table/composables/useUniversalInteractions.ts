@@ -1,5 +1,16 @@
+// composables/useUniversalInteractions.ts
+// ─────────────────────────────────────────────────────────────────────────────
+// Changes vs original:
+//   + applyFilters(filters)  — batch-apply from UiFilter; replaces activeFilters
+//   + commonFilter           — computed ref consumed as :external-filter on UiTable
+//                              (and later on UiList / UiKanban)
+//   + activeFilterCount      — now derived from activeFilters (was already there)
+//   ~ setFilter / clearFilter stay — for any future immediate/inline filter use
+// ─────────────────────────────────────────────────────────────────────────────
+
 import { useDebounceFn } from "@vueuse/core";
 import { computed, ref } from "vue";
+import type { ActiveFilters } from "../../types/filter.types";
 
 export interface SortOption {
   column: string | null;
@@ -16,18 +27,9 @@ export interface UseUniversalInteractionsOptions {
   debounceMs?: number;
   onSearch?: (value: string) => void;
   onSort?: (column: string | null, order: "asc" | "desc" | null) => void;
-  onFilter?: (filters: Record<string, any>) => void;
+  onFilter?: (filters: ActiveFilters) => void;
 }
 
-/**
- * Universal interactions composable — manages search, sort, and filter state
- * that is shared across Table / List / Kanban views.
- *
- * For UiTable: pass `onSearch` / `onSort` callbacks that delegate into
- * `useTableInteractions` (which handles the actual API fetch).
- *
- * For List / Kanban: consume `searchQuery` directly for client-side filtering.
- */
 export function useUniversalInteractions(
   options: UseUniversalInteractionsOptions = {},
 ) {
@@ -36,13 +38,39 @@ export function useUniversalInteractions(
   // ── State ─────────────────────────────────────────────────────────────────
   const searchQuery = ref("");
   const sort = ref<SortOption>({ column: null, order: null });
-  const activeFilters = ref<Record<string, any>>({});
 
+  /**
+   * activeFilters is the single source of truth for applied filters.
+   *
+   * Updated by:
+   *   applyFilters(filters)          ← batch apply from UiFilter "Apply" button
+   *   setFilter(key, value)          ← immediate single-key update (inline use)
+   *   clearFilter(key)               ← remove one filter key
+   *   clearAllFilters()              ← wipe everything
+   */
+  const activeFilters = ref<ActiveFilters>({});
+
+  // ── Derived ───────────────────────────────────────────────────────────────
+  /**
+   * Number of non-empty filters currently applied.
+   * Drives the badge shown on UiHeader's filter button.
+   */
   const activeFilterCount = computed(
     () =>
-      Object.values(activeFilters.value).filter((v) => v != null && v !== "")
-        .length,
+      Object.values(activeFilters.value).filter((v) => {
+        if (v == null || v === "") return false;
+        if (Array.isArray(v) && v.length === 0) return false;
+        return true;
+      }).length,
   );
+
+  /**
+   * Ready-to-use object for :external-filter on UiTable / UiList / UiKanban.
+   * The store's fetchFn is responsible for mapping these to axios query params.
+   */
+  const commonFilter = computed<ActiveFilters>(() => ({
+    ...activeFilters.value,
+  }));
 
   // ── Search ────────────────────────────────────────────────────────────────
   const _fireSearch = useDebounceFn((value: string) => {
@@ -70,7 +98,18 @@ export function useUniversalInteractions(
     onSort?.(null, null);
   }
 
-  // ── Filters ───────────────────────────────────────────────────────────────
+  // ── Filters — batch (UiFilter) ────────────────────────────────────────────
+  /**
+   * Called by UiFilter when the user clicks "Apply".
+   * Replaces activeFilters wholesale and fires onFilter callback.
+   * commonFilter updates reactively → UiTable re-fetches automatically.
+   */
+  function applyFilters(filters: ActiveFilters) {
+    activeFilters.value = { ...filters };
+    onFilter?.(activeFilters.value);
+  }
+
+  // ── Filters — immediate / single key (inline use) ─────────────────────────
   function setFilter(key: string, value: any) {
     activeFilters.value = { ...activeFilters.value, [key]: value };
     onFilter?.(activeFilters.value);
@@ -88,7 +127,7 @@ export function useUniversalInteractions(
     onFilter?.({});
   }
 
-  // ── Client-side helpers (for List / Kanban) ───────────────────────────────
+  // ── Client-side helpers (for List / Kanban local filtering) ───────────────
   function filterItems<T extends Record<string, any>>(
     items: T[],
     fields: (keyof T)[],
@@ -110,12 +149,14 @@ export function useUniversalInteractions(
     sort,
     activeFilters,
     activeFilterCount,
+    commonFilter, // ← NEW: pass as :external-filter to UiTable/UiList/UiKanban
 
     // Actions
     handleSearch,
     clearSearch,
     handleSort,
     clearSort,
+    applyFilters, // ← NEW: called by UiHeader's @apply-filters
     setFilter,
     clearFilter,
     clearAllFilters,

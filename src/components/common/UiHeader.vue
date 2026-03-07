@@ -8,18 +8,13 @@
             class="inline-block w-1 h-6 rounded-full bg-primary shrink-0"
             style="box-shadow: 0 0 8px rgb(var(--color-primary) / 0.6)"
           />
-          <h1
-            class="text-xl text-primary font-bold font-mono tracking-normal text-foreground leading-none"
-          >
+          <h1 class="text-xl text-primary font-bold font-mono tracking-normal text-foreground leading-none">
             {{ title }}
           </h1>
         </div>
 
         <!-- Stats chips -->
-        <div
-          v-if="stats && stats.length"
-          class="flex items-center gap-1.5 pl-3.5"
-        >
+        <div v-if="stats && stats.length" class="flex items-center gap-1.5 pl-3.5">
           <template v-for="stat in stats" :key="stat.label">
             <Badge :color="getDotColor(stat.dot ?? stat.color ?? '')">
               {{ stat.value }} {{ stat.label }}
@@ -40,7 +35,7 @@
           @update:model-value="(v) => emit('update:searchValue', v)"
         />
 
-        <!-- Views -->
+        <!-- View toggles -->
         <TooltipProvider v-if="showViews" :delay-duration="200">
           <div class="flex items-center gap-3">
             <Tooltip v-for="view in views" :key="view.id">
@@ -58,71 +53,70 @@
                   <component :is="view.icon" class="h-4.5 w-4.5" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent
-                side="bottom"
-                :side-offset="8"
-                class="text-xs font-medium"
-              >
+              <TooltipContent side="bottom" :side-offset="8" class="text-xs font-medium">
                 {{ view.label }}
               </TooltipContent>
             </Tooltip>
           </div>
         </TooltipProvider>
 
-        <!-- Filter -->
+        <!-- Filter button -->
         <TooltipProvider v-if="showFilter" :delay-duration="200">
           <Tooltip>
             <TooltipTrigger as-child>
               <Button
                 type="button"
                 class="relative cursor-pointer flex items-center justify-center w-10 h-10 rounded-sm transition-all duration-200 bg-primary-20 text-primary hover:text-foreground hover:bg-background/60"
-                @click="emit('filter')"
+                :class="activeFilterCount > 0 ? 'ring-1 ring-primary/40' : ''"
+                @click="filterOpen = true"
               >
                 <SlidersHorizontal class="h-4.5 w-4.5" />
-                <span
-                  v-if="activeFilterCount > 0"
-                  class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground"
+                <Transition
+                  enter-active-class="transition-all duration-200 ease-out"
+                  enter-from-class="opacity-0 scale-50"
+                  enter-to-class="opacity-100 scale-100"
+                  leave-active-class="transition-all duration-150 ease-in"
+                  leave-from-class="opacity-100 scale-100"
+                  leave-to-class="opacity-0 scale-50"
                 >
-                  {{ activeFilterCount }}
-                </span>
+                  <span
+                    v-if="activeFilterCount > 0"
+                    class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground"
+                  >
+                    {{ activeFilterCount > 9 ? '9+' : activeFilterCount }}
+                  </span>
+                </Transition>
               </Button>
             </TooltipTrigger>
-            <TooltipContent
-              side="bottom"
-              :side-offset="8"
-              class="text-xs font-medium"
-            >
-              Filters{{
-                activeFilterCount > 0 ? ` (${activeFilterCount} active)` : ""
-              }}
+            <TooltipContent side="bottom" :side-offset="8" class="text-xs font-medium">
+              Filters{{ activeFilterCount > 0 ? ` (${activeFilterCount} active)` : '' }}
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
 
         <!-- Refresh -->
-        <Tooltip v-if="showRefresh">
-          <TooltipTrigger as-child>
-            <Button
-              type="button"
-              :disabled="loading"
-              class="relative cursor-pointer flex items-center justify-center w-10 h-10 rounded-sm transition-all duration-200 bg-primary-20 text-primary"
-              @click="emit('refresh')"
-            >
-              <RefreshCcw
-                class="h-4.5 w-4.5 transition-transform duration-500"
-                :class="loading ? 'animate-spin' : ''"
-              />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent
-            side="bottom"
-            :side-offset="8"
-            class="text-xs font-medium"
-          >
-            Refresh
-          </TooltipContent>
-        </Tooltip>
+        <TooltipProvider v-if="showRefresh" :delay-duration="200">
+          <Tooltip>
+            <TooltipTrigger as-child>
+              <Button
+                type="button"
+                :disabled="loading"
+                class="relative cursor-pointer flex items-center justify-center w-10 h-10 rounded-sm transition-all duration-200 bg-primary-20 text-primary"
+                @click="emit('refresh')"
+              >
+                <RefreshCcw
+                  class="h-4.5 w-4.5 transition-transform duration-500"
+                  :class="loading ? 'animate-spin' : ''"
+                />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" :side-offset="8" class="text-xs font-medium">
+              Refresh
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
 
+        <!-- Create button -->
         <Button
           v-if="createLabel"
           type="button"
@@ -140,102 +134,164 @@
         </Button>
       </div>
     </div>
+
+    <!--
+      UiFilter — rendered here, invisible until filterOpen = true.
+
+      Slot forwarding: any `#filter-extra` slot content passed to UiHeader
+      from the index page is forwarded into UiFilter's `#extra` slot.
+
+      The `extra` slot receives { draft, on } from UiFilter:
+        draft — the live reactive filter draft object
+        on(key, value) — call to update a draft field
+
+      Example in WorkspaceIndex:
+        <UiHeader show-filter ...>
+          <template #filter-extra="{ draft, on }">
+            <WorkspaceStatusFilter :draft="draft" @update="on" />
+          </template>
+        </UiHeader>
+    -->
+    <UiFilter
+      v-if="showFilter"
+      v-model:open="filterOpen"
+      :creator-options="filterCreatorOptions"
+      :tag-options="filterTagOptions"
+      :values="filterValues"
+      @apply="(filters) => emit('apply-filters', filters)"
+    >
+      <!--
+        Forward the parent's #filter-extra slot into UiFilter's #extra slot.
+        The scoped slot data (draft, on) flows through transparently.
+      -->
+      <template v-if="$slots['filter-extra']" #extra="slotProps">
+        <slot name="filter-extra" v-bind="slotProps" />
+      </template>
+    </UiFilter>
   </div>
 </template>
 
 <script setup lang="ts">
-  import ExpandableSearch from "@/components/common/ExpandableSearch.vue";
-  import Badge from "@/components/ui/badge/Badge.vue";
-  import Button from "@/components/ui/button/Button.vue";
-  import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-  } from "@/components/ui/tooltip";
-  import type { ViewMode } from "@/ui-table/types/table.types";
-  import {
-    Plus,
-    RefreshCcw,
-    SlidersHorizontal,
-    SquareKanban,
-    Table,
-    TableOfContents,
-  } from "lucide-vue-next";
+import ExpandableSearch from '@/components/common/ExpandableSearch.vue'
+import Badge from '@/components/ui/badge/Badge.vue'
+import Button from '@/components/ui/button/Button.vue'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
+import { useDotColor } from '@/composables/useDotColor'
+import type { ViewMode } from '@/ui-table/types/table.types'
+import {
+  Plus,
+  RefreshCcw,
+  SlidersHorizontal,
+  SquareKanban,
+  Table,
+  TableOfContents,
+} from 'lucide-vue-next'
+import { ref } from 'vue'
+import UiFilter from './UiFilter.vue'
+import type { FilterOption } from './UiFilter.vue'
+import type { ActiveFilters } from '../../types/filter.types'
 
-  import { useDotColor } from "@/composables/useDotColor";
-  const { getDotColor } = useDotColor();
+export type { FilterOption }
 
-  // Stat can come from the backend (dot + badge Tailwind classes)
-  // or be defined manually (color hex/rgb for Badge :color prop)
-  export type UiHeaderStat = {
-    label: string;
-    value: number | string;
-    dot?: string;
-    badge?: string;
-    color?: string;
-  };
+const { getDotColor } = useDotColor()
 
-  const views = [
-    {
-      id: "table" as ViewMode,
-      label: "Table",
-      icon: Table,
-      activeClass:
-        "bg-primary border border-gray-500 text-white active-no-hover",
-    },
-    {
-      id: "list" as ViewMode,
-      label: "List",
-      icon: TableOfContents,
-      activeClass:
-        "bg-primary border border-gray-500 text-white active-no-hover",
-    },
-    {
-      id: "kanban" as ViewMode,
-      label: "Kanban",
-      icon: SquareKanban,
-      activeClass:
-        "bg-primary border border-gray-500 text-white active-no-hover",
-    },
-  ];
+const filterOpen = ref(false)
 
-  withDefaults(
-    defineProps<{
-      title: string;
-      stats?: UiHeaderStat[];
-      showViews?: boolean;
-      currentView?: ViewMode;
-      createLabel?: string;
-      showRefresh?: boolean;
-      loading?: boolean;
-      showSearch?: boolean;
-      searchValue?: string;
-      searchPlaceholder?: string;
-      showFilter?: boolean;
-      activeFilterCount?: number;
-      showSort?: boolean;
-      isSortActive?: boolean;
-      showExport?: boolean;
-    }>(),
-    {
-      showSearch: false,
-      searchPlaceholder: "Search...",
-      showFilter: false,
-      activeFilterCount: 0,
-      showSort: false,
-      isSortActive: false,
-      showExport: false,
-    },
-  );
+export type UiHeaderStat = {
+  label: string
+  value: number | string
+  dot?: string
+  badge?: string
+  color?: string
+}
 
-  const emit = defineEmits<{
-    (e: "update:currentView", value: ViewMode): void;
-    (e: "create"): void;
-    (e: "refresh"): void;
-    (e: "update:searchValue", value: string): void;
-    (e: "filter"): void;
-    (e: "sort"): void;
-    (e: "export", format: "csv" | "json" | "pdf"): void;
-  }>();
+const views = [
+  {
+    id: 'table' as ViewMode,
+    label: 'Table',
+    icon: Table,
+    activeClass: 'bg-primary border border-gray-500 text-white active-no-hover',
+  },
+  {
+    id: 'list' as ViewMode,
+    label: 'List',
+    icon: TableOfContents,
+    activeClass: 'bg-primary border border-gray-500 text-white active-no-hover',
+  },
+  {
+    id: 'kanban' as ViewMode,
+    label: 'Kanban',
+    icon: SquareKanban,
+    activeClass: 'bg-primary border border-gray-500 text-white active-no-hover',
+  },
+]
+
+withDefaults(
+  defineProps<{
+    title: string
+    stats?: UiHeaderStat[]
+    showViews?: boolean
+    currentView?: ViewMode
+    createLabel?: string
+    showRefresh?: boolean
+    loading?: boolean
+    showSearch?: boolean
+    searchValue?: string
+    searchPlaceholder?: string
+    showFilter?: boolean
+    activeFilterCount?: number
+    showSort?: boolean
+    isSortActive?: boolean
+    showExport?: boolean
+    /**
+     * Creator select options.
+     * Example: userStore.all.map(u => ({ label: u.name, value: u.id }))
+     */
+    filterCreatorOptions?: FilterOption[]
+    /**
+     * Tags multi-select options.
+     * Example: tagStore.all.map(t => ({ label: t.name, value: t.id, dot: t.colorClass }))
+     */
+    filterTagOptions?: FilterOption[]
+    /**
+     * Currently applied filters from useUniversalInteractions.commonFilter.
+     * Pass as :filter-values="commonFilter"
+     */
+    filterValues?: ActiveFilters
+  }>(),
+  {
+    showSearch: false,
+    searchPlaceholder: 'Search...',
+    showFilter: false,
+    activeFilterCount: 0,
+    showSort: false,
+    isSortActive: false,
+    showExport: false,
+    filterCreatorOptions: () => [],
+    filterTagOptions: () => [],
+    filterValues: () => ({}),
+  },
+)
+
+const emit = defineEmits<{
+  (e: 'update:currentView', value: ViewMode): void
+  (e: 'create'): void
+  (e: 'refresh'): void
+  (e: 'update:searchValue', value: string): void
+  (e: 'filter'): void
+  (e: 'sort'): void
+  (e: 'export', format: 'csv' | 'json' | 'pdf'): void
+  /**
+   * Fired when UiFilter emits @apply.
+   * The parent index page calls applyFilters($event) from useUniversalInteractions.
+   *
+   * @apply-filters="applyFilters"
+   */
+  (e: 'apply-filters', filters: ActiveFilters): void
+}>()
 </script>
