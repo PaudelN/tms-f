@@ -16,7 +16,13 @@
         <!-- Stats chips -->
         <div v-if="stats && stats.length" class="flex items-center gap-1.5 pl-3.5">
           <template v-for="stat in stats" :key="stat.label">
-            <Badge :color="getDotColor(stat.dot ?? stat.color ?? '')">
+            <!--
+              Color priority for the dot/badge:
+                1. stat.color — raw hex from backend (highest priority, bypasses Tailwind mapping)
+                2. stat.dot   — Tailwind class string, resolved via useDotColor()
+                3. fallback   — useDotColor default (#8b5cf6)
+            -->
+            <Badge :color="resolveStatColor(stat)">
               {{ stat.value }} {{ stat.label }}
             </Badge>
           </template>
@@ -135,23 +141,6 @@
       </div>
     </div>
 
-    <!--
-      UiFilter — rendered here, invisible until filterOpen = true.
-
-      Slot forwarding: any `#filter-extra` slot content passed to UiHeader
-      from the index page is forwarded into UiFilter's `#extra` slot.
-
-      The `extra` slot receives { draft, on } from UiFilter:
-        draft — the live reactive filter draft object
-        on(key, value) — call to update a draft field
-
-      Example in WorkspaceIndex:
-        <UiHeader show-filter ...>
-          <template #filter-extra="{ draft, on }">
-            <WorkspaceStatusFilter :draft="draft" @update="on" />
-          </template>
-        </UiHeader>
-    -->
     <UiFilter
       v-if="showFilter"
       v-model:open="filterOpen"
@@ -160,10 +149,6 @@
       :values="filterValues"
       @apply="(filters) => emit('apply-filters', filters)"
     >
-      <!--
-        Forward the parent's #filter-extra slot into UiFilter's #extra slot.
-        The scoped slot data (draft, on) flows through transparently.
-      -->
       <template v-if="$slots['filter-extra']" #extra="slotProps">
         <slot name="filter-extra" v-bind="slotProps" />
       </template>
@@ -205,9 +190,19 @@ const filterOpen = ref(false)
 export type UiHeaderStat = {
   label: string
   value: number | string
+  /**
+   * Raw hex color from backend — takes priority over `dot`.
+   * Example: "#10b981"
+   * When present, useDotColor() is bypassed entirely.
+   */
+  color?: string
+  /**
+   * Tailwind dot class — legacy / fallback.
+   * Example: "bg-emerald-500"
+   * Resolved to hex via useDotColor() only when `color` is absent.
+   */
   dot?: string
   badge?: string
-  color?: string
 }
 
 const views = [
@@ -248,20 +243,8 @@ withDefaults(
     showSort?: boolean
     isSortActive?: boolean
     showExport?: boolean
-    /**
-     * Creator select options.
-     * Example: userStore.all.map(u => ({ label: u.name, value: u.id }))
-     */
     filterCreatorOptions?: FilterOption[]
-    /**
-     * Tags multi-select options.
-     * Example: tagStore.all.map(t => ({ label: t.name, value: t.id, dot: t.colorClass }))
-     */
     filterTagOptions?: FilterOption[]
-    /**
-     * Currently applied filters from useUniversalInteractions.commonFilter.
-     * Pass as :filter-values="commonFilter"
-     */
     filterValues?: ActiveFilters
   }>(),
   {
@@ -286,12 +269,23 @@ const emit = defineEmits<{
   (e: 'filter'): void
   (e: 'sort'): void
   (e: 'export', format: 'csv' | 'json' | 'pdf'): void
-  /**
-   * Fired when UiFilter emits @apply.
-   * The parent index page calls applyFilters($event) from useUniversalInteractions.
-   *
-   * @apply-filters="applyFilters"
-   */
   (e: 'apply-filters', filters: ActiveFilters): void
 }>()
+
+/**
+ * Resolve the accent hex color for a stat badge/dot.
+ *
+ * Priority:
+ *   1. stat.color — raw hex from backend (bypasses all Tailwind mapping)
+ *   2. stat.dot   — Tailwind class resolved via useDotColor()
+ *   3. useDotColor() default fallback (#8b5cf6)
+ */
+function resolveStatColor(stat: UiHeaderStat): string {
+  // Raw hex wins — no mapping needed
+  if (stat.color && (stat.color.startsWith('#') || stat.color.startsWith('rgb'))) {
+    return stat.color
+  }
+  // Tailwind class fallback
+  return getDotColor(stat.dot ?? stat.color ?? '')
+}
 </script>

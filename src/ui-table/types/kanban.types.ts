@@ -3,6 +3,7 @@
 export interface KanbanStageDefinition {
   value: string;
   label: string;
+  color?: string;
   dot?: string;
   colorClass?: string;
   textClass?: string;

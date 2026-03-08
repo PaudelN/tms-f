@@ -47,6 +47,7 @@ export interface WorkspaceStatus {
   description: string;
   dot: string;
   badge: string;
+  color?: string;
 }
 
 export interface WorkspaceFormData {

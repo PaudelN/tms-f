@@ -7,45 +7,40 @@
     style="background: rgb(var(--color-background))"
   >
     <!-- ══════════════════════════════════════════════
-         TOOLBAR — subtle ambient strip
+         TOOLBAR
     ══════════════════════════════════════════════ -->
-    <div class="shrink-0 flex items-center gap-1.5 px-5 h-11">
-      <div class="flex items-center gap-0.5 p-0.5 rounded-lg bg-muted/50">
+    <div class="shrink-0 flex items-center gap-1.5 px-5 h-11 border rounded-sm">
+      <!-- Left group -->
+      <div class="flex items-center gap-1">
+        <!-- Collapse / Expand all — single toggle button -->
         <Tooltip>
           <TooltipTrigger as-child>
             <button
               type="button"
-              class="kb3-btn"
-              @click="collapseAll"
-              title="Collapse all"
+              class="kb3-toolbar-btn"
+              @click="toggleAllStages"
             >
-              <ChevronsLeft class="h-3.5 w-3.5" />
+              <FoldVertical v-if="allExpanded" class="h-4 w-4" />
+              <UnfoldVertical v-else class="h-4 w-4" />
             </button>
           </TooltipTrigger>
-          <TooltipContent side="bottom" class="text-xs"
-            >Collapse all</TooltipContent
-          >
+          <TooltipContent side="bottom" class="text-xs font-medium">
+            {{ allExpanded ? "Collapse all" : "Expand all" }}
+          </TooltipContent>
         </Tooltip>
+
+        <!-- Density cycle -->
         <Tooltip>
           <TooltipTrigger as-child>
-            <button type="button" class="kb3-btn" @click="expandAll">
-              <ChevronsRight class="h-3.5 w-3.5" />
+            <button type="button" class="kb3-toolbar-btn" @click="cycleDensity">
+              <Rows4 v-if="density === 'compact'" class="h-4 w-4" />
+              <Rows3 v-else-if="density === 'default'" class="h-4 w-4" />
+              <Rows2 v-else class="h-4 w-4" />
             </button>
           </TooltipTrigger>
-          <TooltipContent side="bottom" class="text-xs"
-            >Expand all</TooltipContent
+          <TooltipContent side="bottom" class="text-xs font-medium"
+            >Density</TooltipContent
           >
-        </Tooltip>
-        <div class="w-px h-3 bg-border/60 mx-0.5" />
-        <Tooltip>
-          <TooltipTrigger as-child>
-            <button type="button" class="kb3-btn" @click="cycleDensity">
-              <Rows4 v-if="density === 'compact'" class="h-3.5 w-3.5" />
-              <Rows3 v-else-if="density === 'default'" class="h-3.5 w-3.5" />
-              <Rows2 v-else class="h-3.5 w-3.5" />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom" class="text-xs">Density</TooltipContent>
         </Tooltip>
       </div>
 
@@ -63,32 +58,41 @@
         </div>
       </Transition>
 
-      <div class="flex items-center gap-0.5 p-0.5 rounded-lg bg-muted/50">
+      <!-- Right group -->
+      <div class="flex items-center gap-1">
         <Tooltip>
           <TooltipTrigger as-child>
-            <button type="button" class="kb3-btn" @click="refresh">
+            <button type="button" class="kb3-toolbar-btn" @click="refresh">
               <RefreshCw
-                class="h-3.5 w-3.5"
+                class="h-4 w-4 transition-transform duration-500"
                 :class="refreshing ? 'animate-spin text-primary' : ''"
               />
             </button>
           </TooltipTrigger>
-          <TooltipContent side="bottom" class="text-xs">Refresh</TooltipContent>
+          <TooltipContent side="bottom" class="text-xs font-medium"
+            >Refresh</TooltipContent
+          >
         </Tooltip>
+
         <Tooltip>
           <TooltipTrigger as-child>
             <button
               type="button"
-              class="kb3-btn"
+              class="kb3-toolbar-btn"
+              :class="
+                isFullscreen
+                  ? 'bg-primary text-white border border-gray-500 scale-[1.02]'
+                  : ''
+              "
               @click="isFullscreen = !isFullscreen"
             >
-              <Shrink v-if="isFullscreen" class="h-3.5 w-3.5" />
-              <Expand v-else class="h-3.5 w-3.5" />
+              <Shrink v-if="isFullscreen" class="h-4 w-4" />
+              <Expand v-else class="h-4 w-4" />
             </button>
           </TooltipTrigger>
-          <TooltipContent side="bottom" class="text-xs">{{
-            isFullscreen ? "Exit" : "Fullscreen"
-          }}</TooltipContent>
+          <TooltipContent side="bottom" class="text-xs font-medium">
+            {{ isFullscreen ? "Exit fullscreen" : "Fullscreen" }}
+          </TooltipContent>
         </Tooltip>
       </div>
     </div>
@@ -151,279 +155,304 @@
         <!-- ── Expanded column ── -->
         <div
           v-else
-          class="kb3-col flex flex-col rounded-md overflow-hidden border"
+          class="kb3-col flex flex-col"
           :style="{
             '--ks': stageColor(si),
-            background: `${stageColor(si)}08`,
-            transition:
-              'border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease',
             transform:
               isDragging && dragOverStage === stage.value
                 ? 'scale(1.006)'
                 : 'scale(1)',
+            transition: 'transform 0.2s ease',
           }"
           @dragenter.prevent="dragOverStage = stage.value"
         >
-          <!-- Column header — floating feel -->
-          <div class="shrink-0 px-4 pt-4 pb-3.5">
-            <div class="flex items-center gap-2.5 pb-4 border-b">
-              <!-- Icon bubble -->
-              <div
-                class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-sm"
-                :style="{
-                  background: `linear-gradient(135deg, ${stageColor(si)}30, ${stageColor(si)}18)`,
-                  color: stageColor(si),
-                  border: `1px solid ${stageColor(si)}30`,
-                }"
-              >
-                <component :is="stageIcon(si)" class="w-4 h-4" />
-              </div>
+          <!-- ═══ HEADER CAP ═══
+               Bold 3-px top border = the color stripe.
+               Gradient tint bg — subtle, not heavy.
+               Icon bubble + label + count pill + action buttons all inline.
+               Rounded top corners only; body is flush below.
+          -->
+          <div
+            class="kb3-col-cap shrink-0 flex items-center gap-1.5 px-3 py-2.5"
+            :style="{
+              background: `linear-gradient(135deg, ${stageColor(si)}22 0%, ${stageColor(si)}0e 100%)`,
+              borderTop: `3px solid ${stageColor(si)}`,
+              borderLeft: `0px solid ${stageColor(si)}`,
+              borderRight: `0px solid ${stageColor(si)}`,
+              borderRadius: '20px 20px 0 0',
+            }"
+          >
+            <!-- Icon -->
+            <component
+              :is="stageIcon(si)"
+              class="w-3.5 h-3.5 shrink-0"
+              :style="{ color: stageColor(si) }"
+            />
 
-              <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-1.5">
-                  <span
-                    class="text-[13px] font-bold text-foreground tracking-tight truncate"
-                    >{{ stage.label }}</span
-                  >
-                  <Loader2
-                    v-if="col(stage.value).loading"
-                    class="w-3 h-3 text-muted-foreground animate-spin shrink-0"
-                  />
-                  <div
-                    v-else
-                    class="shrink-0 px-1.5 py-0.5 rounded-md text-[10px] font-black"
-                    :style="{
-                      background: `${stageColor(si)}22`,
-                      color: stageColor(si),
-                    }"
-                  >
-                    {{ col(stage.value).items.length }}
-                  </div>
-                  <Badge
-                    v-if="stage.wipLimit"
-                    :variant="
-                      col(stage.value).items.length >= stage.wipLimit
-                        ? 'destructive'
-                        : 'outline'
-                    "
-                    class="text-[9px] h-4 px-1.5 font-extrabold uppercase shrink-0"
-                    >{{ col(stage.value).items.length }}/{{
-                      stage.wipLimit
-                    }}</Badge
-                  >
-                </div>
-                <p
-                  v-if="
-                    searchQuery &&
-                    searchQuery.trim() &&
-                    filteredItems(stage.value).length !==
-                      col(stage.value).items.length
-                  "
-                  class="text-[10px] text-muted-foreground/60 mt-0.5"
-                >
-                  {{ filteredItems(stage.value).length }} of
-                  {{ col(stage.value).items.length }} shown
-                </p>
-              </div>
+            <!-- Label -->
+            <span class="flex-1 min-w-0 text-[12px] font-semibold truncate">{{
+              stage.label
+            }}</span>
 
-              <div
-                class="flex items-center gap-0.5 opacity-40 hover:opacity-100 transition-opacity"
+            <!-- Spinner while loading -->
+            <Loader2
+              v-if="col(stage.value).loading"
+              class="w-2.5 h-2.5 animate-spin shrink-0"
+              :style="{ color: stageColor(si) }"
+            />
+
+            <!-- Count / WIP pill -->
+            <div
+              v-else
+              class="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-black leading-none text-white"
+              :style="{ background: stageColor(si) }"
+            >
+              {{ col(stage.value).items.length
+              }}<span v-if="stage.wipLimit" class="opacity-70"
+                >/{{ stage.wipLimit }}</span
               >
-                <button class="kb3-btn-sm" @click="loadColumn(stage.value)">
-                  <RotateCw class="w-3 h-3" />
-                </button>
-                <button class="kb3-btn-sm" @click="toggleStage(stage.value)">
-                  <PanelLeftClose class="w-3 h-3" />
-                </button>
-              </div>
             </div>
+
+            <!-- Collapse -->
+            <button
+              class="w-5 h-5 shrink-0 flex items-center justify-center rounded opacity-50 hover:opacity-100 hover:bg-black/8 transition-all"
+              @click.stop="toggleStage(stage.value)"
+            >
+              <PanelLeftClose class="w-3 h-3" />
+            </button>
           </div>
 
-          <!-- Card scroll area — transparent bg continues the column color -->
-          <div class="flex-1 min-h-0 overflow-y-auto px-3 pb-2 kb3-scroll">
-            <draggable
-              :model-value="filteredItems(stage.value)"
-              :item-key="itemKey"
-              group="kanban"
-              :animation="200"
-              ghost-class="kb3-ghost"
-              chosen-class="kb3-chosen"
-              drag-class="kb3-dragging"
-              :disabled="
-                features?.dragDrop === false || col(stage.value).loading
+          <!-- ── Column body — neutral bg, rounded bottom corners ── -->
+          <div
+            class="flex flex-col flex-1 min-h-0 overflow-hidden"
+            :style="{
+              background: `color-mix(in srgb, ${stageColor(si)} 13%, rgb(var(--color-background)))`,
+            }"
+          >
+            <!-- Search filter note -->
+            <p
+              v-if="
+                searchQuery &&
+                searchQuery.trim() &&
+                filteredItems(stage.value).length !==
+                  col(stage.value).items.length
               "
-              :data-stage="stage.value"
-              class="flex flex-col gap-2 min-h-13 rounded-xl"
-              :class="isDragging ? 'kb3-dropzone-active' : ''"
-              :style="{
-                paddingBottom: isDragging ? '88px' : '2px',
-                transition: 'padding-bottom 0.2s ease',
-              }"
-              @update:model-value="(v) => setItems(stage.value, v)"
-              @start="(_e) => onDragStart(stage.value)"
-              @end="onDragEnd"
+              class="text-[10px] text-muted-foreground/60 px-4 pt-2"
             >
-              <template #item="{ element }">
-                <div
-                  class="kb3-card-wrap group/card3"
-                  :class="
-                    landingCard !== null && landingCard.id === element[itemKey]
-                      ? 'kb3-land'
-                      : ''
-                  "
-                  :style="{ '--ks': stageColor(si) }"
-                >
+              {{ filteredItems(stage.value).length }} of
+              {{ col(stage.value).items.length }} shown
+            </p>
+
+            <!-- WIP over-limit warning -->
+            <div
+              v-if="
+                stage.wipLimit &&
+                col(stage.value).items.length >= stage.wipLimit &&
+                !col(stage.value).loading
+              "
+              class="mx-3 mt-2 px-2 py-1 rounded-lg bg-destructive/10 border border-destructive/20 text-[10px] font-semibold text-destructive text-center"
+            >
+              WIP limit reached · {{ col(stage.value).items.length }}/{{
+                stage.wipLimit
+              }}
+            </div>
+
+            <!-- ── Scrollable card area ── -->
+            <div
+              class="flex-1 min-h-0 overflow-y-auto px-3 pt-2 pb-1 kb3-scroll"
+            >
+              <draggable
+                :model-value="filteredItems(stage.value)"
+                :item-key="itemKey"
+                group="kanban"
+                :animation="200"
+                ghost-class="kb3-ghost"
+                chosen-class="kb3-chosen"
+                drag-class="kb3-dragging"
+                :disabled="
+                  features?.dragDrop === false || col(stage.value).loading
+                "
+                :data-stage="stage.value"
+                class="flex flex-col gap-2 min-h-10 rounded-xl"
+                :class="isDragging ? 'kb3-dropzone-active' : ''"
+                :style="{
+                  paddingBottom: isDragging ? '88px' : '4px',
+                  transition: 'padding-bottom 0.2s ease',
+                }"
+                @update:model-value="(v) => setItems(stage.value, v)"
+                @start="(_e) => onDragStart(stage.value)"
+                @end="onDragEnd"
+              >
+                <template #item="{ element }">
                   <div
-                    class="kb3-card relative rounded-xl bg-background cursor-grab active:cursor-grabbing"
-                    :class="densityPadding"
+                    class="kb3-card-wrap group/card3"
+                    :class="
+                      landingCard !== null &&
+                      landingCard.id === element[itemKey]
+                        ? 'kb3-land'
+                        : ''
+                    "
+                    :style="{ '--ks': stageColor(si) }"
                   >
-                    <!-- Hover glow -->
                     <div
-                      class="kb3-glow"
-                      :style="{
-                        background: `radial-gradient(ellipse at 20% 50%, ${stageColor(si)}12, transparent 70%)`,
-                      }"
-                    />
-
-                    <!-- Card actions slot -->
-                    <div
-                      v-if="$slots['card-actions']"
-                      class="absolute top-2 right-2 flex gap-1 z-10 opacity-0 group-hover/card3:opacity-100 transition-opacity duration-150"
-                      @click.stop
-                      @mousedown.stop
-                      @pointerdown.stop
+                      class="kb3-card relative rounded-xl bg-background cursor-grab active:cursor-grabbing"
+                      :class="densityPadding"
                     >
-                      <slot
-                        name="card-actions"
-                        :item="element"
-                        :stage="stage.value"
-                        :stage-meta="stage"
+                      <!-- Hover glow -->
+                      <div
+                        class="kb3-glow"
+                        :style="{
+                          background: `radial-gradient(ellipse at 20% 50%, ${stageColor(si)}12, transparent 70%)`,
+                        }"
                       />
-                    </div>
 
-                    <div class="pl-3">
-                      <slot
-                        name="card"
-                        :item="element"
-                        :stage="stage.value"
-                        :stage-meta="stage"
+                      <!-- Card actions slot -->
+                      <div
+                        v-if="$slots['card-actions']"
+                        class="absolute top-2 right-2 flex gap-1 z-10 opacity-0 group-hover/card3:opacity-100 transition-opacity duration-150"
+                        @click.stop
+                        @mousedown.stop
+                        @pointerdown.stop
                       >
-                        <p
-                          class="text-sm font-semibold text-foreground truncate"
+                        <slot
+                          name="card-actions"
+                          :item="element"
+                          :stage="stage.value"
+                          :stage-meta="stage"
+                        />
+                      </div>
+
+                      <div class="pl-3">
+                        <slot
+                          name="card"
+                          :item="element"
+                          :stage="stage.value"
+                          :stage-meta="stage"
                         >
-                          {{ element.name ?? element[itemKey] }}
-                        </p>
-                      </slot>
+                          <p
+                            class="text-sm font-semibold text-foreground truncate"
+                          >
+                            {{ element.name ?? element[itemKey] }}
+                          </p>
+                        </slot>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </template>
+                </template>
 
-              <template #header>
-                <div
-                  v-if="col(stage.value).loading"
-                  class="flex flex-col gap-2 mb-1"
-                >
+                <template #header>
                   <div
-                    v-for="n in 3"
-                    :key="n"
-                    class="rounded-xl bg-background/50 border border-border/20 animate-pulse"
-                    :style="{
-                      height:
-                        density === 'compact'
-                          ? '54px'
-                          : density === 'comfortable'
-                            ? '90px'
-                            : '72px',
-                      animationDelay: `${n * 80}ms`,
-                    }"
+                    v-if="col(stage.value).loading"
+                    class="flex flex-col gap-2 mb-1"
+                  >
+                    <div
+                      v-for="n in 3"
+                      :key="n"
+                      class="rounded-xl bg-background/50 border border-border/20 animate-pulse"
+                      :style="{
+                        height:
+                          density === 'compact'
+                            ? '54px'
+                            : density === 'comfortable'
+                              ? '90px'
+                              : '72px',
+                        animationDelay: `${n * 80}ms`,
+                      }"
+                    />
+                  </div>
+                </template>
+
+                <template #footer>
+                  <Transition name="kb3-fade">
+                    <div
+                      v-if="
+                        !col(stage.value).loading &&
+                        filteredItems(stage.value).length === 0 &&
+                        !col(stage.value).error
+                      "
+                      class="flex flex-col items-center gap-3 py-10 px-4 mb-1.5 rounded-2xl"
+                      :style="{
+                        background: `${stageColor(si)}06`,
+                        border: `1.5px dashed ${stageColor(si)}25`,
+                      }"
+                    >
+                      <div
+                        class="w-10 h-10 rounded-2xl flex items-center justify-center"
+                        :style="{
+                          background: `${stageColor(si)}15`,
+                          color: stageColor(si),
+                        }"
+                      >
+                        <component :is="stageIcon(si)" class="w-4.5 h-4.5" />
+                      </div>
+                      <div class="text-center">
+                        <p
+                          class="text-[11px] font-semibold text-muted-foreground/60"
+                        >
+                          {{
+                            searchQuery && searchQuery.trim()
+                              ? "No matches found"
+                              : "Nothing here yet"
+                          }}
+                        </p>
+                        <p
+                          v-if="!(searchQuery && searchQuery.trim())"
+                          class="text-[10px] text-muted-foreground/40 mt-0.5"
+                        >
+                          Drop a card or add a new task
+                        </p>
+                      </div>
+                    </div>
+                  </Transition>
+
+                  <div
+                    v-if="col(stage.value).error"
+                    class="flex items-center gap-2 px-3 py-2.5 rounded-xl mb-2 bg-destructive/5 border border-destructive/15"
+                  >
+                    <AlertCircle
+                      class="w-3.5 h-3.5 text-destructive shrink-0"
+                    />
+                    <p
+                      class="text-[11px] text-destructive font-medium flex-1 truncate"
+                    >
+                      {{ col(stage.value).error }}
+                    </p>
+                    <button
+                      type="button"
+                      class="text-[10px] font-bold text-destructive hover:underline shrink-0"
+                      @click="loadColumn(stage.value)"
+                    >
+                      Retry
+                    </button>
+                  </div>
+
+                  <slot
+                    name="column-footer"
+                    :stage="stage.value"
+                    :stage-meta="stage"
+                  />
+                </template>
+              </draggable>
+            </div>
+
+            <!-- ▓▓ Add button — FIXED footer, outside & below the scroll area ▓▓ -->
+            <div
+              class="shrink-0 px-3 py-2 border-t"
+              :style="{ borderColor: `${stageColor(si)}25` }"
+            >
+              <button
+                type="button"
+                class="kb3-add-btn group/add3 w-full"
+                :style="{ '--ks': stageColor(si) }"
+              >
+                <div class="kb3-add-icon-wrap">
+                  <Plus
+                    class="w-3.5 h-3.5 transition-transform duration-200 group-hover/add3:rotate-90"
                   />
                 </div>
-              </template>
-
-              <template #footer>
-                <Transition name="kb3-fade">
-                  <div
-                    v-if="
-                      !col(stage.value).loading &&
-                      filteredItems(stage.value).length === 0 &&
-                      !col(stage.value).error
-                    "
-                    class="flex flex-col items-center gap-3 py-12 px-4 mb-1.5 rounded-2xl"
-                    :style="{
-                      background: `${stageColor(si)}06`,
-                      border: `1.5px dashed ${stageColor(si)}25`,
-                    }"
-                  >
-                    <div
-                      class="w-11 h-11 rounded-2xl flex items-center justify-center"
-                      :style="{
-                        background: `${stageColor(si)}15`,
-                        color: stageColor(si),
-                      }"
-                    >
-                      <component :is="stageIcon(si)" class="w-5 h-5" />
-                    </div>
-                    <div class="text-center">
-                      <p
-                        class="text-[11px] font-semibold text-muted-foreground/60"
-                      >
-                        {{
-                          searchQuery && searchQuery.trim()
-                            ? "No matches found"
-                            : "Nothing here yet"
-                        }}
-                      </p>
-                      <p
-                        v-if="!(searchQuery && searchQuery.trim())"
-                        class="text-[10px] text-muted-foreground/40 mt-0.5"
-                      >
-                        Drop a card or add a new task
-                      </p>
-                    </div>
-                  </div>
-                </Transition>
-
-                <div
-                  v-if="col(stage.value).error"
-                  class="flex items-center gap-2 px-3 py-2.5 rounded-xl mb-2 bg-destructive/5 border border-destructive/15"
-                >
-                  <AlertCircle class="w-3.5 h-3.5 text-destructive shrink-0" />
-                  <p
-                    class="text-[11px] text-destructive font-medium flex-1 truncate"
-                  >
-                    {{ col(stage.value).error }}
-                  </p>
-                  <button
-                    type="button"
-                    class="text-[10px] font-bold text-destructive hover:underline shrink-0"
-                    @click="loadColumn(stage.value)"
-                  >
-                    Retry
-                  </button>
-                </div>
-
-                <!-- Add button — colored with stage accent -->
-                <button
-                  type="button"
-                  class="kb3-add-btn group/add3"
-                  :style="{ '--ks': stageColor(si) }"
-                >
-                  <div class="kb3-add-icon-wrap">
-                    <Plus
-                      class="w-3.5 h-3.5 transition-transform duration-200 group-hover/add3:rotate-90"
-                    />
-                  </div>
-                  <span>Add task</span>
-                </button>
-
-                <slot
-                  name="column-footer"
-                  :stage="stage.value"
-                  :stage-meta="stage"
-                />
-              </template>
-            </draggable>
+                <span>Add task</span>
+              </button>
+            </div>
           </div>
 
           <slot name="column-action" :stage="stage.value" :stage-meta="stage" />
@@ -441,7 +470,6 @@
   import { computed, reactive, ref, watch } from "vue";
   import draggable from "vuedraggable";
 
-  import Badge from "@/components/ui/badge/Badge.vue";
   import {
     Tooltip,
     TooltipContent,
@@ -451,22 +479,21 @@
   import {
     AlertCircle,
     CheckCircle2,
-    ChevronsLeft,
-    ChevronsRight,
     CircleCheck,
     ClipboardList,
     Expand,
+    FoldVertical,
     Loader2,
     PanelLeftClose,
     Plus,
     RefreshCw,
-    RotateCw,
     Rows2,
     Rows3,
     Rows4,
     Search,
     Settings2,
     Shrink,
+    UnfoldVertical,
     Zap,
   } from "lucide-vue-next";
 
@@ -484,7 +511,6 @@
     UniversalApiResponse,
     UniversalFetchParams,
   } from "./types/universal.types";
-import Separator from "@/components/ui/separator/Separator.vue";
 
   interface SortableEvent {
     from: Element;
@@ -522,6 +548,7 @@ import Separator from "@/components/ui/separator/Separator.vue";
     (e: "reorder", event: KanbanReorderEvent): void;
   }>();
 
+  // ── Column state ──────────────────────────────────────────────────────────────
   const columnData = reactive<Record<string, ColumnState>>({});
   function col(sv: string): ColumnState {
     if (!columnData[sv]) {
@@ -551,6 +578,7 @@ import Separator from "@/components/ui/separator/Separator.vue";
     }
   }
 
+  // ── Fetch ─────────────────────────────────────────────────────────────────────
   async function boardLoad(): Promise<void> {
     if (!props.boardFetchFn) {
       await perColumnLoad();
@@ -679,6 +707,7 @@ import Separator from "@/components/ui/separator/Separator.vue";
   watch(() => props.searchQuery, scheduleReload);
   watch(() => props.externalFilter, scheduleReload, { deep: true });
 
+  // ── Search filter ─────────────────────────────────────────────────────────────
   function filteredItems(sv: string): T[] {
     const q = (props.searchQuery ?? "").trim().toLowerCase();
     if (!q) return colItems(sv);
@@ -694,6 +723,7 @@ import Separator from "@/components/ui/separator/Separator.vue";
     props.stages.reduce((n, s) => n + filteredItems(s.value).length, 0),
   );
 
+  // ── UI state ──────────────────────────────────────────────────────────────────
   type Density = "compact" | "default" | "comfortable";
   const density = ref<Density>("default");
   const isFullscreen = ref<boolean>(false);
@@ -711,23 +741,30 @@ import Separator from "@/components/ui/separator/Separator.vue";
         comfortable: "px-4 py-5",
       })[density.value],
   );
+
   function cycleDensity(): void {
     const order: Density[] = ["compact", "default", "comfortable"];
     density.value = order[(order.indexOf(density.value) + 1) % order.length];
   }
+
   function toggleStage(sv: string): void {
     const next = new Set(collapsedStages.value);
     next.has(sv) ? next.delete(sv) : next.add(sv);
     collapsedStages.value = next;
   }
-  function collapseAll(): void {
-    collapsedStages.value = new Set(props.stages.map((s) => s.value));
-  }
-  function expandAll(): void {
-    collapsedStages.value = new Set<string>();
+
+  const allExpanded = computed<boolean>(() => collapsedStages.value.size === 0);
+
+  function toggleAllStages(): void {
+    if (allExpanded.value) {
+      collapsedStages.value = new Set(props.stages.map((s) => s.value));
+    } else {
+      collapsedStages.value = new Set<string>();
+    }
   }
 
-  const colors = [
+  // ── Color resolution ──────────────────────────────────────────────────────────
+  const fallbackColors = [
     "#7c6ff7",
     "#f6a623",
     "#34c789",
@@ -737,12 +774,16 @@ import Separator from "@/components/ui/separator/Separator.vue";
     "#00c4cc",
     "#8bc34a",
   ];
+
   function stageColor(i: number): string {
     const st = props.stages[i];
+    if (st?.color) return st.color;
     if (st?.dot?.includes("red") || st?.dot?.includes("destruct"))
       return "#ff5757";
-    return colors[i % colors.length];
+    return fallbackColors[i % fallbackColors.length];
   }
+
+  // ── Stage icons ───────────────────────────────────────────────────────────────
   const iconList: Component[] = [
     ClipboardList,
     Zap,
@@ -754,6 +795,7 @@ import Separator from "@/components/ui/separator/Separator.vue";
     return iconList[i % iconList.length];
   }
 
+  // ── Drag & drop ───────────────────────────────────────────────────────────────
   let dragFromStage: string | null = null;
   function onDragStart(sv: string): void {
     dragFromStage = sv;
@@ -801,6 +843,7 @@ import Separator from "@/components/ui/separator/Separator.vue";
     }
   }
 
+  // ── Exposed API ───────────────────────────────────────────────────────────────
   const totalItems = computed<number>(() =>
     props.stages.reduce((n, s) => n + colItems(s.value).length, 0),
   );
@@ -831,49 +874,47 @@ import Separator from "@/components/ui/separator/Separator.vue";
   .kb3-scroll {
     scrollbar-width: none;
   }
+
+  /* ── Column layout ─────────────────────────────────────────────────────────── */
   .kb3-col {
     flex: 1 0 272px;
     max-width: 355px;
-    height: 100%;
+    height: calc(100vh - 7.5rem);
     max-height: calc(100vh - 7.5rem);
   }
   .kb3-col-collapsed {
     min-height: 160px;
   }
 
-  /* Buttons */
-  .kb3-btn {
+  /* ── Header cap ────────────────────────────────────────────────────────────── */
+  /*
+   * No bottom border — body border picks up seamlessly.
+   * Soft shadow separates it visually from the card list.
+   */
+  .kb3-col-cap {
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06);
+  }
+
+  /* ── Toolbar buttons ───────────────────────────────────────────────────────── */
+  .kb3-toolbar-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 28px;
-    height: 28px;
-    border-radius: 8px;
-    color: rgb(var(--color-muted-foreground));
+    width: 40px;
+    height: 40px;
+    border-radius: 4px;
+    color: rgb(var(--color-primary));
+    background: transparent;
     transition:
       background 0.15s ease,
       color 0.15s ease;
   }
-  .kb3-btn:hover {
-    background: rgb(var(--color-background));
+  .kb3-toolbar-btn:hover {
     color: rgb(var(--color-foreground));
-  }
-  .kb3-btn-sm {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    border-radius: 6px;
-    color: rgb(var(--color-muted-foreground));
-    transition: background 0.15s ease;
-  }
-  .kb3-btn-sm:hover {
-    background: rgb(var(--color-muted));
+    background: rgb(var(--color-background) / 0.6);
   }
 
-  /* Card */
-
+  /* ── Card ──────────────────────────────────────────────────────────────────── */
   .kb3-card {
     border: 0.1px solid rgb(var(--color-border));
     box-shadow:
@@ -890,8 +931,6 @@ import Separator from "@/components/ui/separator/Separator.vue";
       0 10px 24px -6px rgba(0, 0, 0, 0.1),
       0 4px 10px -4px rgba(0, 0, 0, 0.06);
   }
-
-  /* Hover glow overlay */
   .kb3-glow {
     position: absolute;
     inset: 0;
@@ -904,15 +943,13 @@ import Separator from "@/components/ui/separator/Separator.vue";
     opacity: 1;
   }
 
-  /* Add button with icon bubble */
+  /* ── Add button (pinned footer) ────────────────────────────────────────────── */
   .kb3-add-btn {
-    width: 100%;
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-top: 6px;
-    padding: 8px 10px;
-    border-radius: 12px;
+    padding: 7px 10px;
+    border-radius: 10px;
     font-size: 11px;
     font-weight: 600;
     color: rgb(var(--color-muted-foreground) / 0.55);
@@ -944,7 +981,7 @@ import Separator from "@/components/ui/separator/Separator.vue";
     color: var(--ks);
   }
 
-  /* Dropzone */
+  /* ── Dropzone ──────────────────────────────────────────────────────────────── */
   .kb3-dropzone-active {
     background-image: radial-gradient(
       circle,
@@ -954,7 +991,7 @@ import Separator from "@/components/ui/separator/Separator.vue";
     background-size: 16px 16px;
   }
 
-  /* Drag states */
+  /* ── Drag states ───────────────────────────────────────────────────────────── */
   .kb3-ghost {
     opacity: 0.3 !important;
     background: rgb(var(--color-muted)) !important;
@@ -965,7 +1002,6 @@ import Separator from "@/components/ui/separator/Separator.vue";
   .kb3-ghost > * {
     opacity: 0 !important;
   }
-
   .kb3-chosen {
     opacity: 0.97 !important;
     transform: scale(1.018) translateY(-3px) !important;
@@ -973,7 +1009,6 @@ import Separator from "@/components/ui/separator/Separator.vue";
     z-index: 200 !important;
     border-radius: 12px !important;
   }
-
   .kb3-dragging {
     transform: scale(0.975) translateY(-6px) rotate(5deg) !important;
     opacity: 0.92 !important;
@@ -998,7 +1033,7 @@ import Separator from "@/components/ui/separator/Separator.vue";
     animation: kb3-settle 0.38s cubic-bezier(0.34, 1.6, 0.64, 1) forwards !important;
   }
 
-  /* Transitions */
+  /* ── Transitions ───────────────────────────────────────────────────────────── */
   .kb3-fade-enter-active,
   .kb3-fade-leave-active {
     transition:
