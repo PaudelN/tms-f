@@ -408,7 +408,7 @@
   const kanbanApi = useKanbanApi<Workspace>("/workspaces");
 
   // ── View ──────────────────────────────────────────────────────────────────────
-  const currentView = ref<ViewMode>("table");
+  const currentView = ref<ViewMode>("list");
   const tableRef = ref();
   const listRef = ref();
   const kanbanRef = ref();

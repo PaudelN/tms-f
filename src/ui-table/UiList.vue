@@ -1,325 +1,324 @@
 <template>
   <div
     ref="rootEl"
-    class="rounded-sm overflow-hidden border border-border bg-card transition-all duration-300 flex flex-col"
-    :class="
-      isFullscreen
-        ? 'fixed inset-0 z-50 rounded-none bg-background'
-        : 'max-h-full'
-    "
+    class="ui-list-root flex flex-col overflow-hidden"
+    :class="isFullscreen ? 'fixed inset-0 z-50 rounded-none' : 'rounded-sm border border-border h-full'"
   >
-    <!-- ══════════════════════════════════════════════════════════════════════ -->
-    <!-- HEADER                                                                 -->
-    <!-- ══════════════════════════════════════════════════════════════════════ -->
-    <div
-      class="flex flex-wrap items-center justify-between gap-3 px-5 py-3 border-b border-border bg-background shrink-0"
-    >
-      <!-- Left: info icon + scroll-progress bar -->
-      <div class="flex items-center gap-3 flex-1 min-w-0">
-        <div class="relative group/info shrink-0">
-          <Info class="h-3.5 w-3.5 text-primary cursor-pointer" />
-          <div
-            class="absolute top-full left-0 mt-2 w-72 z-50 opacity-0 invisible group-hover/info:opacity-100 group-hover/info:visible pointer-events-none transition-all duration-200"
-          >
-            <div class="rounded-xl border border-border bg-popover shadow-2xl p-4 text-xs">
-              <div class="flex items-center gap-2 mb-2.5">
-                <span class="font-semibold text-primary text-xs">List View</span>
-              </div>
-              <p class="text-muted-foreground leading-relaxed mb-3">
-                Infinite-scroll list with expandable rows, live grouping and
-                sorting. Items load progressively as you scroll.
-              </p>
-              <div class="flex items-center gap-1.5 text-muted-foreground font-mono">
-                <span class="text-primary font-bold">{{ loadedCount }}</span>
-                <span>of</span>
-                <span class="font-bold">{{ totalCount }}</span>
-                <span>items loaded</span>
-                <span v-if="hasMore" class="ml-auto text-[10px] text-primary animate-pulse">
-                  more below ↓
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
 
-        <div class="flex-1 flex items-center gap-2 min-w-0">
-          <div class="flex-1 h-0.75 bg-border rounded-full overflow-hidden relative">
-            <div
-              class="absolute inset-y-0 left-0 bg-primary rounded-full transition-all duration-100 ease-linear"
-              :style="{ width: `${scrollProgress}%` }"
-            />
-            <div
-              class="absolute inset-y-0 w-4 bg-linear-to-r from-primary/60 to-transparent rounded-full transition-all duration-100 ease-linear"
-              :style="{ left: `calc(${scrollProgress}% - 8px)` }"
-            />
-          </div>
-          <span class="text-[10px] font-mono text-muted-foreground shrink-0 w-8 text-right tabular-nums">
-            {{ Math.round(scrollProgress) }}%
-          </span>
-        </div>
-      </div>
+    <!-- ══════════════════════════════════════════════════════════
+         STICKY HEADER
+    ══════════════════════════════════════════════════════════ -->
+    <header class="ui-list-header shrink-0 sticky top-0 z-30 border-b border-border bg-card">
 
-      <!-- Right controls -->
-      <div class="flex items-center gap-1 shrink-0">
-        <!-- Group By -->
-        <TooltipProvider v-if="features?.groupBy?.length" :delay-duration="150">
+      <!-- Top row: 7 controls in a single clean bar -->
+      <div class="flex items-center gap-1 px-3 py-2 border-b border-border/50">
+
+        <!-- ① Info -->
+        <TooltipProvider :delay-duration="120">
+          <Tooltip>
+            <TooltipTrigger as-child>
+              <Popover>
+                <PopoverTrigger as-child>
+                  <button type="button" class="ui-hbtn">
+                    <Info class="w-4 h-4" />
+                    <span class="ui-hbtn-label">Info</span>
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent side="bottom" align="start" class="w-72 p-4 rounded-sm border border-border bg-popover shadow-xl text-xs">
+                  <p class="font-semibold text-foreground mb-1">List View</p>
+                  <p class="text-muted-foreground leading-relaxed mb-3">
+                    Infinite-scroll list with expandable rows, live grouping and sorting. Items load progressively as you scroll.
+                  </p>
+                  <div class="flex items-center gap-1.5 font-mono text-muted-foreground text-[11px]">
+                    <span class="font-bold text-foreground">{{ loadedCount }}</span>
+                    <span>of</span>
+                    <span class="font-bold text-foreground">{{ totalCount }}</span>
+                    <span>loaded</span>
+                    <span v-if="hasMore" class="ml-auto text-primary text-[10px] animate-pulse">↓ more</span>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" class="text-xs">About this list</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
+        <div class="ui-hsep" />
+
+        <!-- ② Group By -->
+        <TooltipProvider :delay-duration="120">
           <Tooltip>
             <TooltipTrigger as-child>
               <Popover v-model:open="groupByOpen">
                 <PopoverTrigger as-child>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    class="h-8 w-8 rounded-lg cursor-pointer text-primary hover:text-primary hover:bg-secondary transition-colors"
-                    :class="groupByKey ? 'bg-primary/10' : ''"
-                  >
-                    <Layers2 class="h-4 w-4" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent
-                  align="end"
-                  class="w-48 p-2 rounded-xl border border-border bg-popover shadow-xl"
-                >
-                  <p class="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-2 py-1.5 mb-1">
-                    Group By
-                  </p>
                   <button
-                    class="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-lg hover:bg-accent transition-colors"
-                    :class="!groupByKey ? 'text-primary font-semibold' : 'text-foreground'"
-                    @click="() => { setGroupBy(null); groupByOpen = false; }"
+                    type="button"
+                    class="ui-hbtn"
+                    :class="groupByKey ? 'ui-hbtn--active' : ''"
                   >
-                    <Check class="h-3 w-3 shrink-0" :class="!groupByKey ? 'opacity-100' : 'opacity-0'" />
+                    <Layers2 class="w-4 h-4" />
+                    <span class="ui-hbtn-label">Group</span>
+                    <span v-if="groupByKey" class="ui-hbtn-badge">ON</span>
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent side="bottom" align="start" class="w-44 p-1.5 rounded-sm border border-border bg-popover shadow-xl">
+                  <p class="text-[9px] font-black uppercase tracking-widest text-muted-foreground px-2 py-1.5 mb-0.5">Group by</p>
+                  <button
+                    class="ui-dditem"
+                    :class="!groupByKey ? 'ui-dditem--on' : ''"
+                    @click="() => { setGroupBy(null); groupByOpen = false }"
+                  >
+                    <Check class="w-3 h-3 shrink-0" :class="!groupByKey ? 'opacity-100' : 'opacity-0'" />
                     None
                   </button>
                   <button
-                    v-for="opt in features.groupBy"
+                    v-for="opt in features?.groupBy ?? []"
                     :key="opt.key"
-                    class="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-lg hover:bg-accent transition-colors"
-                    :class="groupByKey === opt.key ? 'text-primary font-semibold' : 'text-foreground'"
-                    @click="() => { setGroupBy(opt.key); groupByOpen = false; }"
+                    class="ui-dditem"
+                    :class="groupByKey === opt.key ? 'ui-dditem--on' : ''"
+                    @click="() => { setGroupBy(opt.key); groupByOpen = false }"
                   >
-                    <Check class="h-3 w-3 shrink-0" :class="groupByKey === opt.key ? 'opacity-100' : 'opacity-0'" />
+                    <Check class="w-3 h-3 shrink-0" :class="groupByKey === opt.key ? 'opacity-100' : 'opacity-0'" />
                     {{ opt.label }}
                   </button>
                 </PopoverContent>
               </Popover>
             </TooltipTrigger>
-            <TooltipContent side="top" :side-offset="6" class="text-xs rounded-lg">
-              {{ groupByKey ? `Grouped by: ${groupByKey}` : "Group by field" }}
-            </TooltipContent>
+            <TooltipContent side="bottom" class="text-xs">{{ groupByKey ? `Grouped: ${groupByKey}` : 'Group by field' }}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
 
-        <!-- Sort -->
-        <TooltipProvider v-if="features?.sortOptions?.length" :delay-duration="150">
+        <!-- ③ Sort -->
+        <TooltipProvider :delay-duration="120">
           <Tooltip>
             <TooltipTrigger as-child>
               <Popover v-model:open="sortOpen">
                 <PopoverTrigger as-child>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    class="h-8 w-8 rounded-lg cursor-pointer text-primary hover:text-primary hover:bg-secondary transition-colors"
-                    :class="sortKey ? 'bg-primary/10' : ''"
-                  >
-                    <ArrowUpDown class="h-4 w-4" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent
-                  align="end"
-                  class="w-52 p-2 rounded-xl border border-border bg-popover shadow-xl"
-                >
-                  <p class="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-2 py-1.5 mb-1">
-                    Sort By
-                  </p>
                   <button
-                    class="w-full flex items-center justify-between gap-2 px-2.5 py-1.5 text-xs rounded-lg hover:bg-accent transition-colors"
-                    :class="!sortKey ? 'text-primary font-semibold' : 'text-foreground'"
-                    @click="() => { handleSort(null, null); sortOpen = false; }"
+                    type="button"
+                    class="ui-hbtn"
+                    :class="sortKey ? 'ui-hbtn--active' : ''"
                   >
-                    <span>Default</span>
-                    <Check v-if="!sortKey" class="h-3 w-3 text-primary shrink-0" />
+                    <ArrowUpDown class="w-4 h-4" />
+                    <span class="ui-hbtn-label">Sort</span>
+                    <span v-if="sortKey" class="ui-hbtn-badge flex items-center gap-0.5">
+                      <ArrowUp v-if="sortOrder === 'asc'" class="w-2.5 h-2.5" />
+                      <ArrowDown v-else class="w-2.5 h-2.5" />
+                    </span>
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent side="bottom" align="start" class="w-52 p-1.5 rounded-sm border border-border bg-popover shadow-xl">
+                  <p class="text-[9px] font-black uppercase tracking-widest text-muted-foreground px-2 py-1.5 mb-0.5">Sort by</p>
+                  <button
+                    class="ui-dditem"
+                    :class="!sortKey ? 'ui-dditem--on' : ''"
+                    @click="() => { handleSort(null, null); sortOpen = false }"
+                  >
+                    <Check class="w-3 h-3 shrink-0" :class="!sortKey ? 'opacity-100' : 'opacity-0'" />
+                    Default
                   </button>
                   <button
-                    v-for="opt in features.sortOptions"
+                    v-for="opt in features?.sortOptions ?? []"
                     :key="opt.key"
-                    class="w-full flex items-center justify-between gap-2 px-2.5 py-1.5 text-xs rounded-lg hover:bg-accent transition-colors"
-                    :class="sortKey === opt.key ? 'text-primary font-semibold' : 'text-foreground'"
+                    class="ui-dditem justify-between"
+                    :class="sortKey === opt.key ? 'ui-dditem--on' : ''"
                     @click="cycleSort(opt.key)"
                   >
-                    <span>{{ opt.label }}</span>
+                    <span class="flex items-center gap-2">
+                      <Check class="w-3 h-3 shrink-0" :class="sortKey === opt.key ? 'opacity-100' : 'opacity-0'" />
+                      {{ opt.label }}
+                    </span>
                     <span class="flex items-center shrink-0">
-                      <ArrowUp    v-if="sortKey === opt.key && sortOrder === 'asc'"  class="h-3 w-3 text-primary" />
-                      <ArrowDown  v-else-if="sortKey === opt.key && sortOrder === 'desc'" class="h-3 w-3 text-primary" />
+                      <ArrowUp    v-if="sortKey === opt.key && sortOrder === 'asc'"   class="w-3 h-3 text-primary" />
+                      <ArrowDown  v-else-if="sortKey === opt.key && sortOrder === 'desc'" class="w-3 h-3 text-primary" />
                     </span>
                   </button>
                 </PopoverContent>
               </Popover>
             </TooltipTrigger>
-            <TooltipContent side="top" :side-offset="6" class="text-xs rounded-lg">
-              {{ sortKey ? `Sorted: ${sortKey} (${sortOrder})` : "Sort items" }}
-            </TooltipContent>
+            <TooltipContent side="bottom" class="text-xs">{{ sortKey ? `Sorted: ${sortKey} (${sortOrder})` : 'Sort items' }}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
 
-        <div class="w-px h-5 bg-border shrink-0 mx-0.5" />
-
-        <!-- Density -->
-        <TooltipProvider :delay-duration="150">
+        <!-- ④ Density -->
+        <TooltipProvider :delay-duration="120">
           <Tooltip>
             <TooltipTrigger as-child>
-              <Button
-                variant="ghost"
-                size="icon"
-                class="h-8 w-8 rounded-lg cursor-pointer text-primary hover:text-primary hover:bg-secondary"
-                @click="cycleDensity"
-              >
-                <component :is="densityIcon" class="h-4 w-4" />
-              </Button>
+              <button type="button" class="ui-hbtn" @click="cycleDensity">
+                <component :is="densityIcon" class="w-4 h-4" />
+                <span class="ui-hbtn-label capitalize">{{ density }}</span>
+              </button>
             </TooltipTrigger>
-            <TooltipContent side="top" :side-offset="6" class="text-xs rounded-lg capitalize">
-              {{ density }} density
-            </TooltipContent>
+            <TooltipContent side="bottom" class="text-xs capitalize">{{ density }} density</TooltipContent>
           </Tooltip>
         </TooltipProvider>
 
-        <!-- Copy as JSON -->
-        <TooltipProvider :delay-duration="150">
+        <!-- ⑤ Copy JSON -->
+        <TooltipProvider :delay-duration="120">
           <Tooltip>
             <TooltipTrigger as-child>
-              <Button
-                variant="ghost"
-                size="icon"
-                class="h-8 w-8 rounded-lg cursor-pointer text-primary transition-all duration-200"
+              <button
+                type="button"
+                class="ui-hbtn"
+                :class="copyDone ? 'ui-hbtn--active' : ''"
                 @click="copyItems"
               >
-                <CheckCheck v-if="copyDone" class="h-4 w-4" />
-                <Copy v-else class="h-4 w-4" />
-              </Button>
+                <CheckCheck v-if="copyDone" class="w-4 h-4" />
+                <Copy v-else class="w-4 h-4" />
+                <span class="ui-hbtn-label">{{ copyDone ? 'Copied' : 'Copy' }}</span>
+              </button>
             </TooltipTrigger>
-            <TooltipContent side="top" :side-offset="6" class="text-xs rounded-lg">
-              {{ copyDone ? "Copied!" : "Copy as JSON" }}
-            </TooltipContent>
+            <TooltipContent side="bottom" class="text-xs">{{ copyDone ? 'Copied to clipboard!' : 'Copy items as JSON' }}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
 
-        <!-- Fullscreen -->
-        <TooltipProvider :delay-duration="150">
+        <!-- ⑥ Refresh -->
+        <TooltipProvider :delay-duration="120">
           <Tooltip>
             <TooltipTrigger as-child>
-              <Button
-                variant="ghost"
-                size="icon"
-                class="h-8 w-8 rounded-lg cursor-pointer text-primary transition-all duration-200"
-                @click="isFullscreen = !isFullscreen"
-              >
-                <Minimize v-if="isFullscreen" class="h-4 w-4" />
-                <Maximize v-else              class="h-4 w-4" />
-              </Button>
+              <button type="button" class="ui-hbtn" :class="isRefreshing ? 'ui-hbtn--active' : ''" @click="onRefresh">
+                <RefreshCw class="w-4 h-4" :class="isRefreshing ? 'animate-spin' : ''" />
+                <span class="ui-hbtn-label">Refresh</span>
+              </button>
             </TooltipTrigger>
-            <TooltipContent side="top" :side-offset="6" class="text-xs rounded-lg">
-              {{ isFullscreen ? "Exit fullscreen" : "Fullscreen" }}
-            </TooltipContent>
+            <TooltipContent side="bottom" class="text-xs">Reload list</TooltipContent>
           </Tooltip>
         </TooltipProvider>
+
+        <div class="ui-hsep" />
+
+        <!-- ⑦ Fullscreen -->
+        <TooltipProvider :delay-duration="120">
+          <Tooltip>
+            <TooltipTrigger as-child>
+              <button type="button" class="ui-hbtn" :class="isFullscreen ? 'ui-hbtn--active' : ''" @click="isFullscreen = !isFullscreen">
+                <Minimize v-if="isFullscreen" class="w-4 h-4" />
+                <Maximize v-else class="w-4 h-4" />
+                <span class="ui-hbtn-label">{{ isFullscreen ? 'Exit' : 'Expand' }}</span>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" class="text-xs">{{ isFullscreen ? 'Exit fullscreen' : 'Fullscreen' }}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
+        <!-- Right: item count pill -->
+        <div class="ml-auto flex items-center gap-2 shrink-0">
+          <div class="ui-count-pill">
+            <span class="font-bold text-foreground tabular-nums">{{ loadedCount }}</span>
+            <span class="text-muted-foreground/50 mx-0.5">/</span>
+            <span class="text-muted-foreground tabular-nums">{{ totalCount }}</span>
+          </div>
+        </div>
       </div>
-    </div>
 
-    <!-- ══════════════════════════════════════════════════════════════════════ -->
-    <!-- SCROLLABLE BODY                                                        -->
-    <!-- ══════════════════════════════════════════════════════════════════════ -->
-    <div ref="scrollContainer" class="overflow-y-auto flex-1 min-h-0" @scroll="onScroll">
+      <!-- Scroll progress bar — sits flush under the control row -->
+      <div class="ui-scroll-track">
+        <div
+          class="ui-scroll-fill"
+          :style="{ width: `${scrollProgress}%` }"
+        />
+      </div>
+    </header>
 
-      <!-- Initial skeleton -->
+    <!-- ══════════════════════════════════════════════════════════
+         SCROLLABLE BODY
+    ══════════════════════════════════════════════════════════ -->
+    <div
+      ref="scrollContainer"
+      class="ui-list-body flex-1 min-h-0 overflow-y-auto"
+      @scroll="onScroll"
+    >
+
+      <!-- ── Initial skeleton ── -->
       <template v-if="isInitialLoading">
         <div
-          v-for="i in 7"
+          v-for="i in 8"
           :key="`sk-init-${i}`"
-          :class="['border-b border-border last:border-b-0', itemPaddingClass]"
-          :style="{ opacity: 1 - i * 0.1 }"
+          class="border-b border-border/40"
+          :class="itemPaddingClass"
+          :style="{ opacity: 1 - (i - 1) * 0.1 }"
         >
-          <slot name="skeleton" :index="i"><DefaultSkeleton /></slot>
+          <slot name="skeleton" :index="i">
+            <UiListSkeleton />
+          </slot>
         </div>
       </template>
 
-      <!-- Error state -->
+      <!-- ── Error ── -->
       <template v-else-if="error">
-        <div class="flex flex-col items-center gap-3 py-16 px-6">
-          <div class="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center">
-            <AlertCircle class="h-5 w-5 text-destructive" />
+        <div class="flex flex-col items-center gap-4 py-20 px-8">
+          <div class="w-12 h-12 rounded-sm border border-destructive/30 bg-destructive/8 flex items-center justify-center">
+            <AlertCircle class="w-5 h-5 text-destructive" />
           </div>
-          <div class="text-center">
-            <p class="text-sm font-medium text-destructive">Failed to load items</p>
-            <p class="text-xs text-muted-foreground mt-1">{{ error }}</p>
+          <div class="text-center space-y-1">
+            <p class="text-sm font-semibold text-foreground">Failed to load items</p>
+            <p class="text-xs text-muted-foreground">{{ error }}</p>
           </div>
-          <Button variant="outline" size="sm" class="h-8 px-4 rounded-lg text-xs mt-1" @click="reload">
-            <RefreshCw class="h-3.5 w-3.5 mr-2" />
-            Try again
+          <Button variant="outline" size="sm" class="h-8 px-4 rounded-sm text-xs gap-1.5" @click="reload">
+            <RefreshCw class="w-3.5 h-3.5" />Try again
           </Button>
         </div>
       </template>
 
-      <!-- Empty state -->
+      <!-- ── Empty ── -->
       <template v-else-if="isEmpty">
-        <div class="flex flex-col items-center gap-3 py-16 px-6">
-          <div class="w-12 h-12 rounded-xl border-2 border-dashed border-border flex items-center justify-center">
-            <List class="h-5 w-5 text-muted-foreground" />
+        <div class="flex flex-col items-center gap-4 py-20 px-8">
+          <div class="w-14 h-14 rounded-sm border-2 border-dashed border-border flex items-center justify-center">
+            <List class="w-6 h-6 text-muted-foreground/40" />
           </div>
-          <div class="text-center">
-            <p class="text-sm font-medium text-foreground">No results found</p>
-            <p class="text-xs text-muted-foreground mt-0.5">Try adjusting your search or filters</p>
+          <div class="text-center space-y-1">
+            <p class="text-sm font-semibold text-foreground/70">No results found</p>
+            <p class="text-xs text-muted-foreground/60">Try adjusting your search or filters</p>
           </div>
         </div>
       </template>
 
-      <!-- Item list -->
+      <!-- ── Items ── -->
       <template v-else>
+
         <template v-for="group in groupedItems" :key="group.key">
-          <!-- Group header (sticky) -->
+
+          <!-- Group header — sticky inside scroll area -->
           <div
             v-if="group.label !== null"
-            class="sticky top-0 z-10 flex items-center gap-2.5 px-5 py-2 bg-muted/95 backdrop-blur-sm border-b border-border cursor-pointer select-none"
+            class="ui-group-header sticky top-0 z-10 flex items-center gap-2.5 border-b border-border bg-muted/90 backdrop-blur-sm cursor-pointer select-none px-4 py-2"
             @click="toggleGroup(group.key)"
           >
-            <div
-              class="h-1.5 w-1.5 rounded-full bg-primary shrink-0"
-              :style="{ boxShadow: '0 0 6px rgb(var(--color-primary) / 0.7)' }"
-            />
-            <span class="text-xs font-bold text-primary tracking-wider uppercase">
+            <div class="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+            <span class="text-[11px] font-bold text-primary uppercase tracking-widest flex-1 truncate">
               {{ group.label }}
             </span>
-            <span class="text-[10px] font-mono text-muted-foreground bg-border/60 px-1.5 py-0.5 rounded-full">
+            <span class="text-[10px] font-mono text-muted-foreground bg-border/50 px-1.5 py-0.5 rounded-sm shrink-0">
               {{ group.items.length }}
             </span>
             <ChevronDown
-              class="h-3.5 w-3.5 text-muted-foreground ml-auto transition-transform duration-200"
+              class="w-3.5 h-3.5 text-muted-foreground/60 transition-transform duration-200 shrink-0"
               :class="collapsedGroups.has(group.key) ? '-rotate-90' : ''"
             />
           </div>
 
-          <!-- Items in group -->
           <template v-if="!collapsedGroups.has(group.key)">
             <div
               v-for="(item, localIdx) in group.items"
               :key="resolveItemKey(item, localIdx)"
-              class="border-b border-border last:border-b-0"
-              :class="isNewItem(item, localIdx, group) ? 'list-item-enter' : ''"
+              class="ui-item-block"
+              :class="[
+                isNewItem(item, localIdx, group) ? 'ui-item-enter' : '',
+                isScrolling ? 'ui-item-scroll' : ''
+              ]"
             >
-              <!-- ── Row ─────────────────────────────────────────────────────
-                   Clicking the row navigates to detail.
-                   The right-side actions container stops propagation so neither
-                   action buttons nor the chevron trigger row-click.
-                   The chevron has its own handler to toggle expand.
-              ──────────────────────────────────────────────────────────────── -->
+              <!-- Row -->
               <div
                 :class="[
-                  itemPaddingClass,
-                  'flex items-center justify-between hover:bg-accent cursor-pointer transition-colors duration-150 select-none group/row',
+                  'ui-row group/row flex items-center justify-between cursor-pointer border-b border-border/50',
+                  itemPaddingClass
                 ]"
                 @click="emit('row-click', item)"
               >
-                <!-- Summary slot -->
-                <div class="flex-1 min-w-0">
+                <!-- Left accent pip (hidden until hover) -->
+                <div class="ui-row-pip shrink-0" />
+
+                <div class="flex-1 min-w-0 pl-2">
                   <slot
                     name="item-summary"
                     :item="item"
@@ -327,24 +326,23 @@
                     :is-new="isNewItem(item, localIdx, group)"
                     :is-expanded="expandedItems.has(resolveItemKey(item, localIdx))"
                   >
-                    <span class="text-sm text-foreground truncate">
-                      {{ getDefaultLabel(item) }}
-                    </span>
+                    <span class="text-sm text-foreground truncate">{{ getDefaultLabel(item) }}</span>
                   </slot>
                 </div>
 
-                <!-- Actions + chevron — stops propagation so row-click won't fire -->
                 <div
-                  class="flex items-center gap-2 shrink-0 ml-3"
+                  class="flex items-center gap-2 shrink-0 ml-4"
                   @click.stop
                 >
                   <slot name="item-actions" :item="item" :index="localIdx" />
-                  <!-- Chevron: expand/collapse the accordion for this row -->
-                  <ChevronDown
-                    class="h-3.5 w-3.5 text-muted-foreground transition-transform duration-200 opacity-40 group-hover/row:opacity-100 cursor-pointer hover:text-foreground hover:opacity-100"
-                    :class="expandedItems.has(resolveItemKey(item, localIdx)) ? 'rotate-180 !opacity-100' : ''"
+                  <button
+                    type="button"
+                    class="ui-chevron-btn"
+                    :class="expandedItems.has(resolveItemKey(item, localIdx)) ? 'ui-chevron-btn--open' : ''"
                     @click.stop="toggleExpand(resolveItemKey(item, localIdx))"
-                  />
+                  >
+                    <ChevronDown class="w-3.5 h-3.5" />
+                  </button>
                 </div>
               </div>
 
@@ -359,7 +357,7 @@
               >
                 <div
                   v-if="expandedItems.has(resolveItemKey(item, localIdx))"
-                  class="border-t border-border/50 bg-muted/30"
+                  class="ui-expanded-panel border-b border-border/40"
                 >
                   <div :class="itemPaddingClass">
                     <slot name="item-expanded" :item="item" :index="localIdx">
@@ -372,262 +370,608 @@
           </template>
         </template>
 
-        <!-- Infinite scroll sentinel -->
+        <!-- ── Sentinel: load-more triggers here ── -->
         <div ref="sentinel" class="w-full">
           <template v-if="isLoadingMore">
             <div
-              v-for="i in 4"
+              v-for="i in 3"
               :key="`sk-more-${i}`"
-              :class="['border-b border-border', itemPaddingClass]"
-              :style="{ opacity: 1 - i * 0.2 }"
+              class="border-b border-border/30"
+              :class="itemPaddingClass"
+              :style="{ opacity: 1 - (i - 1) * 0.3 }"
             >
-              <slot name="skeleton" :index="i"><DefaultSkeleton /></slot>
-            </div>
-          </template>
-
-          <template v-else-if="!hasMore && loadedCount > 0">
-            <div class="sticky bottom-0 z-10 bg-background">
-              <div class="flex items-center gap-3 px-5 py-4">
-                <div class="h-px flex-1 bg-border" />
-                <span class="text-[10px] font-mono text-muted-foreground uppercase tracking-widest shrink-0">
-                  {{ loadedCount }} item{{ loadedCount !== 1 ? "s" : "" }} total
-                </span>
-                <div class="h-px flex-1 bg-border" />
-              </div>
+              <slot name="skeleton" :index="i">
+                <UiListSkeleton />
+              </slot>
             </div>
           </template>
         </div>
+
+        <!-- Bottom padding so last row isn't hidden by footer -->
+        <div class="h-1" />
       </template>
     </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         STICKY FOOTER — percentage loader + status
+    ══════════════════════════════════════════════════════════ -->
+    <footer
+      v-if="!isInitialLoading && !error"
+      class="ui-list-footer shrink-0 sticky bottom-0 z-30 border-t border-border bg-card"
+    >
+      <!-- Percentage progress bar fills footer top edge -->
+      <div class="ui-footer-bar-track">
+        <div
+          class="ui-footer-bar-fill"
+          :style="{ width: `${footerProgress}%` }"
+        />
+        <!-- Animated shimmer on the fill tip when actively loading -->
+        <div
+          v-if="hasMore || isLoadingMore"
+          class="ui-footer-shimmer"
+          :style="{ left: `${footerProgress}%` }"
+        />
+      </div>
+
+      <div class="flex items-center justify-between gap-4 px-4 py-2">
+
+        <!-- Left: status text -->
+        <div class="flex items-center gap-2.5 min-w-0">
+          <!-- Live status dot -->
+          <div class="relative shrink-0">
+            <span
+              v-if="isLoadingMore"
+              class="absolute inset-0 rounded-full bg-primary animate-ping opacity-50"
+            />
+            <span
+              class="relative block w-2 h-2 rounded-full"
+              :class="isLoadingMore ? 'bg-primary' : hasMore ? 'bg-primary/60' : 'bg-muted-foreground/30'"
+            />
+          </div>
+
+          <div class="flex items-center gap-1.5 text-xs">
+            <span class="font-bold text-foreground tabular-nums">{{ loadedCount }}</span>
+            <span class="text-muted-foreground/50">of</span>
+            <span class="text-muted-foreground tabular-nums">{{ totalCount }}</span>
+            <span class="text-muted-foreground/40 mx-0.5">·</span>
+            <span
+              class="text-xs font-medium"
+              :class="isLoadingMore ? 'text-primary' : hasMore ? 'text-muted-foreground/60' : 'text-muted-foreground/40'"
+            >
+              <template v-if="isLoadingMore">Loading…</template>
+              <template v-else-if="hasMore">Scroll to load more</template>
+              <template v-else>All loaded</template>
+            </span>
+          </div>
+        </div>
+
+        <!-- Right: big percentage display -->
+        <div class="flex items-center gap-2.5 shrink-0">
+          <!-- Circular scroll indicator -->
+          <div class="ui-circle-progress" :style="{ '--pct': scrollProgress / 100 }">
+            <svg viewBox="0 0 32 32" class="w-7 h-7 -rotate-90">
+              <circle
+                cx="16" cy="16" r="12"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                class="text-border/40"
+              />
+              <circle
+                cx="16" cy="16" r="12"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                class="text-primary transition-all duration-150 ease-linear"
+                :stroke-dasharray="`${2 * Math.PI * 12}`"
+                :stroke-dashoffset="`${2 * Math.PI * 12 * (1 - scrollProgress / 100)}`"
+              />
+            </svg>
+          </div>
+
+          <div class="text-right">
+            <p class="text-sm font-black text-foreground tabular-nums leading-none">
+              {{ Math.round(footerProgress) }}<span class="text-[10px] font-medium text-muted-foreground/60">%</span>
+            </p>
+            <p class="text-[9px] text-muted-foreground/50 leading-none mt-0.5 font-medium">
+              {{ isLoadingMore ? 'loading' : hasMore ? 'scrolled' : 'complete' }}
+            </p>
+          </div>
+        </div>
+      </div>
+    </footer>
   </div>
 </template>
 
 <script setup lang="ts">
-  import Button from "@/components/ui/button/Button.vue";
-  import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-  } from "@/components/ui/popover";
-  import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-  } from "@/components/ui/tooltip";
-  import { useIntersectionObserver } from "@vueuse/core";
-  import {
-    AlertCircle,
-    ArrowDown,
-    ArrowUp,
-    ArrowUpDown,
-    Check,
-    CheckCheck,
-    ChevronDown,
-    Copy,
-    GalleryVertical,
-    Info,
-    Layers2,
-    List,
-    Maximize,
-    Maximize2,
-    Minimize,
-    Minimize2,
-    RefreshCw,
-  } from "lucide-vue-next";
-  import { computed, defineComponent, h, ref, watch } from "vue";
-  import { useListInteractions } from "./composables/useListInteractions";
-  import type {
-    ListConfig,
-    ListDensity,
-    ListFeatures,
-    ListFetchFn,
-    ListGroup,
-    ListSortOrder,
-  } from "./types/list.types";
+import { Button } from '@/components/ui/button'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { useIntersectionObserver } from '@vueuse/core'
+import {
+  AlertCircle, ArrowDown, ArrowUp, ArrowUpDown,
+  Check, CheckCheck, ChevronDown, Copy,
+  GalleryVertical, Info, Layers2, List,
+  Maximize, Maximize2, Minimize, Minimize2, RefreshCw
+} from 'lucide-vue-next'
+import { computed, defineComponent, h, ref, watch } from 'vue'
+import { useListInteractions } from './composables/useListInteractions'
+import type {
+  ListConfig, ListDensity, ListFeatures,
+  ListFetchFn, ListGroup, ListSortOrder
+} from './types/list.types'
 
-  // ── Default skeleton ───────────────────────────────────────────────────────
-  const DefaultSkeleton = defineComponent({
-    setup() {
-      return () =>
-        h("div", { class: "flex items-center gap-3 animate-pulse" }, [
-          h("div", { class: "h-10 w-10 rounded-xl bg-border/80 shrink-0" }),
-          h("div", { class: "flex-1 space-y-2 py-0.5" }, [
-            h("div", { class: "h-3 bg-border/80 rounded-full w-2/5" }),
-            h("div", { class: "h-2.5 bg-border/60 rounded-full w-3/5" }),
-          ]),
-          h("div", { class: "h-2.5 bg-border/60 rounded-full w-14 shrink-0" }),
-        ]);
-    },
-  });
+// ── Built-in skeleton ──────────────────────────────────────────────────────
+const UiListSkeleton = defineComponent({
+  setup() {
+    return () =>
+      h('div', { class: 'flex items-center gap-3 animate-pulse' }, [
+        h('div', { class: 'w-9 h-9 rounded-sm bg-border/60 shrink-0' }),
+        h('div', { class: 'flex-1 space-y-2 py-0.5' }, [
+          h('div', { class: 'h-3 bg-border/60 rounded-sm w-2/5' }),
+          h('div', { class: 'h-2.5 bg-border/40 rounded-sm w-3/5' }),
+        ]),
+        h('div', { class: 'h-6 w-14 bg-border/40 rounded-sm shrink-0' }),
+      ])
+  },
+})
 
-  // ── Props ──────────────────────────────────────────────────────────────────
-  interface Props {
-    listId:          string;
-    fetchFn:         ListFetchFn;
-    config?:         ListConfig;
-    features?:       ListFeatures;
-    externalSearch?: string;
-    externalFilter?: Record<string, any> | null;
-    itemKey?:        string | ((item: any) => string | number);
+// ── Props ──────────────────────────────────────────────────────────────────
+interface Props {
+  listId:          string
+  fetchFn:         ListFetchFn
+  config?:         ListConfig
+  features?:       ListFeatures
+  externalSearch?: string
+  externalFilter?: Record<string, any> | null
+  itemKey?:        string | ((item: any) => string | number)
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  config:  () => ({}),
+  itemKey: 'id',
+})
+
+const emit = defineEmits<{ 'row-click': [item: any] }>()
+
+// ── Composable ─────────────────────────────────────────────────────────────
+const externalFilterRef = computed(() => props.externalFilter)
+
+const {
+  loadedItems, groupedItems, hasMore,
+  isInitialLoading, isLoadingMore, error,
+  totalCount, loadedCount, isEmpty,
+  groupByKey, sortKey, sortOrder, newItemIndexes,
+  loadMore, reload, handleSearch, handleSort, setGroupBy,
+} = useListInteractions(
+  props.listId,
+  props.fetchFn,
+  props.config,
+  externalFilterRef,
+)
+
+watch(() => props.externalSearch, (val) => {
+  if (val !== undefined) handleSearch(val)
+})
+
+// ── Refs ───────────────────────────────────────────────────────────────────
+const rootEl          = ref<HTMLElement | null>(null)
+const isFullscreen    = ref(false)
+const scrollContainer = ref<HTMLElement | null>(null)
+const scrollProgress  = ref(0)
+const isScrolling     = ref(false)
+let scrollTimer: ReturnType<typeof setTimeout> | null = null
+
+function onScroll(): void {
+  if (!scrollContainer.value) return
+  const { scrollTop, scrollHeight, clientHeight } = scrollContainer.value
+  const max = scrollHeight - clientHeight
+  scrollProgress.value = max > 0 ? (scrollTop / max) * 100 : 0
+
+  // Scrolling class for animation suppression
+  isScrolling.value = true
+  if (scrollTimer) clearTimeout(scrollTimer)
+  scrollTimer = setTimeout(() => { isScrolling.value = false }, 120)
+}
+
+// footerProgress = load progress when loading, else scroll progress
+const footerProgress = computed(() => {
+  if (totalCount.value === 0) return 0
+  if (isLoadingMore.value || hasMore.value) {
+    return Math.round((loadedCount.value / totalCount.value) * 100)
   }
+  return scrollProgress.value
+})
 
-  const props = withDefaults(defineProps<Props>(), {
-    config:  () => ({}),
-    itemKey: "id",
-  });
-
-  // ── Emits ──────────────────────────────────────────────────────────────────
-  const emit = defineEmits<{
-    // Fired when the user clicks anywhere on a row except the chevron/actions area.
-    // Parent can use this to navigate to a detail page.
-    'row-click': [item: any];
-  }>();
-
-  // ── Composable ─────────────────────────────────────────────────────────────
-  const externalFilterRef = computed(() => props.externalFilter);
-
-  const {
-    loadedItems, groupedItems, hasMore, isInitialLoading, isLoadingMore,
-    error, totalCount, loadedCount, isEmpty, groupByKey, sortKey, sortOrder,
-    newItemIndexes, loadMore, reload, handleSearch, handleSort, setGroupBy,
-  } = useListInteractions(
-    props.listId,
-    props.fetchFn,
-    props.config,
-    externalFilterRef,
-  );
-
-  // ── External search sync ───────────────────────────────────────────────────
-  watch(
-    () => props.externalSearch,
-    (val) => { if (val !== undefined) handleSearch(val); },
-  );
-
-  // ── Fullscreen ─────────────────────────────────────────────────────────────
-  const rootEl       = ref<HTMLElement | null>(null);
-  const isFullscreen = ref(false);
-
-  // ── Scroll progress ────────────────────────────────────────────────────────
-  const scrollContainer = ref<HTMLElement | null>(null);
-  const scrollProgress  = ref(0);
-
-  function onScroll(): void {
-    if (!scrollContainer.value) return;
-    const { scrollTop, scrollHeight, clientHeight } = scrollContainer.value;
-    const max = scrollHeight - clientHeight;
-    scrollProgress.value = max > 0 ? (scrollTop / max) * 100 : 0;
-  }
-
-  // ── Infinite scroll sentinel ───────────────────────────────────────────────
-  const sentinel = ref<HTMLElement | null>(null);
-
-  useIntersectionObserver(
-    sentinel,
-    ([entry]) => {
-      if (entry.isIntersecting && hasMore.value && !isLoadingMore.value && !isInitialLoading.value) {
-        loadMore();
-      }
-    },
-    { root: scrollContainer, threshold: props.config?.sentinelThreshold ?? 0.1 },
-  );
-
-  // ── Accordion expand / collapse ────────────────────────────────────────────
-  const expandedItems = ref<Set<string | number>>(new Set());
-
-  function resolveItemKey(item: any, fallbackIndex: number): string | number {
-    if (typeof props.itemKey === "function") return props.itemKey(item);
-    const val = item?.[props.itemKey as string];
-    return val != null ? val : `__idx_${fallbackIndex}`;
-  }
-
-  function toggleExpand(key: string | number): void {
-    if (expandedItems.value.has(key)) expandedItems.value.delete(key);
-    else expandedItems.value.add(key);
-    expandedItems.value = new Set(expandedItems.value);
-  }
-
-  // ── Group collapse ─────────────────────────────────────────────────────────
-  const collapsedGroups = ref<Set<string>>(new Set());
-
-  function toggleGroup(key: string): void {
-    if (collapsedGroups.value.has(key)) collapsedGroups.value.delete(key);
-    else collapsedGroups.value.add(key);
-    collapsedGroups.value = new Set(collapsedGroups.value);
-  }
-
-  // ── New-item detection ─────────────────────────────────────────────────────
-  function isNewItem(item: any, localIdx: number, group: ListGroup): boolean {
-    const globalOffset = loadedItems.value.indexOf(group.items[localIdx]);
-    return newItemIndexes.value.has(globalOffset);
-  }
-
-  function getDefaultLabel(item: any): string {
-    return item?.name ?? item?.title ?? item?.label ?? JSON.stringify(item);
-  }
-
-  // ── Density ────────────────────────────────────────────────────────────────
-  const densities: ListDensity[] = ["default", "compact", "comfortable"];
-  const density = ref<ListDensity>("default");
-
-  const densityIcon = computed(() => {
-    if (density.value === "compact")     return Minimize2;
-    if (density.value === "comfortable") return Maximize2;
-    return GalleryVertical;
-  });
-
-  function cycleDensity(): void {
-    const idx = densities.indexOf(density.value);
-    density.value = densities[(idx + 1) % densities.length];
-  }
-
-  const itemPaddingClass = computed(() => {
-    if (density.value === "compact")     return "px-5 py-2";
-    if (density.value === "comfortable") return "px-5 py-5";
-    return "px-5 py-3.5";
-  });
-
-  // ── Copy as JSON ───────────────────────────────────────────────────────────
-  const copyDone = ref(false);
-
-  function copyItems(): void {
-    const json = JSON.stringify(loadedItems.value, null, 2);
-    navigator.clipboard.writeText(json).then(() => {
-      copyDone.value = true;
-      setTimeout(() => (copyDone.value = false), 2000);
-    });
-  }
-
-  // ── Sort cycling ───────────────────────────────────────────────────────────
-  const sortOpen = ref(false);
-
-  function cycleSort(key: string): void {
-    let order: ListSortOrder;
-    if (sortKey.value !== key) {
-      order = "asc";
-    } else if (sortOrder.value === "asc") {
-      order = "desc";
-    } else {
-      handleSort(null, null);
-      sortOpen.value = false;
-      return;
+// ── Infinite scroll sentinel ───────────────────────────────────────────────
+const sentinel = ref<HTMLElement | null>(null)
+useIntersectionObserver(
+  sentinel,
+  ([entry]) => {
+    if (entry.isIntersecting && hasMore.value && !isLoadingMore.value && !isInitialLoading.value) {
+      loadMore()
     }
-    handleSort(key, order);
-    sortOpen.value = false;
+  },
+  { root: scrollContainer, threshold: props.config?.sentinelThreshold ?? 0.1 },
+)
+
+// ── Expand/collapse rows ───────────────────────────────────────────────────
+const expandedItems = ref<Set<string | number>>(new Set())
+
+function resolveItemKey(item: any, fallbackIndex: number): string | number {
+  if (typeof props.itemKey === 'function') return props.itemKey(item)
+  const val = item?.[props.itemKey as string]
+  return val != null ? val : `__idx_${fallbackIndex}`
+}
+
+function toggleExpand(key: string | number): void {
+  if (expandedItems.value.has(key)) expandedItems.value.delete(key)
+  else expandedItems.value.add(key)
+  expandedItems.value = new Set(expandedItems.value)
+}
+
+// ── Group collapse ─────────────────────────────────────────────────────────
+const collapsedGroups = ref<Set<string>>(new Set())
+function toggleGroup(key: string): void {
+  if (collapsedGroups.value.has(key)) collapsedGroups.value.delete(key)
+  else collapsedGroups.value.add(key)
+  collapsedGroups.value = new Set(collapsedGroups.value)
+}
+
+// ── New-item detection ─────────────────────────────────────────────────────
+function isNewItem(item: any, localIdx: number, group: ListGroup): boolean {
+  const globalOffset = loadedItems.value.indexOf(group.items[localIdx])
+  return newItemIndexes.value.has(globalOffset)
+}
+
+function getDefaultLabel(item: any): string {
+  return item?.name ?? item?.title ?? item?.label ?? JSON.stringify(item)
+}
+
+// ── Density ────────────────────────────────────────────────────────────────
+const densities: ListDensity[] = ['default', 'compact', 'comfortable']
+const density = ref<ListDensity>('default')
+
+const densityIcon = computed(() => {
+  if (density.value === 'compact')     return Minimize2
+  if (density.value === 'comfortable') return Maximize2
+  return GalleryVertical
+})
+
+function cycleDensity(): void {
+  const idx = densities.indexOf(density.value)
+  density.value = densities[(idx + 1) % densities.length]
+}
+
+const itemPaddingClass = computed(() => {
+  if (density.value === 'compact')     return 'px-4 py-2'
+  if (density.value === 'comfortable') return 'px-4 py-5'
+  return 'px-4 py-3.5'
+})
+
+// ── Copy JSON ──────────────────────────────────────────────────────────────
+const copyDone = ref(false)
+function copyItems(): void {
+  navigator.clipboard.writeText(JSON.stringify(loadedItems.value, null, 2)).then(() => {
+    copyDone.value = true
+    setTimeout(() => (copyDone.value = false), 2000)
+  })
+}
+
+// ── Refresh ────────────────────────────────────────────────────────────────
+const isRefreshing = ref(false)
+async function onRefresh(): Promise<void> {
+  isRefreshing.value = true
+  await reload()
+  setTimeout(() => { isRefreshing.value = false }, 600)
+}
+
+// ── Sort cycling ───────────────────────────────────────────────────────────
+const sortOpen    = ref(false)
+const groupByOpen = ref(false)
+
+function cycleSort(key: string): void {
+  let order: ListSortOrder
+  if (sortKey.value !== key) {
+    order = 'asc'
+  } else if (sortOrder.value === 'asc') {
+    order = 'desc'
+  } else {
+    handleSort(null, null)
+    sortOpen.value = false
+    return
   }
+  handleSort(key, order)
+  sortOpen.value = false
+}
 
-  const groupByOpen = ref(false);
-
-  defineExpose({ refresh: reload, loadMore });
+defineExpose({ refresh: onRefresh, loadMore })
 </script>
 
 <style scoped>
-  .list-item-enter {
-    animation: listItemReveal 0.4s ease-out both;
-  }
+/* ═══════════════════════════════════════════════════
+   ROOT
+═══════════════════════════════════════════════════ */
+.ui-list-root {
+  background: rgb(var(--color-background));
+  box-shadow:
+    0 1px 3px rgba(0,0,0,0.05),
+    0 4px 16px -4px rgba(0,0,0,0.08);
+}
 
-  @keyframes listItemReveal {
-    from { opacity: 0; transform: translateY(6px); }
-    to   { opacity: 1; transform: translateY(0);   }
-  }
+/* ═══════════════════════════════════════════════════
+   HEADER
+═══════════════════════════════════════════════════ */
+.ui-list-header {
+  box-shadow: 0 1px 0 rgb(var(--color-border)), 0 2px 8px -2px rgba(0,0,0,0.06);
+}
+
+/* 7 header buttons */
+.ui-hbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px;
+  border-radius: 4px; /* rounded-sm */
+  border: 1px solid transparent;
+  font-size: 12px;
+  font-weight: 500;
+  color: rgb(var(--color-muted-foreground));
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.14s ease, color 0.14s ease, border-color 0.14s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+  height: 30px;
+}
+.ui-hbtn:hover {
+  background: rgb(var(--color-muted));
+  color: rgb(var(--color-foreground));
+  border-color: rgb(var(--color-border) / 0.6);
+}
+.ui-hbtn--active {
+  background: rgb(var(--color-primary) / 0.1);
+  color: rgb(var(--color-primary));
+  border-color: rgb(var(--color-primary) / 0.2);
+}
+.ui-hbtn--active:hover {
+  background: rgb(var(--color-primary) / 0.18);
+}
+
+.ui-hbtn-label {
+  font-size: 11px;
+  line-height: 1;
+}
+
+.ui-hbtn-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: 800;
+  background: rgb(var(--color-primary));
+  color: rgb(var(--color-primary-foreground));
+  letter-spacing: 0.02em;
+}
+
+/* Vertical separator between button groups */
+.ui-hsep {
+  width: 1px;
+  height: 20px;
+  background: rgb(var(--color-border));
+  margin: 0 3px;
+  flex-shrink: 0;
+}
+
+/* Count pill in header right */
+.ui-count-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid rgb(var(--color-border) / 0.7);
+  background: rgb(var(--color-muted) / 0.5);
+  font-size: 12px;
+}
+
+/* Scroll progress thread under control row */
+.ui-scroll-track {
+  height: 2px;
+  background: rgb(var(--color-border) / 0.3);
+  position: relative;
+  overflow: hidden;
+}
+.ui-scroll-fill {
+  position: absolute;
+  inset-y: 0;
+  left: 0;
+  background: rgb(var(--color-primary));
+  transition: width 0.1s linear;
+  border-radius: 0 9999px 9999px 0;
+}
+
+/* ═══════════════════════════════════════════════════
+   DROPDOWN ITEMS
+═══════════════════════════════════════════════════ */
+.ui-dditem {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: rgb(var(--color-foreground));
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+.ui-dditem:hover { background: rgb(var(--color-accent)); }
+.ui-dditem--on { color: rgb(var(--color-primary)); font-weight: 600; }
+
+/* ═══════════════════════════════════════════════════
+   BODY
+═══════════════════════════════════════════════════ */
+.ui-list-body {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(var(--color-border) / 0.5) transparent;
+  background: rgb(var(--color-background));
+}
+
+/* ═══════════════════════════════════════════════════
+   GROUP HEADER
+═══════════════════════════════════════════════════ */
+.ui-group-header {
+  transition: background 0.12s ease;
+}
+.ui-group-header:hover {
+  background: rgb(var(--color-muted));
+}
+
+/* ═══════════════════════════════════════════════════
+   ROW
+═══════════════════════════════════════════════════ */
+.ui-row {
+  position: relative;
+  transition: background 0.12s ease;
+}
+.ui-row:hover {
+  background: rgb(var(--color-accent) / 0.6);
+}
+
+/* Left accent pip — visible on hover */
+.ui-row-pip {
+  width: 2px;
+  align-self: stretch;
+  border-radius: 0 2px 2px 0;
+  background: rgb(var(--color-primary));
+  opacity: 0;
+  flex-shrink: 0;
+  transition: opacity 0.15s ease;
+  margin-right: -2px;
+}
+.ui-row:hover .ui-row-pip {
+  opacity: 1;
+}
+
+/* Chevron expand button */
+.ui-chevron-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: 1px solid rgb(var(--color-border) / 0.5);
+  color: rgb(var(--color-muted-foreground));
+  background: transparent;
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity 0.12s ease, transform 0.2s ease, background 0.12s ease, border-color 0.12s ease;
+}
+.group\/row:hover .ui-chevron-btn {
+  opacity: 0.8;
+}
+.ui-chevron-btn:hover {
+  opacity: 1 !important;
+  background: rgb(var(--color-muted));
+  border-color: rgb(var(--color-border));
+}
+.ui-chevron-btn--open {
+  opacity: 1 !important;
+  transform: rotate(180deg);
+  background: rgb(var(--color-primary) / 0.1);
+  border-color: rgb(var(--color-primary) / 0.3);
+  color: rgb(var(--color-primary));
+}
+
+/* ═══════════════════════════════════════════════════
+   EXPANDED PANEL
+═══════════════════════════════════════════════════ */
+.ui-expanded-panel {
+  background: rgb(var(--color-muted) / 0.35);
+  border-top: 1px solid rgb(var(--color-border) / 0.4);
+  border-left: 3px solid rgb(var(--color-primary) / 0.3);
+}
+
+/* ═══════════════════════════════════════════════════
+   FOOTER
+═══════════════════════════════════════════════════ */
+.ui-list-footer {
+  box-shadow: 0 -1px 0 rgb(var(--color-border)), 0 -4px 12px -4px rgba(0,0,0,0.06);
+}
+
+/* Footer progress bar track (top edge of footer) */
+.ui-footer-bar-track {
+  height: 3px;
+  background: rgb(var(--color-border) / 0.3);
+  position: relative;
+  overflow: visible;
+}
+.ui-footer-bar-fill {
+  position: absolute;
+  inset-y: 0;
+  left: 0;
+  background: linear-gradient(
+    90deg,
+    rgb(var(--color-primary) / 0.6) 0%,
+    rgb(var(--color-primary)) 100%
+  );
+  border-radius: 0 3px 3px 0;
+  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 6px rgb(var(--color-primary) / 0.4);
+}
+
+/* Animated shimmer dot at the tip of the fill */
+.ui-footer-shimmer {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgb(var(--color-primary));
+  box-shadow: 0 0 8px 2px rgb(var(--color-primary) / 0.5);
+  animation: shimmerPing 1.5s ease-in-out infinite;
+}
+@keyframes shimmerPing {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  50%       { transform: translate(-50%, -50%) scale(1.6); opacity: 0.5; }
+}
+
+/* ═══════════════════════════════════════════════════
+   ANIMATIONS
+═══════════════════════════════════════════════════ */
+
+/* New item reveal */
+.ui-item-enter {
+  animation: itemReveal 0.35s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+@keyframes itemReveal {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* While scrolling: items gently soften then snap back */
+.ui-item-scroll .ui-row {
+  transition: background 0.06s ease;
+}
+
+/* ═══════════════════════════════════════════════════
+   SCROLLBAR
+═══════════════════════════════════════════════════ */
+.ui-list-body::-webkit-scrollbar { width: 4px; }
+.ui-list-body::-webkit-scrollbar-track { background: transparent; }
+.ui-list-body::-webkit-scrollbar-thumb {
+  background: rgb(var(--color-border) / 0.5);
+  border-radius: 9999px;
+}
+.ui-list-body::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--color-primary) / 0.4);
+}
 </style>
