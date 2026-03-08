@@ -405,12 +405,6 @@
           class="ui-footer-bar-fill"
           :style="{ width: `${footerProgress}%` }"
         />
-        <!-- Animated shimmer on the fill tip when actively loading -->
-        <div
-          v-if="hasMore || isLoadingMore"
-          class="ui-footer-shimmer"
-          :style="{ left: `${footerProgress}%` }"
-        />
       </div>
 
       <div class="flex items-center justify-between gap-4 px-4 py-2">
@@ -445,40 +439,52 @@
           </div>
         </div>
 
-        <!-- Right: big percentage display -->
-        <div class="flex items-center gap-2.5 shrink-0">
-          <!-- Circular scroll indicator -->
-          <div class="ui-circle-progress" :style="{ '--pct': scrollProgress / 100 }">
-            <svg viewBox="0 0 32 32" class="w-7 h-7 -rotate-90">
-              <circle
-                cx="16" cy="16" r="12"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2.5"
-                class="text-border/40"
-              />
-              <circle
-                cx="16" cy="16" r="12"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2.5"
-                stroke-linecap="round"
-                class="text-primary transition-all duration-150 ease-linear"
-                :stroke-dasharray="`${2 * Math.PI * 12}`"
-                :stroke-dashoffset="`${2 * Math.PI * 12 * (1 - scrollProgress / 100)}`"
-              />
-            </svg>
-          </div>
-
-          <div class="text-right">
-            <p class="text-sm font-black text-foreground tabular-nums leading-none">
-              {{ Math.round(footerProgress) }}<span class="text-[10px] font-medium text-muted-foreground/60">%</span>
-            </p>
-            <p class="text-[9px] text-muted-foreground/50 leading-none mt-0.5 font-medium">
-              {{ isLoadingMore ? 'loading' : hasMore ? 'scrolled' : 'complete' }}
-            </p>
+        <!-- Right: circular scroll progress with embedded % label -->
+        <div class="relative shrink-0 w-12 h-12">
+          <svg class="w-12 h-12 -rotate-90" viewBox="0 0 40 40">
+            <!-- Track -->
+            <circle
+              cx="20"
+              cy="20"
+              r="15"
+              fill="none"
+              stroke="rgb(var(--color-muted-foreground))"
+              stroke-width="2.5"
+              opacity="0.2"
+            />
+            <!-- Progress main line -->
+            <circle
+              cx="20"
+              cy="20"
+              r="15"
+              fill="none"
+              stroke="rgb(var(--color-primary))"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              :stroke-dasharray="`${scrollProgress / 100 * 94.25} 94.25`"
+              class="transition-all duration-500 ease-out"
+              style="filter: drop-shadow(0 0 2.5px rgb(var(--color-primary) / 1))"
+            />
+            <!-- Glowing tip dot -->
+            <circle
+              v-if="scrollProgress > 2"
+              cx="20"
+              cy="5"
+              r="2.2"
+              fill="rgb(var(--color-primary))"
+              :transform="`rotate(${scrollProgress * 3.6} 20 20)`"
+              class="transition-all duration-500 ease-out"
+              style="filter: drop-shadow(0 0 4px rgb(var(--color-primary)))"
+            />
+          </svg>
+          <!-- Center % label -->
+          <div class="absolute inset-0 flex items-center justify-center">
+            <span class="text-[9px] font-black text-primary leading-none tracking-tight flex items-baseline gap-x-px">
+              {{ Math.round(scrollProgress) }}<span class="text-[9px] font-extrabold opacity-75">%</span>
+            </span>
           </div>
         </div>
+
       </div>
     </footer>
   </div>
@@ -927,18 +933,7 @@ defineExpose({ refresh: onRefresh, loadMore })
   box-shadow: 0 0 6px rgb(var(--color-primary) / 0.4);
 }
 
-/* Animated shimmer dot at the tip of the fill */
-.ui-footer-shimmer {
-  position: absolute;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: rgb(var(--color-primary));
-  box-shadow: 0 0 8px 2px rgb(var(--color-primary) / 0.5);
-  animation: shimmerPing 1.5s ease-in-out infinite;
-}
+
 @keyframes shimmerPing {
   0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
   50%       { transform: translate(-50%, -50%) scale(1.6); opacity: 0.5; }
