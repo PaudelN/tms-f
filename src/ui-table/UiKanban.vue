@@ -101,7 +101,7 @@
          BOARD
     ══════════════════════════════════════════════ -->
     <div
-      class="flex-1 min-h-0 flex gap-4 px-5 py-3 pb-5 overflow-x-auto items-start kb3-board"
+      class="flex-1 min-h-0 flex gap-4 px-5 py-3 pb-5 overflow-x-auto items-stretch kb3-board"
     >
       <template v-for="(stage, si) in stages" :key="stage.value">
         <!-- ── Collapsed strip ── -->
@@ -177,9 +177,9 @@
             :style="{
               background: `linear-gradient(135deg, ${stageColor(si)}22 0%, ${stageColor(si)}0e 100%)`,
               borderTop: `3px solid ${stageColor(si)}`,
-              borderLeft: `0px solid ${stageColor(si)}`,
-              borderRight: `0px solid ${stageColor(si)}`,
-              borderRadius: '20px 20px 0 0',
+              borderLeft: `1px solid ${stageColor(si)}28`,
+              borderRight: `1px solid ${stageColor(si)}28`,
+              borderRadius: '10px 10px 0 0',
             }"
           >
             <!-- Icon -->
@@ -450,7 +450,10 @@
                     class="w-3.5 h-3.5 transition-transform duration-200 group-hover/add3:rotate-90"
                   />
                 </div>
-                <span>Add task</span>
+                <span>Comming Soon...</span>
+                <HourglassIcon
+                  class="w-3.5 h-3.5 transition-transform duration-200 group-hover/add3:rotate-90"
+                />
               </button>
             </div>
           </div>
@@ -483,6 +486,7 @@
     ClipboardList,
     Expand,
     FoldVertical,
+    HourglassIcon,
     Loader2,
     PanelLeftClose,
     Plus,
@@ -879,11 +883,15 @@
   .kb3-col {
     flex: 1 0 272px;
     max-width: 355px;
-    height: calc(100vh - 7.5rem);
-    max-height: calc(100vh - 7.5rem);
+    /* Stretch to fill the board row height — no viewport calc needed.
+       The board is flex with min-h-0 so this column fills exactly the
+       remaining space: cap (shrink-0) + scrollable cards (flex-1) + footer (shrink-0) */
+    align-self: stretch;
+    min-height: 0;
   }
   .kb3-col-collapsed {
     min-height: 160px;
+    align-self: stretch;
   }
 
   /* ── Header cap ────────────────────────────────────────────────────────────── */
