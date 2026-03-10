@@ -30,6 +30,8 @@ export interface Workspace {
   extra?: Record<string, unknown> | null;
   user_id: number;
   user?: { id: number; name: string; email: string };
+  // Included in DetailResource when loaded via show()
+  projects?: import("@/stores/project").Project[];
   created_at: string;
   updated_at: string;
 }
@@ -59,6 +61,7 @@ export interface WorkspaceFormData {
 // ── Store ──────────────────────────────────────────────────────────────────────
 
 export const useWorkspaceStore = defineStore("workspace", () => {
+  // Exposed as writable ref so AppLayout can sync the list after fetchWorkspaces
   const workspaces = ref<Workspace[]>([]);
   const currentWorkspace = ref<Workspace | null>(null);
   const loading = ref(false);
@@ -111,12 +114,12 @@ export const useWorkspaceStore = defineStore("workspace", () => {
         },
       },
     );
+    // Sync the local list so AppLayout sidebar switcher is always up to date
+    workspaces.value = data.data ?? [];
     return data;
   }
 
-  // ── Kanban board fetch (Option B) ───────────────────────────────────────────
-  // One HTTP call → all columns.
-  // UiKanban calls this on mount, on search, and on filter change.
+  // ── Kanban board fetch ──────────────────────────────────────────────────────
 
   async function fetchKanbanBoard(
     params: KanbanBoardFetchParams,
@@ -134,7 +137,7 @@ export const useWorkspaceStore = defineStore("workspace", () => {
     return data;
   }
 
-  // ── Status counts (for header stats bar) ───────────────────────────────────
+  // ── Status counts ───────────────────────────────────────────────────────────
 
   async function fetchStatusCounts(): Promise<void> {
     try {
@@ -174,6 +177,9 @@ export const useWorkspaceStore = defineStore("workspace", () => {
         `/workspaces/${id}`,
       );
       currentWorkspace.value = data.data;
+      // Also sync the list entry if it exists
+      const idx = workspaces.value.findIndex((w) => w.id === id);
+      if (idx !== -1) workspaces.value[idx] = data.data;
       return data.data;
     } catch (err) {
       const e = err as AxiosError<{ message: string }>;
@@ -282,6 +288,7 @@ export const useWorkspaceStore = defineStore("workspace", () => {
   }
 
   return {
+    // Expose as writable so AppLayout can directly assign the sidebar list
     workspaces,
     currentWorkspace,
     loading,
@@ -298,7 +305,7 @@ export const useWorkspaceStore = defineStore("workspace", () => {
     errorMessage,
 
     fetchWorkspaces,
-    fetchKanbanBoard, // ← new
+    fetchKanbanBoard,
     fetchStatusCounts,
     moveCard,
     reorderCards,

@@ -2,15 +2,15 @@
   <div class="h-full flex flex-col bg-background overflow-hidden">
     <div class="flex flex-col flex-1 min-h-0 w-full mx-auto p-8">
       <UiHeader
-        title="Workspaces"
+        title="Projects"
         :stats="headerStats"
         :show-views="true"
         :show-refresh="true"
         :current-view="currentView"
-        create-label="Add Workspace"
+        create-label="Add Project"
         show-search
         :search-value="searchQuery"
-        search-placeholder="Search workspaces..."
+        search-placeholder="Search projects..."
         show-filter
         :active-filter-count="activeFilterCount"
         :filter-values="commonFilter"
@@ -45,7 +45,7 @@
 
             <div class="flex flex-wrap gap-2">
               <button
-                v-for="status in workspaceStore.statuses"
+                v-for="status in projectStore.statuses"
                 :key="status.value"
                 type="button"
                 class="inline-flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-medium transition-all duration-150"
@@ -56,10 +56,6 @@
                 "
                 @click="toggleStatus(draft, on, status.value)"
               >
-                <!--
-                  Use backend hex color for dot — no Tailwind class mapping needed.
-                  Falls back to dot class only when color is absent.
-                -->
                 <span
                   class="h-2 w-2 rounded-full shrink-0"
                   :class="!status.color ? (STAGE_STYLE[status.value]?.dot ?? 'bg-muted-foreground') : undefined"
@@ -84,9 +80,9 @@
           v-if="currentView === 'table'"
           ref="tableRef"
           class="min-h-0 max-h-full"
-          table-id="workspaces-table"
+          table-id="projects-table"
           :columns="tableColumns"
-          :fetch-fn="workspaceStore.fetchWorkspaces"
+          :fetch-fn="tableFetchFn"
           :external-search="searchQuery"
           :external-filter="commonFilter"
           :features="tableFeatures"
@@ -105,8 +101,17 @@
             </div>
           </template>
 
-          <template #cell-user="{ row }">
-            <span class="text-sm">{{ row.user?.name ?? '—' }}</span>
+          <template #cell-creator="{ row }">
+            <span class="text-sm">{{ row.creator?.name ?? '—' }}</span>
+          </template>
+
+          <template #cell-visibility="{ row }">
+            <span class="inline-flex items-center gap-1.5 text-xs font-medium capitalize">
+              <Globe v-if="row.visibility === 'public'" class="h-3.5 w-3.5 text-muted-foreground" />
+              <Lock v-else-if="row.visibility === 'private'" class="h-3.5 w-3.5 text-muted-foreground" />
+              <Users v-else class="h-3.5 w-3.5 text-muted-foreground" />
+              {{ row.visibility?.value ?? '—' }}
+            </span>
           </template>
 
           <template #cell-actions="{ row }">
@@ -154,8 +159,8 @@
           v-else-if="currentView === 'list'"
           ref="listRef"
           class="flex-1 min-h-0"
-          list-id="workspaces-list"
-          :fetch-fn="workspaceStore.fetchWorkspaces"
+          list-id="projects-list"
+          :fetch-fn="tableFetchFn"
           :features="listFeatures"
           :config="listConfig"
           :external-search="searchQuery"
@@ -171,10 +176,6 @@
               <div class="min-w-0 flex-1">
                 <div class="flex items-center gap-2">
                   <span class="text-sm font-semibold text-foreground truncate">{{ item.name }}</span>
-                  <span
-                    v-if="item.is_archived"
-                    class="text-xs font-medium text-orange-600 bg-orange-500/10 px-2 py-0.5 rounded-full shrink-0"
-                  >Archived</span>
                 </div>
                 <p v-if="item.description" class="text-xs text-muted-foreground truncate mt-0.5">{{ item.description }}</p>
               </div>
@@ -185,8 +186,8 @@
             <div class="space-y-3">
               <div class="grid grid-cols-3 gap-3">
                 <div>
-                  <p class="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-0.5">Owner</p>
-                  <p class="text-sm font-medium">{{ item.user?.name ?? '—' }}</p>
+                  <p class="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-0.5">Creator</p>
+                  <p class="text-sm font-medium">{{ item.creator?.name ?? '—' }}</p>
                 </div>
                 <div>
                   <p class="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-0.5">Status</p>
@@ -222,8 +223,8 @@
           v-else-if="currentView === 'kanban'"
           ref="kanbanRef"
           class="flex-1 min-h-0"
-          :fetch-fn="workspaceStore.fetchWorkspaces"
-          :board-fetch-fn="workspaceStore.fetchKanbanBoard"
+          :fetch-fn="tableFetchFn"
+          :board-fetch-fn="kanbanBoardFetchFn"
           :stages="kanbanStages"
           :config="kanbanConfig"
           :features="kanbanFeatures"
@@ -234,7 +235,7 @@
           @reorder="onKanbanReorder"
         >
           <template #card="{ item, stageMeta }">
-            <WorkspaceKanbanCard :item="item" :stage-meta="stageMeta" @view="handleView" @edit="handleEdit" />
+            <ProjectKanbanCard :item="item" :stage-meta="stageMeta" @view="handleView" @edit="handleEdit" />
           </template>
           <template #card-actions="{ item }">
             <button
@@ -260,10 +261,10 @@
     <Dialog v-model:open="deleteModalOpen">
       <DialogContent class="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Delete Workspace</DialogTitle>
+          <DialogTitle>Delete Project</DialogTitle>
           <DialogDescription>
             Are you sure you want to delete
-            <strong class="text-destructive">{{ workspaceToDelete?.name }}</strong>?
+            <strong class="text-destructive">{{ projectToDelete?.name }}</strong>?
             This cannot be undone.
           </DialogDescription>
         </DialogHeader>
@@ -280,15 +281,15 @@
 </template>
 
 <script setup lang="ts">
-  import { ArchiveIcon, Check, Eye, MoreHorizontal, Pencil, Trash2, Trash2Icon } from 'lucide-vue-next'
+  import { ArchiveIcon, Check, Eye, Globe, Lock, MoreHorizontal, Pencil, Trash2, Trash2Icon, Users } from 'lucide-vue-next'
   import { computed, onMounted, ref } from 'vue'
-  import { useRouter } from 'vue-router'
+  import { useRoute, useRouter } from 'vue-router'
 
   import UiHeader from '@/components/common/UiHeader.vue'
   import UiKanban from '@/ui-table/UiKanban.vue'
   import UiList from '@/ui-table/UiList.vue'
   import UiTable from '@/ui-table/UiTable.vue'
-  import WorkspaceKanbanCard from './common/WorkspaceKanbanCard.vue'
+  import ProjectKanbanCard from './common/ProjectKanbanCard.vue'
 
   import Button from '@/components/ui/button/Button.vue'
   import {
@@ -299,22 +300,28 @@
   import Spinner from '@/components/ui/spinner/Spinner.vue'
 
   import { notify } from '@/helpers/toast'
-  import { useWorkspaceStore, type Workspace } from '@/stores/workspace'
+  import { useProjectStore, type Project } from '@/stores/project'
   import { useKanbanApi } from '@/ui-table/composables/useKanbanApi'
   import { useUniversalInteractions } from '@/ui-table/composables/useUniversalInteractions'
 
   import type {
+    KanbanBoardFetchParams,
     KanbanConfig, KanbanFeatures, KanbanMoveEvent,
     KanbanReorderEvent, KanbanStageDefinition,
   } from '@/ui-table/types/kanban.types'
   import type { ListConfig, ListFeatures } from '@/ui-table/types/list.types'
   import type { TableColumn, TableConfig, TableFeatures } from '@/ui-table/types/table.types'
-  import type { ViewMode } from '@/ui-table/types/universal.types'
+  import type { UniversalFetchParams, ViewMode } from '@/ui-table/types/universal.types'
 
   // ── Core ──────────────────────────────────────────────────────────────────────
+  const route = useRoute()
   const router = useRouter()
-  const workspaceStore = useWorkspaceStore()
-  const kanbanApi = useKanbanApi<Workspace>('/workspaces')
+  const projectStore = useProjectStore()
+
+  // workspaceId from route param — all nested API calls use this
+  const workspaceId = computed(() => Number(route.params.workspaceId))
+
+  const kanbanApi = useKanbanApi<Project>(`/workspaces/${workspaceId.value}/projects`)
 
   // ── View ──────────────────────────────────────────────────────────────────────
   const currentView = ref<ViewMode>('table')
@@ -328,30 +335,33 @@
     if (currentView.value === 'table') tableRef.value?.refresh?.()
     else if (currentView.value === 'list') listRef.value?.refresh?.()
     else if (currentView.value === 'kanban') kanbanRef.value?.refresh?.()
-    workspaceStore.fetchStatusCounts()
+    projectStore.fetchStatusCounts(workspaceId.value)
   }
 
   // ── Universal interactions ────────────────────────────────────────────────────
   const { searchQuery, activeFilterCount, handleSearch, applyFilters, commonFilter } =
     useUniversalInteractions({ debounceMs: 400 })
 
+  // ── Fetch fns — inject workspaceId into every call ────────────────────────────
+
+  function tableFetchFn(params: UniversalFetchParams) {
+    return projectStore.fetchProjects({ ...params, workspaceId: workspaceId.value })
+  }
+
+  function kanbanBoardFetchFn(params: KanbanBoardFetchParams) {
+    return projectStore.fetchKanbanBoard({ ...params, workspaceId: workspaceId.value })
+  }
+
   // ── Header stats ──────────────────────────────────────────────────────────────
-  //
-  // KEY FIX: pass `color` (hex from backend) instead of only `dot` (Tailwind class).
-  // UiHeader.resolveStatColor() now picks stat.color first, bypassing useDotColor().
-  // This guarantees stat badge colors exactly match the kanban column cap colors.
-  //
   const headerStats = computed(() =>
-    workspaceStore.statuses.map((s) => ({
+    projectStore.statuses.map((s) => ({
       label: s.label,
-      // Hex color direct from backend — no Tailwind→hex mapping needed
       color: s.color ?? undefined,
-      // Keep dot for badge components that still use Tailwind classes
       dot: s.dot ?? undefined,
       value:
         currentView.value === 'kanban'
-          ? (kanbanRef.value?.columnCounts?.[s.value] ?? workspaceStore.statusCounts[s.value] ?? 0)
-          : (workspaceStore.statusCounts[s.value] ?? 0),
+          ? (kanbanRef.value?.columnCounts?.[s.value] ?? projectStore.statusCounts[s.value] ?? 0)
+          : (projectStore.statusCounts[s.value] ?? 0),
     })),
   )
 
@@ -364,14 +374,15 @@
     persistState: true,
   }
 
-  const tableColumns: TableColumn<Workspace>[] = [
-    { key: 'name', label: 'Workspace', sortable: true, width: '40%' },
-    { key: 'user', label: 'Owner', sortable: false, width: '25%' },
-    { key: 'created_at', label: 'Created', sortable: true, width: '20%' },
-    { key: 'actions', label: 'Actions', sortable: false, align: 'center', width: '15%' },
+  const tableColumns: TableColumn<Project>[] = [
+    { key: 'name',       label: 'Project',     sortable: true,  width: '35%' },
+    { key: 'creator',    label: 'Creator',     sortable: false, width: '20%' },
+    { key: 'visibility', label: 'Visibility',  sortable: false, width: '15%' },
+    { key: 'created_at', label: 'Created',     sortable: true,  width: '15%' },
+    { key: 'actions',    label: 'Actions',     sortable: false, align: 'center', width: '15%' },
   ]
 
-  const tableFeatures: TableFeatures<Workspace> = {
+  const tableFeatures: TableFeatures<Project> = {
     selection: { enabled: true },
     bulkActions: [
       {
@@ -399,39 +410,32 @@
 
   const listFeatures: ListFeatures = {
     groupBy: [
-      { key: 'status', label: 'Status' },
-      { key: 'user.name', label: 'Owner' },
+      { key: 'status',       label: 'Status' },
+      { key: 'creator.name', label: 'Creator' },
     ],
     sortOptions: [
-      { key: 'name', label: 'Name (A → Z)' },
+      { key: 'name',       label: 'Name (A → Z)' },
       { key: 'created_at', label: 'Created' },
     ],
   }
 
   // ── Kanban stages ─────────────────────────────────────────────────────────────
-  //
-  // STAGE_STYLE is kept for Tailwind-based helpers (badge pill classes etc.)
-  // The kanban board itself only uses `color` (hex) — stageColor() in UiKanban
-  // reads stage.color first, so these Tailwind strings are supplementary.
-  //
   const STAGE_STYLE: Record<
     string,
     Pick<KanbanStageDefinition, 'colorClass' | 'textClass' | 'borderClass' | 'dot'>
   > = {
-    active:    { dot: 'bg-emerald-500', colorClass: 'bg-emerald-500/10', textClass: 'text-emerald-600', borderClass: 'border-emerald-500/30' },
-    archived:  { dot: 'bg-rose-400',    colorClass: 'bg-rose-500/10',    textClass: 'text-rose-600',    borderClass: 'border-rose-500/30' },
-    pending:   { dot: 'bg-amber-400',   colorClass: 'bg-amber-500/10',   textClass: 'text-amber-600',   borderClass: 'border-amber-500/30' },
-    on_hold:   { dot: 'bg-red-400',     colorClass: 'bg-orange-500/10',  textClass: 'text-orange-600',  borderClass: 'border-orange-500/30' },
-    completed: { dot: 'bg-blue-400',    colorClass: 'bg-blue-500/10',    textClass: 'text-blue-600',    borderClass: 'border-blue-500/30' },
+    draft:       { dot: 'bg-slate-400',   colorClass: 'bg-slate-500/10',   textClass: 'text-slate-600',   borderClass: 'border-slate-500/30' },
+    in_progress: { dot: 'bg-blue-500',    colorClass: 'bg-blue-500/10',    textClass: 'text-blue-600',    borderClass: 'border-blue-500/30' },
+    on_hold:     { dot: 'bg-amber-400',   colorClass: 'bg-amber-500/10',   textClass: 'text-amber-600',   borderClass: 'border-amber-500/30' },
+    cancelled:   { dot: 'bg-red-400',     colorClass: 'bg-red-500/10',     textClass: 'text-red-600',     borderClass: 'border-red-500/30' },
+    completed:   { dot: 'bg-emerald-500', colorClass: 'bg-emerald-500/10', textClass: 'text-emerald-600', borderClass: 'border-emerald-500/30' },
   }
 
   const kanbanStages = computed<KanbanStageDefinition[]>(() =>
-    workspaceStore.statuses.map((s) => ({
+    projectStore.statuses.map((s) => ({
       value: s.value,
       label: s.label,
-      // Backend hex color — drives column cap color in UiKanban (highest priority)
       color: s.color ?? undefined,
-      // Tailwind helpers — used by badge/dot chips outside the kanban board
       ...(STAGE_STYLE[s.value] ?? {}),
     })),
   )
@@ -455,11 +459,11 @@
   }
 
   // ── Kanban events ─────────────────────────────────────────────────────────────
-  async function onKanbanMove(event: KanbanMoveEvent<Workspace>) {
+  async function onKanbanMove(event: KanbanMoveEvent<Project>) {
     try {
       await kanbanApi.move({ model_id: event.item.id, column_id: event.toStage })
       notify.success('Stage updated', `"${event.item.name}" moved to ${event.toStage}.`)
-      workspaceStore.fetchStatusCounts()
+      projectStore.fetchStatusCounts(workspaceId.value)
     } catch (err: unknown) {
       notify.error('Move failed', err instanceof Error ? err.message : 'Could not move the card.')
       kanbanRef.value?.refreshColumn(event.fromStage)
@@ -477,30 +481,33 @@
   }
 
   // ── CRUD ──────────────────────────────────────────────────────────────────────
-  const handleCreate = () => router.push({ name: 'workspace-add' })
-  const handleView = (id: number) => router.push({ name: 'workspace-detail', params: { id } })
-  const handleEdit = (id: number) => router.push({ name: 'workspace-edit', params: { id } })
+  const handleCreate = () =>
+    router.push({ name: 'project-add', params: { workspaceId: workspaceId.value } })
+
+  // Shallow routes for show / edit
+  const handleView = (id: number) => router.push({ name: 'project-detail', params: { id } })
+  const handleEdit = (id: number) => router.push({ name: 'project-edit', params: { id } })
 
   const deleteModalOpen = ref(false)
   const deleteLoading = ref(false)
-  const workspaceToDelete = ref<{ id: number; name: string } | null>(null)
+  const projectToDelete = ref<{ id: number; name: string } | null>(null)
 
   function confirmDeletePrompt(id: number, name: string) {
-    workspaceToDelete.value = { id, name }
+    projectToDelete.value = { id, name }
     deleteModalOpen.value = true
   }
 
   async function confirmDelete() {
-    if (!workspaceToDelete.value) return
+    if (!projectToDelete.value) return
     deleteLoading.value = true
     try {
-      await workspaceStore.deleteWorkspace(workspaceToDelete.value.id)
+      await projectStore.deleteProject(projectToDelete.value.id, workspaceId.value)
       deleteModalOpen.value = false
-      workspaceToDelete.value = null
-      notify.success('Workspace deleted', 'The workspace was removed successfully.', { position: 'bottom-right' })
+      projectToDelete.value = null
+      notify.success('Project deleted', 'The project was removed successfully.', { position: 'bottom-right' })
       onRefresh()
     } catch {
-      notify.error('Delete failed', "We couldn't delete the workspace.", { position: 'bottom-right' })
+      notify.error('Delete failed', "We couldn't delete the project.", { position: 'bottom-right' })
     } finally {
       deleteLoading.value = false
     }
@@ -514,7 +521,7 @@
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────────
   onMounted(async () => {
-    await workspaceStore.fetchStatuses()
-    workspaceStore.fetchStatusCounts()
+    await projectStore.fetchStatuses()
+    projectStore.fetchStatusCounts(workspaceId.value)
   })
 </script>

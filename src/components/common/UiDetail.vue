@@ -25,8 +25,14 @@
       <div
         class="px-5 pt-3.5 pb-2.5 flex items-center justify-between shrink-0"
       >
+        <div v-if="statusBadge" class="ml-2">
+          <Badge :color="getDotColor(statusBadge.dot ?? '')">
+            {{ statusBadge.label }}
+          </Badge>
+        </div>
+        <div></div>
         <!-- Breadcrumb -->
-        <nav class="flex items-center gap-1.5">
+        <!-- <nav class="flex items-center gap-1.5">
           <button
             v-for="(crumb, i) in breadcrumbs"
             :key="i"
@@ -48,13 +54,8 @@
             />
           </button>
 
-          <!-- Status badge inline with breadcrumb -->
-          <div v-if="statusBadge" class="ml-2">
-            <Badge :color="getDotColor(statusBadge.dot ?? '')">
-              {{ statusBadge.label }}
-            </Badge>
-          </div>
-        </nav>
+     
+        </nav> -->
 
         <!-- Action Buttons -->
         <TooltipProvider :delay-duration="150">
@@ -367,13 +368,7 @@
   } from "@/components/ui/tooltip";
 
   import Badge from "@/components/ui/badge/Badge.vue";
-  import {
-    ChevronRight,
-    FileText,
-    Loader2,
-    MessageSquare,
-    Trash2,
-  } from "lucide-vue-next";
+  import { FileText, Loader2, MessageSquare, Trash2 } from "lucide-vue-next";
 
   import { useDotColor } from "@/composables/useDotColor";
   const { getDotColor } = useDotColor();

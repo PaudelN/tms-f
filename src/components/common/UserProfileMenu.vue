@@ -1,222 +1,172 @@
 <template>
-  <div
-    ref="menuRef"
-    class="border-t border-border/60 bg-card/70 backdrop-blur pt-2"
-  >
-    <div class="relative">
-      <Button
-        v-if="!sidebarCollapsed"
-        variant="ghost"
-        class="w-full justify-start gap-3 px-4 py-3"
-        @click="toggleProfile"
-      >
-        <Avatar class="h-9 w-9 ring-1 ring-border/60">
-          <AvatarFallback
-            class="bg-linear-to-br from-primary to-primary/80 text-foreground text-sm font-semibold"
-          >
-            {{ userInitials }}
-          </AvatarFallback>
-        </Avatar>
+  <div ref="menuRef" class="px-2 pb-2">
+    <!-- ── Collapsed: icon only ──────────────────────────────── -->
+    <Button
+      v-if="collapsed"
+      variant="ghost"
+      size="icon"
+      class="w-full h-10 flex items-center justify-center"
+      @click="toggleProfile"
+    >
+      <Avatar class="h-7 w-7 ring-1 ring-border/60 shrink-0">
+        <AvatarFallback class="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-[11px] font-bold">
+          {{ userInitials }}
+        </AvatarFallback>
+      </Avatar>
+    </Button>
 
-        <div class="flex-1 min-w-0 leading-tight text-left">
-          <p class="text-sm font-medium truncate">
-            {{ authStore.user?.name || "User" }}
-          </p>
-          <p class="text-xs text-muted-foreground truncate">
-            {{ authStore.user?.email || "" }}
-          </p>
+    <!-- ── Expanded: full row ────────────────────────────────── -->
+    <Button
+      v-else
+      variant="ghost"
+      class="w-full h-11 justify-start gap-3 px-2"
+      @click="toggleProfile"
+    >
+      <Avatar class="h-7 w-7 ring-1 ring-border/60 shrink-0">
+        <AvatarFallback class="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-[11px] font-bold">
+          {{ userInitials }}
+        </AvatarFallback>
+      </Avatar>
+      <div class="flex-1 min-w-0 text-left leading-tight">
+        <p class="text-[13px] font-semibold truncate">{{ authStore.user?.name || 'User' }}</p>
+        <p class="text-[11px] text-muted-foreground truncate">{{ authStore.user?.email || '' }}</p>
+      </div>
+      <ChevronsUpDown class="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" />
+    </Button>
+
+    <!-- ── Flyout (opens UPWARD) ──────────────────────────────── -->
+    <Transition
+      enter-active-class="transition duration-150 ease-out"
+      enter-from-class="opacity-0 translate-y-2 scale-95"
+      enter-to-class="opacity-100 translate-y-0 scale-100"
+      leave-active-class="transition duration-100 ease-in"
+      leave-from-class="opacity-100 translate-y-0 scale-100"
+      leave-to-class="opacity-0 translate-y-2 scale-95"
+    >
+      <div
+        v-if="profileOpen"
+        class="absolute bottom-full left-2 right-2 mb-1 rounded-xl bg-popover border border-border shadow-2xl z-[100] overflow-hidden"
+      >
+        <!-- User header -->
+        <div class="flex items-center gap-3 px-4 py-3 border-b border-border/60 bg-muted/30">
+          <Avatar class="h-9 w-9 ring-2 ring-border/60 shrink-0">
+            <AvatarFallback class="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-sm font-bold">
+              {{ userInitials }}
+            </AvatarFallback>
+          </Avatar>
+          <div class="flex-1 min-w-0 leading-tight">
+            <p class="text-[13px] font-semibold text-foreground truncate">{{ authStore.user?.name || 'User' }}</p>
+            <p class="text-[11px] text-muted-foreground truncate">{{ authStore.user?.email || '' }}</p>
+          </div>
+          <span class="h-2 w-2 rounded-full bg-emerald-400 shrink-0" title="Online" />
         </div>
 
-        <ChevronDown
-          class="h-4 w-4 text-muted-foreground transition-transform duration-200"
-          :class="profileOpen ? '-rotate-90' : ''"
-        />
-      </Button>
-
-      <Button
-        v-else
-        variant="ghost"
-        size="icon"
-        class="w-full h-auto py-3"
-        @click="toggleProfile"
-      >
-        <Avatar class="h-9 w-9 ring-1 ring-border/60">
-          <AvatarFallback
-            class="bg-linear-to-br from-primary to-primary/80 text-foreground text-sm font-semibold"
-          >
-            {{ userInitials }}
-          </AvatarFallback>
-        </Avatar>
-      </Button>
-
-      <Transition
-        enter-active-class="transition duration-200 ease-out"
-        enter-from-class="opacity-0 translate-x-2 scale-95"
-        enter-to-class="opacity-100 translate-x-0 scale-100"
-        leave-active-class="transition duration-150 ease-in"
-        leave-from-class="opacity-100 translate-x-0 scale-100"
-        leave-to-class="opacity-0 translate-x-2 scale-95"
-      >
-        <div
-          v-if="profileOpen"
-          class="absolute bottom-3 left-full ml-3 w-72 rounded-xl bg-card border border-border/60 shadow-2xl z-50"
-        >
-          <div class="px-4 py-3 border-b border-border/60">
-            <p class="text-xs font-semibold text-muted-foreground uppercase">
-              Signed in as
-            </p>
-
-            <div class="flex items-center gap-3 mt-2">
-              <Avatar class="h-10 w-10 ring-1 ring-border/60">
-                <AvatarFallback
-                  class="bg-linear-to-br from-primary to-primary/80 text-foreground text-sm font-semibold"
-                >
-                  {{ userInitials }}
-                </AvatarFallback>
+        <!-- Team members (Phase 2+) -->
+        <div v-if="teamMembers.length > 0" class="border-b border-border/60">
+          <p class="px-4 pt-2.5 pb-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+            Team ({{ teamMembers.length }})
+          </p>
+          <div class="max-h-36 overflow-y-auto px-2 pb-2 space-y-0.5">
+            <div
+              v-for="member in teamMembers"
+              :key="member.id"
+              class="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-accent transition-colors"
+            >
+              <Avatar class="h-6 w-6 ring-1 ring-border/60 shrink-0">
+                <AvatarFallback class="text-[10px] font-bold">{{ getInitials(member.name) }}</AvatarFallback>
               </Avatar>
-
-              <div class="leading-tight min-w-0">
-                <p class="text-sm font-semibold truncate">
-                  {{ authStore.user?.name || "User" }}
-                </p>
-                <p class="text-xs text-muted-foreground truncate">
-                  {{ authStore.user?.email || "" }}
-                </p>
+              <div class="min-w-0">
+                <p class="text-[12px] font-medium truncate">{{ member.name }}</p>
+                <p class="text-[10px] text-muted-foreground truncate">{{ member.email }}</p>
               </div>
             </div>
           </div>
-
-          <div v-if="authStore.users.length > 0" class="px-2 py-2">
-            <p
-              class="px-2 pb-1 text-xs font-semibold text-muted-foreground uppercase"
-            >
-              Team Members ({{ authStore.users.length }})
-            </p>
-
-            <div class="max-h-48 overflow-y-auto">
-              <Button
-                v-for="user in authStore.users"
-                :key="user.id"
-                variant="ghost"
-                class="group w-full justify-start gap-3 px-3 py-2"
-              >
-                <Avatar class="h-7 w-7 ring-1 ring-border/60">
-                  <AvatarFallback class="text-xs font-semibold">
-                    {{ getInitials(user.name) }}
-                  </AvatarFallback>
-                </Avatar>
-
-                <div class="min-w-0 text-left">
-                  <p class="text-sm truncate">{{ user.name }}</p>
-                  <p class="text-xs text-muted-foreground truncate">
-                    {{ user.email }}
-                  </p>
-                </div>
-              </Button>
-            </div>
-          </div>
-
-          <div class="p-2 border-t border-border/60 space-y-1">
-            <Button
-              variant="ghost"
-              class="w-full justify-start gap-2 text-sm"
-              @click="profileOpen = false"
-            >
-              <IdCard class="h-4 w-4" />
-              Profile
-            </Button>
-
-            <Button
-              variant="ghost"
-              class="w-full justify-start gap-2 text-sm"
-              @click="profileOpen = false"
-            >
-              <Users class="h-4 w-4" />
-              Users
-            </Button>
-
-            <Button
-              variant="ghost"
-              class="w-full justify-start gap-2 text-sm"
-              @click="profileOpen = false"
-            >
-              <Settings class="h-4 w-4" />
-              Settings
-            </Button>
-
-            <div class="h-px bg-border/60 my-1" />
-
-            <Button
-              variant="ghost"
-              class="w-full justify-start gap-2 text-sm text-destructive hover:text-destructive"
-              @click="handleLogout"
-            >
-              <LogOut class="h-4 w-4" />
-              Logout
-            </Button>
-          </div>
         </div>
-      </Transition>
-    </div>
+
+        <!-- Actions -->
+        <div class="p-1.5 space-y-0.5">
+          <Button variant="ghost" class="w-full justify-start gap-2.5 text-[13px] h-8 px-2.5" @click="profileOpen = false">
+            <IdCard class="h-4 w-4 text-muted-foreground shrink-0" />
+            Profile
+          </Button>
+          <Button variant="ghost" class="w-full justify-start gap-2.5 text-[13px] h-8 px-2.5" @click="profileOpen = false">
+            <Users class="h-4 w-4 text-muted-foreground shrink-0" />
+            Users
+          </Button>
+          <Button variant="ghost" class="w-full justify-start gap-2.5 text-[13px] h-8 px-2.5" @click="profileOpen = false">
+            <Settings class="h-4 w-4 text-muted-foreground shrink-0" />
+            Settings
+          </Button>
+          <div class="h-px bg-border/60 mx-1 my-1" />
+          <Button
+            variant="ghost"
+            class="w-full justify-start gap-2.5 text-[13px] h-8 px-2.5 text-destructive hover:text-destructive hover:bg-destructive/10"
+            @click="handleLogout"
+          >
+            <LogOut class="h-4 w-4 shrink-0" />
+            Sign out
+          </Button>
+        </div>
+      </div>
+    </Transition>
   </div>
 </template>
 
 <script setup lang="ts">
-import Avatar from "@/components/ui/avatar/Avatar.vue";
-import AvatarFallback from "@/components/ui/avatar/AvatarFallback.vue";
-import { Button } from "@/components/ui/button";
-import {
-  ChevronDown,
-  IdCard,
-  LogOut,
-  Settings,
-  Users,
-} from "lucide-vue-next";
-import { onClickOutside } from "@vueuse/core";
-import { computed, onMounted, ref } from "vue";
-import { useAuthStore } from "@/stores/auth";
-import { storeToRefs } from "pinia";
-import { useSidebar } from "@/components/ui/sidebar";
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Button } from '@/components/ui/button'
+import { ChevronsUpDown, IdCard, LogOut, Settings, Users } from 'lucide-vue-next'
+import { onClickOutside } from '@vueuse/core'
+import { computed, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+import { storeToRefs } from 'pinia'
 
-const { state } = useSidebar();
-const authStore = useAuthStore();
-const { user } = storeToRefs(authStore); 
+// ── Props ───────────────────────────────────────────────────────────────────
+// collapsed is passed by AppSidebar via the isSidebarCollapsed computed.
+// We intentionally do NOT call useSidebar() here to avoid injection errors.
+withDefaults(defineProps<{ collapsed?: boolean }>(), { collapsed: false })
 
-const menuRef = ref<HTMLElement | null>(null);
-const profileOpen = ref(false);
-const sidebarCollapsed = computed(() => state.value === "collapsed");
+const router    = useRouter()
+const authStore = useAuthStore()
+const { user }  = storeToRefs(authStore)
 
-const toggleProfile = () => {
-  profileOpen.value = !profileOpen.value;
-};
+const menuRef     = ref<HTMLElement | null>(null)
+const profileOpen = ref(false)
 
-const userInitials = computed(() => {
-  if (!user.value?.name) return "U";
-  const names = user.value.name.split(" ");
-  if (names.length >= 2) {
-    return (names[0][0] + names[1][0]).toUpperCase();
-  }
-  return user.value.name.substring(0, 2).toUpperCase();
-});
+function toggleProfile() { profileOpen.value = !profileOpen.value }
 
-const getInitials = (name: string) => {
-  const names = name.split(" ");
-  if (names.length >= 2) {
-    return (names[0][0] + names[1][0]).toUpperCase();
-  }
-  return name.substring(0, 2).toUpperCase();
-};
+// ── Initials ────────────────────────────────────────────────────────────────
+const userInitials = computed<string>(() => {
+  const name  = user.value?.name ?? ''
+  const parts = name.trim().split(' ')
+  if (parts.length >= 2) return ((parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')).toUpperCase()
+  return name.slice(0, 2).toUpperCase() || 'U'
+})
 
-const handleLogout = async () => {
-  profileOpen.value = false;
-  await authStore.logout();
-};
+function getInitials(name: string): string {
+  const parts = name.trim().split(' ')
+  if (parts.length >= 2) return ((parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')).toUpperCase()
+  return name.slice(0, 2).toUpperCase() || '?'
+}
 
-onClickOutside(menuRef, () => {
-  profileOpen.value = false;
-});
+// ── Team members (Phase 2+) ─────────────────────────────────────────────────
+const teamMembers = computed<Array<{ id: number; name: string; email: string }>>(() => {
+  return (authStore as any).users ?? []
+})
+
+// ── Actions ─────────────────────────────────────────────────────────────────
+async function handleLogout() {
+  profileOpen.value = false
+  await authStore.logout?.()
+  router.push({ name: 'login' })
+}
+
+onClickOutside(menuRef, () => { profileOpen.value = false })
 
 onMounted(async () => {
-  await authStore.fetchUsers(); 
-});
+  if (typeof (authStore as any).fetchUsers === 'function') {
+    await (authStore as any).fetchUsers()
+  }
+})
 </script>
