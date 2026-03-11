@@ -68,6 +68,25 @@ export interface KanbanBoardFetchParams {
   filters?: Record<string, any> | null | undefined;
 }
 
+export interface KanbanStageState<T> {
+  items: T[];
+  currentPage: number;
+  totalPages: number;
+  total: number;
+  hasMore: boolean;
+  isInitialLoading: boolean;
+  isLoadingMore: boolean;
+  error: string | null;
+}
+
+export interface KanbanConfig {
+  columnWidth?: string;
+  stageKey?: string;
+  perPage?: number;
+  pageSize?: number; // ← useKanbanInteractions uses this
+  debounceMs?: number; // ← useKanbanInteractions uses this
+}
+
 /**
  * The function signature passed to UiKanban as `boardFetchFn`.
  * Each entity store exposes one of these pointing at its board endpoint.

@@ -46,8 +46,16 @@ export interface KanbanApiInstance<T = any> {
   reorder(payload: KanbanReorderPayload): Promise<void>;
 }
 
-export function useKanbanApi<T = any>(baseUrl: string): KanbanApiInstance<T> {
-  const base = baseUrl.replace(/\/+$/, "");
+// composables/useKanbanApi.ts
+
+export function useKanbanApi<T = any>(
+  baseUrl: string | (() => string), // ← accepts static string OR getter
+): KanbanApiInstance<T> {
+  // Re-evaluated on every call — never stale
+  function base(): string {
+    const raw = typeof baseUrl === "function" ? baseUrl() : baseUrl;
+    return raw.replace(/\/+$/, "");
+  }
 
   async function fetchStage(
     stage: string,
@@ -62,17 +70,17 @@ export function useKanbanApi<T = any>(baseUrl: string): KanbanApiInstance<T> {
     });
     if (search.trim()) params.set("search", search.trim());
     const { data } = await axios.get<KanbanApiResponse<T>>(
-      `${base}?${params.toString()}`,
+      `${base()}?${params.toString()}`,
     );
     return data;
   }
 
   async function move(payload: KanbanMovePayload): Promise<void> {
-    await axios.post(`${base}/kanban/move`, payload);
+    await axios.post(`${base()}/kanban/move`, payload);
   }
 
   async function reorder(payload: KanbanReorderPayload): Promise<void> {
-    await axios.post(`${base}/kanban/reorder`, payload);
+    await axios.post(`${base()}/kanban/reorder`, payload);
   }
 
   return { fetchStage, move, reorder };

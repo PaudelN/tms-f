@@ -26,7 +26,10 @@
           <div class="space-y-2.5">
             <div class="flex items-center justify-between min-h-5">
               <div class="flex items-center gap-2">
-                <span class="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Status</span>
+                <span
+                  class="text-[10px] font-bold uppercase tracking-widest text-muted-foreground"
+                  >Status</span
+                >
                 <span
                   v-if="Array.isArray(draft.status) && draft.status.length > 0"
                   class="inline-block h-1.5 w-1.5 rounded-full bg-primary"
@@ -58,8 +61,15 @@
               >
                 <span
                   class="h-2 w-2 rounded-full shrink-0"
-                  :class="!status.color ? (STAGE_STYLE[status.value]?.dot ?? 'bg-muted-foreground') : undefined"
-                  :style="status.color ? { background: status.color } : undefined"
+                  :class="
+                    !status.color
+                      ? (STAGE_STYLE[status.value]?.dot ??
+                        'bg-muted-foreground')
+                      : undefined
+                  "
+                  :style="
+                    status.color ? { background: status.color } : undefined
+                  "
                 />
                 {{ status.label }}
                 <span
@@ -91,26 +101,45 @@
         >
           <template #cell-name="{ row }">
             <div class="flex items-center gap-3">
-              <div class="h-9 w-9 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
-                <span class="text-primary text-sm font-bold">{{ row.name?.charAt(0).toUpperCase() ?? '?' }}</span>
+              <div
+                class="h-9 w-9 rounded-xl bg-primary/15 flex items-center justify-center shrink-0"
+              >
+                <span class="text-primary text-sm font-bold">{{
+                  row.name?.charAt(0).toUpperCase() ?? "?"
+                }}</span>
               </div>
               <div class="min-w-0">
-                <p class="font-semibold text-foreground truncate">{{ row.name }}</p>
-                <p v-if="row.description" class="text-xs text-muted-foreground truncate">{{ row.description }}</p>
+                <p class="font-semibold text-foreground truncate">
+                  {{ row.name }}
+                </p>
+                <p
+                  v-if="row.description"
+                  class="text-xs text-muted-foreground truncate"
+                >
+                  {{ row.description }}
+                </p>
               </div>
             </div>
           </template>
 
           <template #cell-creator="{ row }">
-            <span class="text-sm">{{ row.creator?.name ?? '—' }}</span>
+            <span class="text-sm">{{ row.creator?.name ?? "—" }}</span>
           </template>
 
           <template #cell-visibility="{ row }">
-            <span class="inline-flex items-center gap-1.5 text-xs font-medium capitalize">
-              <Globe v-if="row.visibility === 'public'" class="h-3.5 w-3.5 text-muted-foreground" />
-              <Lock v-else-if="row.visibility === 'private'" class="h-3.5 w-3.5 text-muted-foreground" />
+            <span
+              class="inline-flex items-center gap-1.5 text-xs font-medium capitalize"
+            >
+              <Globe
+                v-if="row.visibility === 'public'"
+                class="h-3.5 w-3.5 text-muted-foreground"
+              />
+              <Lock
+                v-else-if="row.visibility === 'private'"
+                class="h-3.5 w-3.5 text-muted-foreground"
+              />
               <Users v-else class="h-3.5 w-3.5 text-muted-foreground" />
-              {{ row.visibility?.value ?? '—' }}
+              {{ row.visibility?.value ?? "—" }}
             </span>
           </template>
 
@@ -125,20 +154,28 @@
                     <MoreHorizontal class="h-4 w-4" />
                   </button>
                 </PopoverTrigger>
-                <PopoverContent align="end" :side-offset="6" class="w-40 p-1.5 rounded-xl border border-border bg-popover shadow-xl">
+                <PopoverContent
+                  align="end"
+                  :side-offset="6"
+                  class="w-40 p-1.5 rounded-xl border border-border bg-popover shadow-xl"
+                >
                   <button
                     type="button"
                     class="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs font-medium rounded-lg hover:bg-accent transition-colors text-foreground"
                     @click="handleView(row.id)"
                   >
-                    <Eye class="h-3.5 w-3.5 text-muted-foreground shrink-0" /> View
+                    <Eye class="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                    View
                   </button>
                   <button
                     type="button"
                     class="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs font-medium rounded-lg hover:bg-accent transition-colors text-foreground"
                     @click="handleEdit(row.id)"
                   >
-                    <Pencil class="h-3.5 w-3.5 text-muted-foreground shrink-0" /> Edit
+                    <Pencil
+                      class="h-3.5 w-3.5 text-muted-foreground shrink-0"
+                    />
+                    Edit
                   </button>
                   <div class="h-px bg-border my-1" />
                   <button
@@ -170,14 +207,26 @@
         >
           <template #item-summary="{ item }">
             <div class="flex items-center gap-3 w-full min-w-0">
-              <div class="h-9 w-9 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
-                <span class="text-primary text-sm font-bold">{{ item.name?.charAt(0).toUpperCase() ?? '?' }}</span>
+              <div
+                class="h-9 w-9 rounded-xl bg-primary/15 flex items-center justify-center shrink-0"
+              >
+                <span class="text-primary text-sm font-bold">{{
+                  item.name?.charAt(0).toUpperCase() ?? "?"
+                }}</span>
               </div>
               <div class="min-w-0 flex-1">
                 <div class="flex items-center gap-2">
-                  <span class="text-sm font-semibold text-foreground truncate">{{ item.name }}</span>
+                  <span
+                    class="text-sm font-semibold text-foreground truncate"
+                    >{{ item.name }}</span
+                  >
                 </div>
-                <p v-if="item.description" class="text-xs text-muted-foreground truncate mt-0.5">{{ item.description }}</p>
+                <p
+                  v-if="item.description"
+                  class="text-xs text-muted-foreground truncate mt-0.5"
+                >
+                  {{ item.description }}
+                </p>
               </div>
             </div>
           </template>
@@ -186,16 +235,34 @@
             <div class="space-y-3">
               <div class="grid grid-cols-3 gap-3">
                 <div>
-                  <p class="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-0.5">Creator</p>
-                  <p class="text-sm font-medium">{{ item.creator?.name ?? '—' }}</p>
+                  <p
+                    class="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-0.5"
+                  >
+                    Creator
+                  </p>
+                  <p class="text-sm font-medium">
+                    {{ item.creator?.name ?? "—" }}
+                  </p>
                 </div>
                 <div>
-                  <p class="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-0.5">Status</p>
-                  <p class="text-sm font-medium capitalize">{{ item.status ?? '—' }}</p>
+                  <p
+                    class="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-0.5"
+                  >
+                    Status
+                  </p>
+                  <p class="text-sm font-medium capitalize">
+                    {{ item.status ?? "—" }}
+                  </p>
                 </div>
                 <div>
-                  <p class="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-0.5">Created</p>
-                  <p class="text-sm font-medium">{{ formatDate(item.created_at) }}</p>
+                  <p
+                    class="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-0.5"
+                  >
+                    Created
+                  </p>
+                  <p class="text-sm font-medium">
+                    {{ formatDate(item.created_at) }}
+                  </p>
                 </div>
               </div>
               <div class="flex gap-2 pt-1">
@@ -235,7 +302,12 @@
           @reorder="onKanbanReorder"
         >
           <template #card="{ item, stageMeta }">
-            <ProjectKanbanCard :item="item" :stage-meta="stageMeta" @view="handleView" @edit="handleEdit" />
+            <ProjectKanbanCard
+              :item="item"
+              :stage-meta="stageMeta"
+              @view="handleView"
+              @edit="handleEdit"
+            />
           </template>
           <template #card-actions="{ item }">
             <button
@@ -264,15 +336,22 @@
           <DialogTitle>Delete Project</DialogTitle>
           <DialogDescription>
             Are you sure you want to delete
-            <strong class="text-destructive">{{ projectToDelete?.name }}</strong>?
-            This cannot be undone.
+            <strong class="text-destructive">{{ projectToDelete?.name }}</strong
+            >? This cannot be undone.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter class="gap-2">
-          <Button variant="outline" @click="deleteModalOpen = false">Cancel</Button>
-          <Button variant="destructive" :disabled="deleteLoading" class="gap-2" @click="confirmDelete">
+          <Button variant="outline" @click="deleteModalOpen = false"
+            >Cancel</Button
+          >
+          <Button
+            variant="destructive"
+            :disabled="deleteLoading"
+            class="gap-2"
+            @click="confirmDelete"
+          >
             <Spinner v-if="deleteLoading" class="h-4 w-4" />
-            {{ deleteLoading ? 'Deleting…' : 'Delete' }}
+            {{ deleteLoading ? "Deleting…" : "Delete" }}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -281,75 +360,119 @@
 </template>
 
 <script setup lang="ts">
-  import { ArchiveIcon, Check, Eye, Globe, Lock, MoreHorizontal, Pencil, Trash2, Trash2Icon, Users } from 'lucide-vue-next'
-  import { computed, onMounted, ref } from 'vue'
-  import { useRoute, useRouter } from 'vue-router'
-
-  import UiHeader from '@/components/common/UiHeader.vue'
-  import UiKanban from '@/ui-table/UiKanban.vue'
-  import UiList from '@/ui-table/UiList.vue'
-  import UiTable from '@/ui-table/UiTable.vue'
-  import ProjectKanbanCard from './common/ProjectKanbanCard.vue'
-
-  import Button from '@/components/ui/button/Button.vue'
   import {
-    Dialog, DialogContent, DialogDescription,
-    DialogFooter, DialogHeader, DialogTitle,
-  } from '@/components/ui/dialog'
-  import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-  import Spinner from '@/components/ui/spinner/Spinner.vue'
+    ArchiveIcon,
+    Check,
+    Eye,
+    Globe,
+    Lock,
+    MoreHorizontal,
+    Pencil,
+    Trash2,
+    Trash2Icon,
+    Users,
+  } from "lucide-vue-next";
+  import { computed, onMounted, ref } from "vue";
+  import { useRoute, useRouter } from "vue-router";
 
-  import { notify } from '@/helpers/toast'
-  import { useProjectStore, type Project } from '@/stores/project'
-  import { useKanbanApi } from '@/ui-table/composables/useKanbanApi'
-  import { useUniversalInteractions } from '@/ui-table/composables/useUniversalInteractions'
+  import UiHeader from "@/components/common/UiHeader.vue";
+  import UiKanban from "@/ui-table/UiKanban.vue";
+  import UiList from "@/ui-table/UiList.vue";
+  import UiTable from "@/ui-table/UiTable.vue";
+  import ProjectKanbanCard from "./common/ProjectKanbanCard.vue";
+
+  import Button from "@/components/ui/button/Button.vue";
+  import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+  } from "@/components/ui/dialog";
+  import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+  } from "@/components/ui/popover";
+  import Spinner from "@/components/ui/spinner/Spinner.vue";
+
+  import { notify } from "@/helpers/toast";
+  import { useProjectStore, type Project } from "@/stores/project";
+  import { useKanbanApi } from "@/ui-table/composables/useKanbanApi";
+  import { useUniversalInteractions } from "@/ui-table/composables/useUniversalInteractions";
 
   import type {
     KanbanBoardFetchParams,
-    KanbanConfig, KanbanFeatures, KanbanMoveEvent,
-    KanbanReorderEvent, KanbanStageDefinition,
-  } from '@/ui-table/types/kanban.types'
-  import type { ListConfig, ListFeatures } from '@/ui-table/types/list.types'
-  import type { TableColumn, TableConfig, TableFeatures } from '@/ui-table/types/table.types'
-  import type { UniversalFetchParams, ViewMode } from '@/ui-table/types/universal.types'
+    KanbanConfig,
+    KanbanFeatures,
+    KanbanMoveEvent,
+    KanbanReorderEvent,
+    KanbanStageDefinition,
+  } from "@/ui-table/types/kanban.types";
+  import type { ListConfig, ListFeatures } from "@/ui-table/types/list.types";
+  import type {
+    TableColumn,
+    TableConfig,
+    TableFeatures,
+  } from "@/ui-table/types/table.types";
+  import type {
+    UniversalFetchParams,
+    ViewMode,
+  } from "@/ui-table/types/universal.types";
 
   // ── Core ──────────────────────────────────────────────────────────────────────
-  const route = useRoute()
-  const router = useRouter()
-  const projectStore = useProjectStore()
+  const route = useRoute();
+  const router = useRouter();
+  const projectStore = useProjectStore();
 
   // workspaceId from route param — all nested API calls use this
-  const workspaceId = computed(() => Number(route.params.workspaceId))
+  const workspaceId = computed(() => Number(route.params.workspaceId));
 
-  const kanbanApi = useKanbanApi<Project>(`/workspaces/${workspaceId.value}/projects`)
+  const kanbanApi = useKanbanApi<Project>(
+    () => `/workspaces/${workspaceId.value}/projects`,
+  );
 
   // ── View ──────────────────────────────────────────────────────────────────────
-  const currentView = ref<ViewMode>('table')
-  const tableRef = ref()
-  const listRef = ref()
-  const kanbanRef = ref()
+  const currentView = ref<ViewMode>("table");
+  const tableRef = ref();
+  const listRef = ref();
+  const kanbanRef = ref();
 
-  function onViewChange(view: ViewMode) { currentView.value = view }
+  function onViewChange(view: ViewMode) {
+    currentView.value = view;
+  }
 
   function onRefresh() {
-    if (currentView.value === 'table') tableRef.value?.refresh?.()
-    else if (currentView.value === 'list') listRef.value?.refresh?.()
-    else if (currentView.value === 'kanban') kanbanRef.value?.refresh?.()
-    projectStore.fetchStatusCounts(workspaceId.value)
+    if (currentView.value === "table") tableRef.value?.refresh?.();
+    else if (currentView.value === "list") listRef.value?.refresh?.();
+    else if (currentView.value === "kanban") kanbanRef.value?.refresh?.();
+    projectStore.fetchStatusCounts(workspaceId.value);
   }
 
   // ── Universal interactions ────────────────────────────────────────────────────
-  const { searchQuery, activeFilterCount, handleSearch, applyFilters, commonFilter } =
-    useUniversalInteractions({ debounceMs: 400 })
+  const {
+    searchQuery,
+    activeFilterCount,
+    handleSearch,
+    applyFilters,
+    commonFilter,
+  } = useUniversalInteractions({ debounceMs: 400 });
 
   // ── Fetch fns — inject workspaceId into every call ────────────────────────────
 
   function tableFetchFn(params: UniversalFetchParams) {
-    return projectStore.fetchProjects({ ...params, workspaceId: workspaceId.value })
+    return projectStore.fetchProjects({
+      ...params,
+      workspaceId: workspaceId.value,
+    });
   }
 
   function kanbanBoardFetchFn(params: KanbanBoardFetchParams) {
-    return projectStore.fetchKanbanBoard({ ...params, workspaceId: workspaceId.value })
+    return projectStore.fetchKanbanBoard({
+      ...params,
+      workspaceId: workspaceId.value,
+    });
   }
 
   // ── Header stats ──────────────────────────────────────────────────────────────
@@ -359,77 +482,113 @@
       color: s.color ?? undefined,
       dot: s.dot ?? undefined,
       value:
-        currentView.value === 'kanban'
-          ? (kanbanRef.value?.columnCounts?.[s.value] ?? projectStore.statusCounts[s.value] ?? 0)
+        currentView.value === "kanban"
+          ? (kanbanRef.value?.columnCounts?.[s.value] ??
+            projectStore.statusCounts[s.value] ??
+            0)
           : (projectStore.statusCounts[s.value] ?? 0),
     })),
-  )
+  );
 
   // ── Table config ──────────────────────────────────────────────────────────────
   const tableConfig: TableConfig = {
     defaultPerPage: 10,
-    defaultSortBy: 'created_at',
-    defaultSortOrder: 'desc',
+    defaultSortBy: "created_at",
+    defaultSortOrder: "desc",
     debounceMs: 400,
     persistState: true,
-  }
+  };
 
   const tableColumns: TableColumn<Project>[] = [
-    { key: 'name',       label: 'Project',     sortable: true,  width: '35%' },
-    { key: 'creator',    label: 'Creator',     sortable: false, width: '20%' },
-    { key: 'visibility', label: 'Visibility',  sortable: false, width: '15%' },
-    { key: 'created_at', label: 'Created',     sortable: true,  width: '15%' },
-    { key: 'actions',    label: 'Actions',     sortable: false, align: 'center', width: '15%' },
-  ]
+    { key: "name", label: "Project", sortable: true, width: "35%" },
+    { key: "creator", label: "Creator", sortable: false, width: "20%" },
+    { key: "visibility", label: "Visibility", sortable: false, width: "15%" },
+    { key: "created_at", label: "Created", sortable: true, width: "15%" },
+    {
+      key: "actions",
+      label: "Actions",
+      sortable: false,
+      align: "center",
+      width: "15%",
+    },
+  ];
 
   const tableFeatures: TableFeatures<Project> = {
     selection: { enabled: true },
     bulkActions: [
       {
-        label: 'Archive Selected',
+        label: "Archive Selected",
         icon: ArchiveIcon,
         disabled: (r) => r.length === 0,
         onClick: () => tableRef.value?.refresh(),
       },
       {
-        label: 'Delete Selected',
+        label: "Delete Selected",
         icon: Trash2Icon,
         disabled: (r) => r.length === 0,
         onClick: () => tableRef.value?.refresh(),
       },
     ],
-  }
+  };
 
   // ── List config ───────────────────────────────────────────────────────────────
   const listConfig: ListConfig = {
     pageSize: 25,
     debounceMs: 400,
-    defaultSortBy: 'created_at',
-    defaultSortOrder: 'desc',
-  }
+    defaultSortBy: "created_at",
+    defaultSortOrder: "desc",
+  };
 
   const listFeatures: ListFeatures = {
     groupBy: [
-      { key: 'status',       label: 'Status' },
-      { key: 'creator.name', label: 'Creator' },
+      { key: "status", label: "Status" },
+      { key: "creator.name", label: "Creator" },
     ],
     sortOptions: [
-      { key: 'name',       label: 'Name (A → Z)' },
-      { key: 'created_at', label: 'Created' },
+      { key: "name", label: "Name (A → Z)" },
+      { key: "created_at", label: "Created" },
     ],
-  }
+  };
 
   // ── Kanban stages ─────────────────────────────────────────────────────────────
   const STAGE_STYLE: Record<
     string,
-    Pick<KanbanStageDefinition, 'colorClass' | 'textClass' | 'borderClass' | 'dot'>
+    Pick<
+      KanbanStageDefinition,
+      "colorClass" | "textClass" | "borderClass" | "dot"
+    >
   > = {
-    draft:       { dot: 'bg-slate-400',   colorClass: 'bg-slate-500/10',   textClass: 'text-slate-600',   borderClass: 'border-slate-500/30' },
-    in_progress: { dot: 'bg-blue-500',    colorClass: 'bg-blue-500/10',    textClass: 'text-blue-600',    borderClass: 'border-blue-500/30' },
-    on_hold:     { dot: 'bg-amber-400',   colorClass: 'bg-amber-500/10',   textClass: 'text-amber-600',   borderClass: 'border-amber-500/30' },
-    cancelled:   { dot: 'bg-red-400',     colorClass: 'bg-red-500/10',     textClass: 'text-red-600',     borderClass: 'border-red-500/30' },
-    completed:   { dot: 'bg-emerald-500', colorClass: 'bg-emerald-500/10', textClass: 'text-emerald-600', borderClass: 'border-emerald-500/30' },
-  }
+    draft: {
+      dot: "bg-slate-400",
+      colorClass: "bg-slate-500/10",
+      textClass: "text-slate-600",
+      borderClass: "border-slate-500/30",
+    },
+    in_progress: {
+      dot: "bg-blue-500",
+      colorClass: "bg-blue-500/10",
+      textClass: "text-blue-600",
+      borderClass: "border-blue-500/30",
+    },
+    on_hold: {
+      dot: "bg-amber-400",
+      colorClass: "bg-amber-500/10",
+      textClass: "text-amber-600",
+      borderClass: "border-amber-500/30",
+    },
+    cancelled: {
+      dot: "bg-red-400",
+      colorClass: "bg-red-500/10",
+      textClass: "text-red-600",
+      borderClass: "border-red-500/30",
+    },
+    completed: {
+      dot: "bg-emerald-500",
+      colorClass: "bg-emerald-500/10",
+      textClass: "text-emerald-600",
+      borderClass: "border-emerald-500/30",
+    },
+  };
 
   const kanbanStages = computed<KanbanStageDefinition[]>(() =>
     projectStore.statuses.map((s) => ({
@@ -438,13 +597,19 @@
       color: s.color ?? undefined,
       ...(STAGE_STYLE[s.value] ?? {}),
     })),
-  )
+  );
 
-  const kanbanConfig: KanbanConfig = { perPage: 50 }
-  const kanbanFeatures: KanbanFeatures = { dragDrop: true, intraStageReorder: true }
+  const kanbanConfig: KanbanConfig = { perPage: 50 };
+  const kanbanFeatures: KanbanFeatures = {
+    dragDrop: true,
+    intraStageReorder: true,
+  };
 
-  function isStatusSelected(draft: Record<string, any>, value: string): boolean {
-    return Array.isArray(draft.status) && draft.status.includes(value)
+  function isStatusSelected(
+    draft: Record<string, any>,
+    value: string,
+  ): boolean {
+    return Array.isArray(draft.status) && draft.status.includes(value);
   }
 
   function toggleStatus(
@@ -452,76 +617,111 @@
     on: (key: string, value: any) => void,
     value: string,
   ) {
-    const current: string[] = Array.isArray(draft.status) ? [...draft.status] : []
-    const idx = current.indexOf(value)
-    idx === -1 ? current.push(value) : current.splice(idx, 1)
-    on('status', current.length ? current : null)
+    const current: string[] = Array.isArray(draft.status)
+      ? [...draft.status]
+      : [];
+    const idx = current.indexOf(value);
+    idx === -1 ? current.push(value) : current.splice(idx, 1);
+    on("status", current.length ? current : null);
   }
 
   // ── Kanban events ─────────────────────────────────────────────────────────────
   async function onKanbanMove(event: KanbanMoveEvent<Project>) {
     try {
-      await kanbanApi.move({ model_id: event.item.id, column_id: event.toStage })
-      notify.success('Stage updated', `"${event.item.name}" moved to ${event.toStage}.`)
-      projectStore.fetchStatusCounts(workspaceId.value)
+      await kanbanApi.move({
+        model_id: event.item.id,
+        column_id: event.toStage,
+      });
+      notify.success(
+        "Stage updated",
+        `"${event.item.name}" moved to ${event.toStage}.`,
+      );
+      projectStore.fetchStatusCounts(workspaceId.value);
     } catch (err: unknown) {
-      notify.error('Move failed', err instanceof Error ? err.message : 'Could not move the card.')
-      kanbanRef.value?.refreshColumn(event.fromStage)
-      kanbanRef.value?.refreshColumn(event.toStage)
+      notify.error(
+        "Move failed",
+        err instanceof Error ? err.message : "Could not move the card.",
+      );
+      kanbanRef.value?.refreshColumn(event.fromStage);
+      kanbanRef.value?.refreshColumn(event.toStage);
     }
   }
 
   async function onKanbanReorder(event: KanbanReorderEvent) {
     try {
-      await kanbanApi.reorder({ stage_value: event.stage, ordered_ids: event.orderedIds })
+      await kanbanApi.reorder({
+        stage_value: event.stage,
+        ordered_ids: event.orderedIds,
+      });
     } catch (err: unknown) {
-      notify.error('Reorder failed', err instanceof Error ? err.message : 'Could not save order.')
-      kanbanRef.value?.refreshColumn(event.stage)
+      notify.error(
+        "Reorder failed",
+        err instanceof Error ? err.message : "Could not save order.",
+      );
+      kanbanRef.value?.refreshColumn(event.stage);
     }
   }
 
   // ── CRUD ──────────────────────────────────────────────────────────────────────
   const handleCreate = () =>
-    router.push({ name: 'project-add', params: { workspaceId: workspaceId.value } })
+    router.push({
+      name: "project-add",
+      params: { workspaceId: workspaceId.value },
+    });
 
   // Shallow routes for show / edit
-  const handleView = (id: number) => router.push({ name: 'project-detail', params: { id } })
-  const handleEdit = (id: number) => router.push({ name: 'project-edit', params: { id } })
+  const handleView = (id: number) =>
+    router.push({ name: "project-detail", params: { id } });
+  const handleEdit = (id: number) =>
+    router.push({ name: "project-edit", params: { id } });
 
-  const deleteModalOpen = ref(false)
-  const deleteLoading = ref(false)
-  const projectToDelete = ref<{ id: number; name: string } | null>(null)
+  const deleteModalOpen = ref(false);
+  const deleteLoading = ref(false);
+  const projectToDelete = ref<{ id: number; name: string } | null>(null);
 
   function confirmDeletePrompt(id: number, name: string) {
-    projectToDelete.value = { id, name }
-    deleteModalOpen.value = true
+    projectToDelete.value = { id, name };
+    deleteModalOpen.value = true;
   }
 
   async function confirmDelete() {
-    if (!projectToDelete.value) return
-    deleteLoading.value = true
+    if (!projectToDelete.value) return;
+    deleteLoading.value = true;
     try {
-      await projectStore.deleteProject(projectToDelete.value.id, workspaceId.value)
-      deleteModalOpen.value = false
-      projectToDelete.value = null
-      notify.success('Project deleted', 'The project was removed successfully.', { position: 'bottom-right' })
-      onRefresh()
+      await projectStore.deleteProject(
+        projectToDelete.value.id,
+        workspaceId.value,
+      );
+      deleteModalOpen.value = false;
+      projectToDelete.value = null;
+      notify.success(
+        "Project deleted",
+        "The project was removed successfully.",
+        { position: "bottom-right" },
+      );
+      onRefresh();
     } catch {
-      notify.error('Delete failed', "We couldn't delete the project.", { position: 'bottom-right' })
+      notify.error("Delete failed", "We couldn't delete the project.", {
+        position: "bottom-right",
+      });
     } finally {
-      deleteLoading.value = false
+      deleteLoading.value = false;
     }
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────────
   function formatDate(d: string): string {
-    if (!d) return '—'
-    return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    if (!d) return "—";
+    return new Date(d).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
   }
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────────
   onMounted(async () => {
-    await projectStore.fetchStatuses()
-    projectStore.fetchStatusCounts(workspaceId.value)
-  })
+    await projectStore.fetchStatuses();
+    projectStore.fetchStatusCounts(workspaceId.value);
+  });
 </script>

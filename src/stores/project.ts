@@ -273,8 +273,8 @@ export const useProjectStore = defineStore("project", () => {
     error.value = null;
     try {
       // ✅ PATCH — matches Laravel's shallow apiResource registration
-      const { data } = await axios.patch<{ data: Project }>(
-        `/projects/${id}`,
+      const { data } = await axios.post<{ data: Project }>(
+        `/projects/${id}/update`,
         payload,
       );
       // Keep sidebar list in sync
