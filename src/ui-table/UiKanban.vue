@@ -1,18 +1,20 @@
 <template>
   <div
-    class="kb3-root flex flex-col "
+    class="kb3-root flex flex-col"
     :class="
-      isFullscreen ? 'fixed inset-0 z-50 overflow-hidden' : 'relative h-full border-l border-r border-b rounded-sm'
+      isFullscreen
+        ? 'fixed inset-0 z-50 overflow-hidden'
+        : 'relative h-full border-l border-r border-b rounded-sm'
     "
     style="background: rgb(var(--color-background))"
   >
     <!-- ══════════════════════════════════════════════
          TOOLBAR
     ══════════════════════════════════════════════ -->
-    <div class="shrink-0 flex items-center gap-1.5 px-5 h-11 border-t border-b rounded-sm ">
-      <!-- Left group -->
+    <div
+      class="shrink-0 flex items-center gap-1.5 px-5 h-11 border-t border-b rounded-sm"
+    >
       <div class="flex items-center gap-1">
-        <!-- Collapse / Expand all — single toggle button -->
         <Tooltip>
           <TooltipTrigger as-child>
             <button
@@ -28,8 +30,6 @@
             {{ allExpanded ? "Collapse all" : "Expand all" }}
           </TooltipContent>
         </Tooltip>
-
-        <!-- Density cycle -->
         <Tooltip>
           <TooltipTrigger as-child>
             <button type="button" class="kb3-toolbar-btn" @click="cycleDensity">
@@ -46,7 +46,6 @@
 
       <div class="flex-1" />
 
-      <!-- Search result float -->
       <Transition name="kb3-pop">
         <div
           v-if="searchQuery && searchQuery.trim()"
@@ -58,7 +57,6 @@
         </div>
       </Transition>
 
-      <!-- Right group -->
       <div class="flex items-center gap-1">
         <Tooltip>
           <TooltipTrigger as-child>
@@ -73,7 +71,6 @@
             >Refresh</TooltipContent
           >
         </Tooltip>
-
         <Tooltip>
           <TooltipTrigger as-child>
             <button
@@ -166,12 +163,7 @@
           }"
           @dragenter.prevent="dragOverStage = stage.value"
         >
-          <!-- ═══ HEADER CAP ═══
-               Bold 3-px top border = the color stripe.
-               Gradient tint bg — subtle, not heavy.
-               Icon bubble + label + count pill + action buttons all inline.
-               Rounded top corners only; body is flush below.
-          -->
+          <!-- Header cap -->
           <div
             class="kb3-col-cap shrink-0 flex items-center gap-1.5 px-3 py-2.5"
             :style="{
@@ -182,26 +174,19 @@
               borderRadius: '10px 10px 0 0',
             }"
           >
-            <!-- Icon -->
             <component
               :is="stageIcon(si)"
               class="w-3.5 h-3.5 shrink-0"
               :style="{ color: stageColor(si) }"
             />
-
-            <!-- Label -->
             <span class="flex-1 min-w-0 text-[12px] font-semibold truncate">{{
               stage.label
             }}</span>
-
-            <!-- Spinner while loading -->
             <Loader2
               v-if="col(stage.value).loading"
               class="w-2.5 h-2.5 animate-spin shrink-0"
               :style="{ color: stageColor(si) }"
             />
-
-            <!-- Count / WIP pill -->
             <div
               v-else
               class="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-black leading-none text-white"
@@ -212,8 +197,6 @@
                 >/{{ stage.wipLimit }}</span
               >
             </div>
-
-            <!-- Collapse -->
             <button
               class="w-5 h-5 shrink-0 flex items-center justify-center rounded opacity-50 hover:opacity-100 hover:bg-black/8 transition-all"
               @click.stop="toggleStage(stage.value)"
@@ -222,14 +205,13 @@
             </button>
           </div>
 
-          <!-- ── Column body — neutral bg, rounded bottom corners ── -->
+          <!-- Column body -->
           <div
             class="flex flex-col flex-1 min-h-0 overflow-hidden"
             :style="{
               background: `color-mix(in srgb, ${stageColor(si)} 13%, rgb(var(--color-background)))`,
             }"
           >
-            <!-- Search filter note -->
             <p
               v-if="
                 searchQuery &&
@@ -243,7 +225,6 @@
               {{ col(stage.value).items.length }} shown
             </p>
 
-            <!-- WIP over-limit warning -->
             <div
               v-if="
                 stage.wipLimit &&
@@ -257,7 +238,7 @@
               }}
             </div>
 
-            <!-- ── Scrollable card area ── -->
+            <!-- Scrollable card area -->
             <div
               class="flex-1 min-h-0 overflow-y-auto px-3 pt-2 pb-1 kb3-scroll"
             >
@@ -272,16 +253,15 @@
                 :disabled="
                   features?.dragDrop === false || col(stage.value).loading
                 "
-                :data-stage="stage.value"
                 class="flex flex-col gap-2 min-h-10 rounded-xl"
                 :class="isDragging ? 'kb3-dropzone-active' : ''"
                 :style="{
                   paddingBottom: isDragging ? '88px' : '4px',
                   transition: 'padding-bottom 0.2s ease',
                 }"
-                @update:model-value="(v) => setItems(stage.value, v)"
-                @start="(_e) => onDragStart(stage.value)"
-                @end="onDragEnd"
+                @update:model-value="(v: T[]) => onModelUpdate(stage.value, v)"
+                @start="(e: SortableEvent) => onDragStart(e, stage.value)"
+                @end="(e: SortableEvent) => onDragEnd(e)"
               >
                 <template #item="{ element }">
                   <div
@@ -298,15 +278,12 @@
                       class="kb3-card relative rounded-xl bg-background cursor-grab active:cursor-grabbing"
                       :class="densityPadding"
                     >
-                      <!-- Hover glow -->
                       <div
                         class="kb3-glow"
                         :style="{
                           background: `radial-gradient(ellipse at 20% 50%, ${stageColor(si)}12, transparent 70%)`,
                         }"
                       />
-
-                      <!-- Card actions slot -->
                       <div
                         v-if="$slots['card-actions']"
                         class="absolute top-2 right-2 flex gap-1 z-10 opacity-0 group-hover/card3:opacity-100 transition-opacity duration-150"
@@ -321,7 +298,6 @@
                           :stage-meta="stage"
                         />
                       </div>
-
                       <div class="pl-3">
                         <slot
                           name="card"
@@ -435,7 +411,7 @@
               </draggable>
             </div>
 
-            <!-- ▓▓ Add button — FIXED footer, outside & below the scroll area ▓▓ -->
+            <!-- Add button footer -->
             <div
               class="shrink-0 px-3 py-2 border-t"
               :style="{ borderColor: `${stageColor(si)}25` }"
@@ -470,15 +446,11 @@
   lang="ts"
   generic="T extends { id: number | string; [key: string]: any }"
 >
-  import { computed, reactive, ref, watch } from "vue";
-  import draggable from "vuedraggable";
-
   import {
     Tooltip,
     TooltipContent,
     TooltipTrigger,
   } from "@/components/ui/tooltip";
-
   import {
     AlertCircle,
     CheckCircle2,
@@ -500,8 +472,9 @@
     UnfoldVertical,
     Zap,
   } from "lucide-vue-next";
-
   import type { Component } from "vue";
+  import { computed, reactive, ref, watch } from "vue";
+  import draggable from "vuedraggable";
   import type {
     KanbanBoardFetchFn,
     KanbanBoardFetchParams,
@@ -516,12 +489,15 @@
     UniversalFetchParams,
   } from "./types/universal.types";
 
+  // ── Local types ───────────────────────────────────────────────────────────────
+
   interface SortableEvent {
     from: Element;
     to: Element;
     newIndex: number;
     oldIndex: number;
   }
+
   interface ColumnState {
     items: unknown[];
     loading: boolean;
@@ -531,6 +507,7 @@
     totalPages: number;
     total: number;
   }
+
   interface Props {
     stages: KanbanStageDefinition[];
     boardFetchFn?: KanbanBoardFetchFn<T>;
@@ -547,13 +524,16 @@
     searchQuery: "",
     features: () => ({ dragDrop: true, intraStageReorder: true }),
   });
+
   const emit = defineEmits<{
     (e: "move", event: KanbanMoveEvent<T>): void;
     (e: "reorder", event: KanbanReorderEvent): void;
   }>();
 
   // ── Column state ──────────────────────────────────────────────────────────────
+
   const columnData = reactive<Record<string, ColumnState>>({});
+
   function col(sv: string): ColumnState {
     if (!columnData[sv]) {
       columnData[sv] = {
@@ -568,12 +548,14 @@
     }
     return columnData[sv] as ColumnState;
   }
+
   function colItems(sv: string): T[] {
     return col(sv).items as T[];
   }
   function setItems(sv: string, items: T[]): void {
     col(sv).items = items as unknown[];
   }
+
   function markAllLoading(): void {
     for (const st of props.stages) {
       const c = col(st.value);
@@ -583,6 +565,7 @@
   }
 
   // ── Fetch ─────────────────────────────────────────────────────────────────────
+
   async function boardLoad(): Promise<void> {
     if (!props.boardFetchFn) {
       await perColumnLoad();
@@ -683,11 +666,8 @@
     await Promise.all(props.stages.map((st) => loadColumn(st.value)));
   }
   async function loadAll(): Promise<void> {
-    if (props.boardFetchFn) {
-      await boardLoad();
-    } else {
-      await perColumnLoad();
-    }
+    if (props.boardFetchFn) await boardLoad();
+    else await perColumnLoad();
   }
 
   watch(
@@ -712,6 +692,7 @@
   watch(() => props.externalFilter, scheduleReload, { deep: true });
 
   // ── Search filter ─────────────────────────────────────────────────────────────
+
   function filteredItems(sv: string): T[] {
     const q = (props.searchQuery ?? "").trim().toLowerCase();
     if (!q) return colItems(sv);
@@ -723,11 +704,13 @@
       ),
     );
   }
+
   const searchResultCount = computed<number>(() =>
     props.stages.reduce((n, s) => n + filteredItems(s.value).length, 0),
   );
 
   // ── UI state ──────────────────────────────────────────────────────────────────
+
   type Density = "compact" | "default" | "comfortable";
   const density = ref<Density>("default");
   const isFullscreen = ref<boolean>(false);
@@ -750,15 +733,12 @@
     const order: Density[] = ["compact", "default", "comfortable"];
     density.value = order[(order.indexOf(density.value) + 1) % order.length];
   }
-
   function toggleStage(sv: string): void {
     const next = new Set(collapsedStages.value);
     next.has(sv) ? next.delete(sv) : next.add(sv);
     collapsedStages.value = next;
   }
-
   const allExpanded = computed<boolean>(() => collapsedStages.value.size === 0);
-
   function toggleAllStages(): void {
     if (allExpanded.value) {
       collapsedStages.value = new Set(props.stages.map((s) => s.value));
@@ -767,7 +747,8 @@
     }
   }
 
-  // ── Color resolution ──────────────────────────────────────────────────────────
+  // ── Color / icon helpers ──────────────────────────────────────────────────────
+
   const fallbackColors = [
     "#7c6ff7",
     "#f6a623",
@@ -778,7 +759,6 @@
     "#00c4cc",
     "#8bc34a",
   ];
-
   function stageColor(i: number): string {
     const st = props.stages[i];
     if (st?.color) return st.color;
@@ -786,8 +766,6 @@
       return "#ff5757";
     return fallbackColors[i % fallbackColors.length];
   }
-
-  // ── Stage icons ───────────────────────────────────────────────────────────────
   const iconList: Component[] = [
     ClipboardList,
     Zap,
@@ -800,37 +778,97 @@
   }
 
   // ── Drag & drop ───────────────────────────────────────────────────────────────
+  //
+  // THREE module-level variables — each has a distinct purpose:
+  //
+  //  dragFromStage   Set in onDragStart. The source stage. Never touches DOM.
+  //
+  //  draggedItem     Snapshot of the dragged item captured at ev.oldIndex when
+  //                  drag starts. The source column is intact at that moment,
+  //                  so this is always correct. Used for cross-column moves and
+  //                  the landing animation — avoids needing to look up by index
+  //                  after vuedraggable has mutated the arrays.
+  //
+  //  pendingReorder  Populated by onModelUpdate() when @update:model-value fires
+  //                  DURING a drag. This is the ONLY reliable way to get the new
+  //                  sorted order for same-column reorder because the @end event
+  //                  and @update:model-value event order is NOT guaranteed —
+  //                  @end may fire before the array is updated in the store,
+  //                  so colItems() at @end time could have the OLD order.
+  //                  Capturing it from @update:model-value is always correct.
+  //
+  // We do NOT read ev.from/ev.to.getAttribute('data-stage').
+  // The :data-stage prop binds to the <draggable> Vue component element,
+  // not the underlying DOM node SortableJS reports in its events.
+  // getAttribute() on ev.from / ev.to always returns null for this reason.
+  // We use dragFromStage + dragOverStage (set by @dragenter on the column div) instead.
+
   let dragFromStage: string | null = null;
-  function onDragStart(sv: string): void {
+  let draggedItem: T | null = null;
+  let pendingReorder: { stage: string; ids: (string | number)[] } | null = null;
+
+  /**
+   * Replaces @update:model-value handler on <draggable>.
+   * During an active drag, also captures the new item order for reorder emit.
+   */
+  function onModelUpdate(sv: string, items: T[]): void {
+    setItems(sv, items);
+    if (isDragging.value) {
+      // Always overwrite — the last call before @end is the authoritative order
+      pendingReorder = {
+        stage: sv,
+        ids: items.map((i) => i[props.itemKey] as string | number),
+      };
+    }
+  }
+
+  function onDragStart(ev: SortableEvent, sv: string): void {
     dragFromStage = sv;
+    // Capture item at drag start — ev.oldIndex into source column is always correct here
+    draggedItem = colItems(sv)[ev.oldIndex] ?? null;
     isDragging.value = true;
     dragOverStage.value = sv;
+    pendingReorder = null;
   }
+
   function onDragEnd(ev: SortableEvent): void {
-    const from = ev.from.getAttribute("data-stage") ?? dragFromStage;
-    const to = ev.to.getAttribute("data-stage") ?? from;
+    const from = dragFromStage;
+    const to = dragOverStage.value ?? from;
+
+    // Reset ALL drag state before any conditional return
     dragFromStage = null;
     isDragging.value = false;
-    if (to) {
-      const dropped = colItems(to)[ev.newIndex];
-      if (dropped) {
-        landingCard.value = { id: dropped[props.itemKey] as string | number };
-        setTimeout(() => {
-          landingCard.value = null;
-        }, 400);
-      }
-    }
     dragOverStage.value = null;
-    if (!from || !to) return;
+
+    if (!from || !to) {
+      draggedItem = null;
+      pendingReorder = null;
+      return;
+    }
+
+    // Landing animation — use captured item, not an index lookup
+    if (draggedItem) {
+      landingCard.value = { id: draggedItem[props.itemKey] as string | number };
+      setTimeout(() => {
+        landingCard.value = null;
+      }, 400);
+    }
+
     if (from !== to) {
-      const moved = colItems(to)[ev.newIndex];
+      // ── Cross-column move ──────────────────────────────────────────────────
+      const moved = draggedItem;
+      draggedItem = null;
+      pendingReorder = null;
+
       if (!moved) return;
+
       const stageMeta = props.stages.find((s) => s.value === to);
       if (stageMeta?.wipLimit && colItems(to).length > stageMeta.wipLimit) {
         loadColumn(from);
         loadColumn(to);
         return;
       }
+
       emit("move", {
         item: moved,
         fromStage: from,
@@ -838,16 +876,35 @@
         newIndex: ev.newIndex,
       });
     } else if (props.features?.intraStageReorder !== false) {
-      emit("reorder", {
-        stage: to,
-        orderedIds: colItems(to).map(
-          (i) => i[props.itemKey] as string | number,
-        ),
-      });
+      // ── Same-column reorder ────────────────────────────────────────────────
+      draggedItem = null;
+
+      // Use IDs from pendingReorder (captured in onModelUpdate) — guaranteed correct order.
+      // Falls back to colItems() only as a last resort.
+      const ids =
+        pendingReorder?.ids && pendingReorder.ids.length > 0
+          ? pendingReorder.ids
+          : colItems(to).map((i) => i[props.itemKey] as string | number);
+
+      pendingReorder = null;
+
+      // Never send an empty array to the backend — backend requires ordered_ids
+      if (ids.length === 0) {
+        console.warn("[UiKanban] reorder: 0 IDs — skipping emit");
+        return;
+      }
+
+      // KanbanReorderEvent uses camelCase (orderedIds, stage)
+      // useKanbanApi.handleReorder() maps this to snake_case (ordered_ids, stage_value)
+      emit("reorder", { stage: to, orderedIds: ids });
+    } else {
+      draggedItem = null;
+      pendingReorder = null;
     }
   }
 
   // ── Exposed API ───────────────────────────────────────────────────────────────
+
   const totalItems = computed<number>(() =>
     props.stages.reduce((n, s) => n + colItems(s.value).length, 0),
   );
@@ -878,14 +935,9 @@
   .kb3-scroll {
     scrollbar-width: none;
   }
-
-  /* ── Column layout ─────────────────────────────────────────────────────────── */
   .kb3-col {
     flex: 1 0 272px;
     max-width: 355px;
-    /* Stretch to fill the board row height — no viewport calc needed.
-       The board is flex with min-h-0 so this column fills exactly the
-       remaining space: cap (shrink-0) + scrollable cards (flex-1) + footer (shrink-0) */
     align-self: stretch;
     min-height: 0;
   }
@@ -893,17 +945,9 @@
     min-height: 160px;
     align-self: stretch;
   }
-
-  /* ── Header cap ────────────────────────────────────────────────────────────── */
-  /*
-   * No bottom border — body border picks up seamlessly.
-   * Soft shadow separates it visually from the card list.
-   */
   .kb3-col-cap {
     box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06);
   }
-
-  /* ── Toolbar buttons ───────────────────────────────────────────────────────── */
   .kb3-toolbar-btn {
     display: flex;
     align-items: center;
@@ -921,8 +965,6 @@
     color: rgb(var(--color-foreground));
     background: rgb(var(--color-background) / 0.6);
   }
-
-  /* ── Card ──────────────────────────────────────────────────────────────────── */
   .kb3-card {
     border: 0.1px solid rgb(var(--color-border));
     box-shadow:
@@ -950,8 +992,6 @@
   .kb3-card-wrap:hover .kb3-glow {
     opacity: 1;
   }
-
-  /* ── Add button (pinned footer) ────────────────────────────────────────────── */
   .kb3-add-btn {
     display: flex;
     align-items: center;
@@ -988,8 +1028,6 @@
     background: color-mix(in srgb, var(--ks) 15%, transparent);
     color: var(--ks);
   }
-
-  /* ── Dropzone ──────────────────────────────────────────────────────────────── */
   .kb3-dropzone-active {
     background-image: radial-gradient(
       circle,
@@ -998,8 +1036,6 @@
     );
     background-size: 16px 16px;
   }
-
-  /* ── Drag states ───────────────────────────────────────────────────────────── */
   .kb3-ghost {
     opacity: 0.3 !important;
     background: rgb(var(--color-muted)) !important;
@@ -1025,7 +1061,6 @@
     border-radius: 10px !important;
     transition: none !important;
   }
-
   @keyframes kb3-settle {
     0% {
       transform: translateY(-7px) scale(1.03) rotate(2deg);
@@ -1040,8 +1075,6 @@
   .kb3-land {
     animation: kb3-settle 0.38s cubic-bezier(0.34, 1.6, 0.64, 1) forwards !important;
   }
-
-  /* ── Transitions ───────────────────────────────────────────────────────────── */
   .kb3-fade-enter-active,
   .kb3-fade-leave-active {
     transition:

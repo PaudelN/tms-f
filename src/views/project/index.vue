@@ -298,8 +298,8 @@
           :search-query="searchQuery"
           :external-filter="commonFilter"
           item-key="id"
-          @move="onKanbanMove"
-          @reorder="onKanbanReorder"
+          @move="(e) => api.handleMove(e)"
+          @reorder="(e) => api.handleReorder(e)"
         >
           <template #card="{ item, stageMeta }">
             <ProjectKanbanCard
@@ -399,9 +399,13 @@
 
   import { notify } from "@/helpers/toast";
   import { useProjectStore, type Project } from "@/stores/project";
-  import { useKanbanApi } from "@/ui-table/composables/useKanbanApi";
   import { useUniversalInteractions } from "@/ui-table/composables/useUniversalInteractions";
 
+  import { useWorkspaceStore } from "@/stores/workspace";
+  import {
+    resolveNestedUrl,
+    useKanbanApi,
+  } from "@/ui-table/composables/useKanbanApi";
   import type {
     KanbanBoardFetchParams,
     KanbanConfig,
@@ -425,16 +429,23 @@
   const route = useRoute();
   const router = useRouter();
   const projectStore = useProjectStore();
+  const workspaceStore = useWorkspaceStore();
 
+  const api = useKanbanApi<Project>(
+    resolveNestedUrl(
+      (id) => `workspaces/${id}/projects`,
+      [
+        () => route.params.workspaceId,
+        () => workspaceStore.current?.id,
+        () => projectStore.projects[0]?.workspace_id,
+      ],
+    ),
+  );
   // workspaceId from route param — all nested API calls use this
   const workspaceId = computed(() => Number(route.params.workspaceId));
 
-  const kanbanApi = useKanbanApi<Project>(
-    () => `/workspaces/${workspaceId.value}/projects`,
-  );
-
   // ── View ──────────────────────────────────────────────────────────────────────
-  const currentView = ref<ViewMode>("table");
+  const currentView = ref<ViewMode>("kanban");
   const tableRef = ref();
   const listRef = ref();
   const kanbanRef = ref();
@@ -628,10 +639,7 @@
   // ── Kanban events ─────────────────────────────────────────────────────────────
   async function onKanbanMove(event: KanbanMoveEvent<Project>) {
     try {
-      await kanbanApi.move({
-        model_id: event.item.id,
-        column_id: event.toStage,
-      });
+      await projectStore.moveCard(event, workspaceId.value);
       notify.success(
         "Stage updated",
         `"${event.item.name}" moved to ${event.toStage}.`,
@@ -649,10 +657,7 @@
 
   async function onKanbanReorder(event: KanbanReorderEvent) {
     try {
-      await kanbanApi.reorder({
-        stage_value: event.stage,
-        ordered_ids: event.orderedIds,
-      });
+      await projectStore.reorderCards(event, workspaceId.value);
     } catch (err: unknown) {
       notify.error(
         "Reorder failed",
