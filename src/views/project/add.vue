@@ -14,15 +14,23 @@
       <Card class="border-border rounded-lg">
         <CardHeader class="pb-2 px-5">
           <div class="flex items-center gap-2">
-            <div class="h-7 w-7 rounded-lg bg-primary-20 flex items-center justify-center">
+            <div
+              class="h-7 w-7 rounded-lg bg-primary-20 flex items-center justify-center"
+            >
               <Flashlight class="h-3.5 w-3.5 text-primary" />
             </div>
-            <CardTitle class="text-[13px] font-semibold">Status Guide</CardTitle>
+            <CardTitle class="text-[13px] font-semibold"
+              >Status Guide</CardTitle
+            >
           </div>
         </CardHeader>
         <CardContent class="px-5 pb-5 pt-2 space-y-2.5">
           <div v-if="statusesLoading" class="space-y-2">
-            <div v-for="i in 5" :key="i" class="h-8 bg-muted animate-pulse rounded" />
+            <div
+              v-for="i in 5"
+              :key="i"
+              class="h-8 bg-muted animate-pulse rounded"
+            />
           </div>
           <div
             v-for="s in projectStore.statuses"
@@ -31,8 +39,12 @@
           >
             <span :class="['h-2 w-2 rounded-full shrink-0 mt-1.5', s.dot]" />
             <div>
-              <p class="text-[12px] font-semibold text-foreground">{{ s.label }}</p>
-              <p class="text-[11px] text-muted-foreground leading-relaxed">{{ s.description }}</p>
+              <p class="text-[12px] font-semibold text-foreground">
+                {{ s.label }}
+              </p>
+              <p class="text-[11px] text-muted-foreground leading-relaxed">
+                {{ s.description }}
+              </p>
             </div>
           </div>
         </CardContent>
@@ -50,7 +62,9 @@
               :key="tip"
               class="flex items-start gap-1.5 text-[11px] text-muted-foreground leading-relaxed"
             >
-              <ChevronRight class="h-3 w-3 shrink-0 mt-0.5 text-muted-foreground" />
+              <ChevronRight
+                class="h-3 w-3 shrink-0 mt-0.5 text-muted-foreground"
+              />
               {{ tip }}
             </li>
           </ul>
@@ -64,15 +78,20 @@
         <!-- Header -->
         <div class="px-10 pt-8 pb-6 border-b">
           <div class="flex items-start gap-4">
-            <div class="h-10 w-10 rounded-xl bg-primary-20 flex items-center justify-center shrink-0">
+            <div
+              class="h-10 w-10 rounded-xl bg-primary-20 flex items-center justify-center shrink-0"
+            >
               <CirclePlus class="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h1 class="text-[18px] font-bold tracking-tight text-foreground leading-tight">
+              <h1
+                class="text-[18px] font-bold tracking-tight text-foreground leading-tight"
+              >
                 Add Project
               </h1>
               <p class="text-[13px] text-muted-foreground mt-0.5">
-                Create a new project inside this workspace to organise your team's work.
+                Create a new project inside this workspace to organise your
+                team's work.
               </p>
             </div>
           </div>
@@ -80,7 +99,9 @@
 
         <!-- Name + Status -->
         <div class="px-8 py-8">
-          <div class="grid grid-cols-1 sm:grid-cols-[1fr_200px] gap-3 items-start">
+          <div
+            class="grid grid-cols-1 sm:grid-cols-[1fr_200px] gap-3 items-start"
+          >
             <FormField v-slot="{ componentField, meta: fieldMeta }" name="name">
               <UiFormField
                 label="Project Name"
@@ -104,9 +125,17 @@
                     class="h-10 w-full bg-muted border-border focus:bg-card transition-colors text-[13px]"
                   >
                     <SelectValue placeholder="Select…">
-                      <span v-if="values.status && selectedStatus" class="flex items-center gap-2">
-                        <span class="h-2 w-2 rounded-full shrink-0" :class="selectedStatus.dot" />
-                        <span class="text-[13px]">{{ selectedStatus.label }}</span>
+                      <span
+                        v-if="values.status && selectedStatus"
+                        class="flex items-center gap-2"
+                      >
+                        <span
+                          class="h-2 w-2 rounded-full shrink-0"
+                          :class="selectedStatus.dot"
+                        />
+                        <span class="text-[13px]">{{
+                          selectedStatus.label
+                        }}</span>
                       </span>
                     </SelectValue>
                   </SelectTrigger>
@@ -117,7 +146,10 @@
                       :value="s.value"
                     >
                       <span class="flex items-center gap-2.5 py-0.5">
-                        <span class="h-2 w-2 rounded-full shrink-0" :class="s.dot" />
+                        <span
+                          class="h-2 w-2 rounded-full shrink-0"
+                          :class="s.dot"
+                        />
                         <span class="text-[13px]">{{ s.label }}</span>
                       </span>
                     </SelectItem>
@@ -134,7 +166,9 @@
             <FormField v-slot="{ componentField }" name="visibility">
               <UiFormField label="Visibility" required :icon="Eye">
                 <Select v-bind="componentField">
-                  <SelectTrigger class="h-10 w-full bg-muted border-border focus:bg-card transition-colors text-[13px]">
+                  <SelectTrigger
+                    class="h-10 w-full bg-muted border-border focus:bg-card transition-colors text-[13px]"
+                  >
                     <SelectValue placeholder="Select…" />
                   </SelectTrigger>
                   <SelectContent>
@@ -151,7 +185,11 @@
             </FormField>
 
             <FormField v-slot="{ componentField }" name="start_date">
-              <UiFormField label="Start Date" badge="Optional" :icon="CalendarDays">
+              <UiFormField
+                label="Start Date"
+                badge="Optional"
+                :icon="CalendarDays"
+              >
                 <Input
                   type="date"
                   class="h-10 bg-muted border-border focus-visible:bg-card transition-colors text-[13px]"
@@ -161,7 +199,11 @@
             </FormField>
 
             <FormField v-slot="{ componentField }" name="end_date">
-              <UiFormField label="End Date" badge="Optional" :icon="CalendarDays">
+              <UiFormField
+                label="End Date"
+                badge="Optional"
+                :icon="CalendarDays"
+              >
                 <Input
                   type="date"
                   class="h-10 bg-muted border-border focus-visible:bg-card transition-colors text-[13px]"
@@ -190,7 +232,11 @@
               <template #hint-right>
                 <span
                   class="text-[11px] tabular-nums font-semibold transition-colors duration-200"
-                  :class="(values.description?.length ?? 0) > 900 ? 'text-amber-500' : 'text-muted-foreground'"
+                  :class="
+                    (values.description?.length ?? 0) > 900
+                      ? 'text-amber-500'
+                      : 'text-muted-foreground'
+                  "
                 >
                   {{ values.description?.length ?? 0 }}
                   <span class="text-muted-foreground font-normal">/1000</span>
@@ -205,6 +251,7 @@
 </template>
 
 <script setup lang="ts">
+  import { notify } from "@/helpers/toast";
 import { toTypedSchema } from "@vee-validate/zod";
 import {
   Activity,
@@ -220,13 +267,17 @@ import {
 import { useForm } from "vee-validate";
 import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { notify } from "@/helpers/toast";
 import { z } from "zod";
 
-import type { FormBreadcrumb } from "@/components/common/UiForm.vue";
+  import type { FormBreadcrumb } from "@/components/common/UiForm.vue";
 import UiForm from "@/components/common/UiForm.vue";
 import UiFormField from "@/components/common/UiFormField.vue";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { FormField } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import {
@@ -239,79 +290,80 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useProjectStore } from "@/stores/project";
 
-const route = useRoute();
-const router = useRouter();
-const projectStore = useProjectStore();
+  const route = useRoute();
+  const router = useRouter();
+  const projectStore = useProjectStore();
 
-// workspaceId comes from the nested route: /workspace/:workspaceId/projects/add
-const workspaceId = computed(() => Number(route.params.workspaceId));
+  // workspaceId comes from the nested route: /workspace/:workspaceId/projects/add
+  const workspaceId = computed(() => Number(route.params.workspaceId));
 
-const statusesLoading = ref(true);
+  const statusesLoading = ref(true);
 
-onMounted(async () => {
-  await Promise.all([
-    projectStore.fetchStatuses(),
-    projectStore.fetchVisibilities(),
-  ]);
-  statusesLoading.value = false;
-});
+  onMounted(async () => {
+    await Promise.all([
+      projectStore.fetchStatuses(),
+      projectStore.fetchVisibilities(),
+    ]);
+    statusesLoading.value = false;
+  });
 
-const selectedStatus = computed(() =>
-  projectStore.statuses.find((s) => s.value === values.status),
-);
+  const selectedStatus = computed(() =>
+    projectStore.statuses.find((s) => s.value === values.status),
+  );
 
-const tips = [
-  "Pick a name that clearly communicates the project's goal.",
-  'Set status to "Draft" while planning, switch to "In Progress" when work begins.',
-  "Visibility controls who in the workspace can see this project.",
-  "Start and end dates help with scheduling across the workspace.",
-];
+  const tips = [
+    "Pick a name that clearly communicates the project's goal.",
+    'Set status to "Draft" while planning, switch to "In Progress" when work begins.',
+    "Visibility controls who in the workspace can see this project.",
+    "Start and end dates help with scheduling across the workspace.",
+  ];
 
-const formSchema = toTypedSchema(
-  z.object({
-    name: z
-      .string({ required_error: "Project name is required." })
-      .min(3, "Must be at least 3 characters.")
-      .max(255, "Must not exceed 255 characters."),
-    status: z.string({ required_error: "Please select a status." }),
-    visibility: z.string({ required_error: "Please select visibility." }),
-    start_date: z.string().optional(),
-    end_date: z.string().optional(),
-    description: z.string().max(1000, "Must not exceed 1000 characters.").optional(),
-  }),
-);
+  const formSchema = toTypedSchema(
+    z.object({
+      name: z
+        .string({ required_error: "Project name is required." })
+        .min(3, "Must be at least 3 characters.")
+        .max(255, "Must not exceed 255 characters."),
+      status: z.string({ required_error: "Please select a status." }),
+      visibility: z.string({ required_error: "Please select visibility." }),
+      start_date: z.string().optional(),
+      end_date: z.string().optional(),
+      description: z
+        .string()
+        .max(1000, "Must not exceed 1000 characters.")
+        .optional(),
+    }),
+  );
 
-const { handleSubmit, meta, values } = useForm({
-  validationSchema: formSchema,
-});
+  const { handleSubmit, meta, values } = useForm({
+    validationSchema: formSchema,
+  });
 
-const onSubmit = handleSubmit(async (formValues) => {
-  projectStore.clearError();
-  try {
-    const project = await projectStore.createProject(workspaceId.value, {
-      name: formValues.name,
-      status: formValues.status,
-      visibility: formValues.visibility,
-      start_date: formValues.start_date || undefined,
-      end_date: formValues.end_date || undefined,
-      description: formValues.description || undefined,
-    });
-    notify.success("Project created", `"${project.name}" is now ready to use.`);
-    // Navigate to shallow project detail
-    router.push({ name: "project-detail", params: { id: project.id } });
-  } catch (e) {
-    notify.error("Failed to create project", "Please check the form and try again.");
-    console.error(e);
-  }
-});
+  const onSubmit = handleSubmit(async (formValues) => {
+    projectStore.clearError();
+    try {
+      const project = await projectStore.createProject(workspaceId.value, {
+        name: formValues.name,
+        status: formValues.status,
+        visibility: formValues.visibility,
+        start_date: formValues.start_date || undefined,
+        end_date: formValues.end_date || undefined,
+        description: formValues.description || undefined,
+      });
+      notify.success(
+        "Project created",
+        `"${project.name}" is now ready to use.`,
+      );
+      // Navigate to shallow project detail
+      router.push({ name: "project-detail", params: { id: project.id } });
+    } catch (e) {
+      notify.error(
+        "Failed to create project",
+        "Please check the form and try again.",
+      );
+      console.error(e);
+    }
+  });
 
-const breadcrumbs: FormBreadcrumb[] = [
-  { label: "Workspaces", onClick: () => router.push({ name: "workspace" }) },
-  {
-    label: "Projects",
-    onClick: () =>
-      router.push({ name: "project-index", params: { workspaceId: workspaceId.value } }),
-  },
-  { label: "New Project" },
-];
+  const breadcrumbs: FormBreadcrumb[] = [{ label: "New Project" }];
 </script>

@@ -445,7 +445,7 @@
   const workspaceId = computed(() => Number(route.params.workspaceId));
 
   // ── View ──────────────────────────────────────────────────────────────────────
-  const currentView = ref<ViewMode>("kanban");
+  const currentView = ref<ViewMode>("table");
   const tableRef = ref();
   const listRef = ref();
   const kanbanRef = ref();

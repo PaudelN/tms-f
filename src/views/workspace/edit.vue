@@ -348,15 +348,6 @@
   });
 
   const breadcrumbs = computed<FormBreadcrumb[]>(() => [
-    { label: "Workspaces", onClick: () => router.push({ name: "workspace" }) },
-    {
-      label: workspace.value?.name ?? "Workspace",
-      onClick: () =>
-        router.push({
-          name: "workspace-detail",
-          params: { id: workspace.value?.id },
-        }),
-    },
-    { label: "Edit" },
+    { label: "Edit Workspace" },
   ]);
 </script>
