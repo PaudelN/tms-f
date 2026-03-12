@@ -20,7 +20,7 @@
                   <BreadcrumbLink as-child class="text-[13px] font-medium cursor-pointer">
                     <button
                       type="button"
-                      class="truncate max-w-[180px] text-muted-foreground hover:text-foreground transition-colors"
+                      class="truncate max-w-50 text-muted-foreground hover:text-foreground transition-colors"
                       @click="goToWorkspace"
                     >
                       {{ workspaceStore.activeWorkspace?.name ?? 'Workspaces' }}

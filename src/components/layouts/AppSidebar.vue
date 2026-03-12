@@ -1,6 +1,6 @@
 <template>
   <Sidebar
-    collapsible='icon'
+    collapsible="icon"
     class="border-r border-border/50 bg-sidebar select-none"
   >
     <SidebarHeader class="p-0">
@@ -73,12 +73,20 @@
                   Loading workspaces…
                 </div>
                 <template v-else>
-                  <p
+                  <div
                     v-if="filteredWorkspaces.length === 0"
-                    class="py-6 text-center text-[12px] text-muted-foreground/60"
+                    class="flex flex-col items-center justify-center py-6 text-muted-foreground/60"
                   >
-                    No workspaces found
-                  </p>
+                    <FolderSearch class="h-6 w-6 mb-2 opacity-70" />
+
+                    <p class="text-center text-[12px] font-medium">
+                      No workspaces found
+                    </p>
+
+                    <p class="text-[11px] text-muted-foreground/50">
+                      Try creating a new workspace
+                    </p>
+                  </div>
                   <button
                     v-for="ws in filteredWorkspaces"
                     :key="ws.id"
@@ -209,7 +217,10 @@
         class="flex min-h-0 flex-1 flex-col overflow-hidden px-2 py-2"
       >
         <!-- CHANGE 1: added v-if="workspaceStore.activeWorkspace" — hides Projects label/count/filter/add when no workspace -->
-        <div v-if="workspaceStore.activeWorkspace" class="mb-1 flex h-7 items-center justify-between px-1">
+        <div
+          v-if="workspaceStore.activeWorkspace"
+          class="mb-1 flex h-7 items-center justify-between px-1"
+        >
           <div v-if="!isSidebarCollapsed" class="flex items-center gap-0">
             <Button
               type="button"
@@ -368,12 +379,13 @@
             <CirclePlus class="h-3.5 w-3.5 shrink-0" />
             Add Workspace
           </Button>
-          <p
+          <div
             v-if="!isSidebarCollapsed"
-            class="px-2 py-2 text-[11px] text-muted-foreground/50"
+            class="flex flex-col items-center justify-center gap-2 py-4 text-muted-foreground/60"
           >
-            No workspace selected
-          </p>
+            <FolderX class="h-5 w-5 opacity-70" />
+            <p class="text-[11px] text-center">No workspace selected</p>
+          </div>
         </SidebarGroupContent>
 
         <SidebarGroupContent
@@ -464,11 +476,10 @@
                 </SidebarMenuButton>
 
                 <SidebarMenuAction
-                  class="right-0.5 text-muted-foreground/30 opacity-0 transition-opacity hover:text-muted-foreground group-hover/item:opacity-100"
+                  class="right-0.5 text-muted-foreground/30 cursor-pointer"
                   @click.stop="openContextMenu(project, $event)"
                 >
                   <MoreHorizontal class="h-3.5 w-3.5" />
-                  <span class="sr-only">Options</span>
                 </SidebarMenuAction>
               </SidebarMenuItem>
             </template>
@@ -550,6 +561,8 @@
     CirclePlus,
     Eye,
     FolderOpen,
+    FolderSearch,
+    FolderX,
     Funnel,
     LayoutDashboard,
     Loader2,
@@ -656,6 +669,7 @@
   async function selectWorkspace(ws: Workspace) {
     wsOpen.value = false;
     wsSearch.value = "";
+    // fetchWorkspace calls setActiveWorkspace internally which stamps lastSelectedAt
     await workspaceStore.fetchWorkspace(ws.id);
     await loadProjects(ws.id);
     router.push({ name: "project-index", params: { workspaceId: ws.id } });
@@ -854,12 +868,29 @@
         ? Number(rawParam[0])
         : Number(rawParam)
       : null;
-    const wsId = workspaceStore.activeWorkspace?.id ?? routeWsId;
+
+    // If the persisted selection is older than 30 days, wipe it so the user
+    // is not silently dropped into a stale workspace on their next visit.
+    if (workspaceStore.isPersistedWorkspaceExpired) {
+      workspaceStore.clearActiveWorkspace();
+    }
+
+    // Priority: store (hydrated from persisted state) > URL param
+    const persistedWsId = workspaceStore.activeWorkspace?.id ?? null;
+    const wsId = routeWsId ?? persistedWsId;
 
     if (wsId) {
-      if (!workspaceStore.activeWorkspace)
-        await workspaceStore.fetchWorkspace(wsId).catch(() => {});
+      // Re-fetch to get fresh data; also re-stamps lastSelectedAt via setActiveWorkspace
+      await workspaceStore.fetchWorkspace(wsId).catch(() => {});
       await loadProjects(wsId);
+
+      // Restore navigation context when opening a fresh tab with no URL workspace
+      if (!routeWsId && persistedWsId && route.name === "dashboard") {
+        router.replace({
+          name: "project-index",
+          params: { workspaceId: wsId },
+        });
+      }
     }
   });
 
