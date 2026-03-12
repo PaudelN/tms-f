@@ -59,7 +59,7 @@ const routes: RouteRecordRaw[] = [
 
       // ── Projects ───────────────────────────────────────────────
       //
-      // Shallow routing — mirrors the backend:
+      // Shallow routing — mirrors the backend apiResource shallow():
       //
       //   NESTED (workspace context required):
       //     index  → /workspace/:workspaceId/projects
@@ -69,39 +69,76 @@ const routes: RouteRecordRaw[] = [
       //     detail → /projects/:id
       //     edit   → /projects/:id/edit
       //
-      // This matches:
-      //   GET    /workspaces/{workspace}/projects   → index  (nested)
-      //   POST   /workspaces/{workspace}/projects   → store  (nested)
-      //   GET    /projects/{project}                → show   (shallow)
-      //   PATCH  /projects/{project}                → update (shallow)
-      //   DELETE /projects/{project}                → destroy (shallow)
       {
-        // Project list scoped to a workspace (table / list / kanban)
-        // workspaceId is passed as route param — projectStore.fetchProjects({ workspaceId })
         path: "workspace/:workspaceId/projects",
         name: "project-index",
         component: () => import("@/views/project/index.vue"),
       },
       {
-        // Create project inside a workspace
-        // workspaceId from route param → projectStore.createProject(workspaceId, payload)
         path: "workspace/:workspaceId/projects/add",
         name: "project-add",
         component: () => import("@/views/project/add.vue"),
       },
       {
-        // Project detail — shallow, only project id needed
-        // projectStore.fetchProject(id) — workspace data returned in project.workspace
         path: "projects/:id",
         name: "project-detail",
         component: () => import("@/views/project/detail.vue"),
       },
       {
-        // Edit project — shallow, only project id needed
-        // projectStore.updateProject(id, payload)
         path: "projects/:id/edit",
         name: "project-edit",
         component: () => import("@/views/project/edit.vue"),
+      },
+
+      // ── Pipelines ──────────────────────────────────────────────
+      //
+      // Shallow routing — mirrors backend projects.pipelines shallow():
+      //
+      // Hierarchy: Workspace → Project → Pipeline → PipelineStage (next)
+      //
+      //   NESTED (project context required — creation & listing):
+      //     index  → /projects/:projectId/pipelines
+      //     add    → /projects/:projectId/pipelines/add
+      //
+      //   SHALLOW (only pipeline id needed):
+      //     detail → /pipelines/:id
+      //     edit   → /pipelines/:id/edit
+      //
+      // URL design mirrors the backend:
+      //   GET    /projects/{project}/pipelines        → index  (nested)
+      //   POST   /projects/{project}/pipelines        → store  (nested)
+      //   GET    /pipelines/{pipeline}                → show   (shallow)
+      //   POST   /pipelines/{pipeline}/update         → update (shallow, CORS-safe POST)
+      //   DELETE /pipelines/{pipeline}                → destroy (shallow)
+      //
+      // Note: No kanban routes — pipelines use list / table only.
+      {
+        // Pipeline list scoped to a project
+        // projectId from route param → pipelineStore.fetchPipelines({ projectId })
+        path: "projects/:projectId/pipelines",
+        name: "pipeline-index",
+        component: () => import("@/views/pipeline/index.vue"),
+      },
+      {
+        // Create pipeline inside a project
+        // projectId from route param → pipelineStore.createPipeline(projectId, payload)
+        path: "projects/:projectId/pipelines/add",
+        name: "pipeline-add",
+        component: () => import("@/views/pipeline/add.vue"),
+      },
+      {
+        // Pipeline detail — shallow, only pipeline id needed
+        // pipelineStore.fetchPipeline(id) — project + workspace data returned in pipeline.project
+        path: "pipelines/:id",
+        name: "pipeline-detail",
+        component: () => import("@/views/pipeline/detail.vue"),
+      },
+      {
+        // Edit pipeline — shallow, only pipeline id needed
+        // pipelineStore.updatePipeline(id, payload)
+        path: "pipelines/:id/edit",
+        name: "pipeline-edit",
+        component: () => import("@/views/pipeline/edit.vue"),
       },
     ],
   },
