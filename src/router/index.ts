@@ -140,6 +140,40 @@ const routes: RouteRecordRaw[] = [
         name: "pipeline-edit",
         component: () => import("@/views/pipeline/edit.vue"),
       },
+      // ── Pipeline Stages ────────────────────────────────────────────────────
+      //
+      // Hierarchy: Workspace → Project → Pipeline → PipelineStage → Task
+      //
+      // Shallow routing — mirrors backend pipelines.stages shallow():
+      //
+      //   NESTED (pipeline context required — listing & creation):
+      //     index  → /pipelines/:pipelineId/stages
+      //     add    → /pipelines/:pipelineId/stages/add
+      //
+      //   SHALLOW (only stage id needed):
+      //     detail → /stages/:id
+      //     edit   → /stages/:id/edit
+      //
+      {
+        path: "pipelines/:pipelineId/stages",
+        name: "pipeline-stage-index",
+        component: () => import("@/views/pipelineStages/index.vue"),
+      },
+      {
+        path: "pipelines/:pipelineId/stages/add",
+        name: "pipeline-stage-add",
+        component: () => import("@/views/pipelineStages/add.vue"),
+      },
+      {
+        path: "stages/:id",
+        name: "pipeline-stage-detail",
+        component: () => import("@/views/pipelineStages/detail.vue"),
+      },
+      {
+        path: "stages/:id/edit",
+        name: "pipeline-stage-edit",
+        component: () => import("@/views/pipelineStages/edit.vue"),
+      },
     ],
   },
 

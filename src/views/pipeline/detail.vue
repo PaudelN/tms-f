@@ -38,7 +38,7 @@
         </div>
       </div>
 
-      <!-- Stages placeholder — coming next phase -->
+      <!-- Stages list -->
       <div class="space-y-2.5">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
@@ -53,16 +53,91 @@
               {{ pipeline.stages_count }}
             </span>
           </div>
+          <!-- View all → stage index -->
+          <button
+            v-if="pipeline?.stages_count && pipeline.stages_count > 0"
+            type="button"
+            class="text-[11px] font-semibold text-primary hover:underline underline-offset-2 transition-colors"
+            @click="goToStages"
+          >
+            View all
+          </button>
         </div>
-        <div class="rounded-lg border border-dashed border-border/60 bg-muted/10 px-4 py-6 flex flex-col items-center gap-2 text-center">
-          <Layers class="h-7 w-7 text-muted-foreground/25" />
-          <p class="text-[12px] font-medium text-muted-foreground/50">
-            Pipeline stages coming soon
-          </p>
-          <p class="text-[11px] text-muted-foreground/40">
-            Stages let you define the steps tasks move through in this pipeline.
-          </p>
-        </div>
+
+        <!-- Populated list — up to 5 stages shown inline -->
+        <template v-if="pipeline?.stages && pipeline.stages.length > 0">
+          <div class="space-y-1.5">
+            <div
+              v-for="stage in pipeline.stages.slice(0, 5)"
+              :key="stage.id"
+              class="group flex items-center gap-3 rounded-lg border border-border/40 bg-muted/10 px-3 py-2.5 cursor-pointer hover:bg-muted/30 hover:border-border/70 transition-all duration-150"
+              @click="goToStage(stage.id)"
+            >
+              <!-- Color swatch -->
+              <div
+                class="h-7 w-7 rounded-lg flex items-center justify-center shrink-0 border border-border/30"
+                :style="stage.color ? `background:${stage.color}22` : undefined"
+                :class="!stage.color ? 'bg-muted' : ''"
+              >
+                <span
+                  class="text-[11px] font-bold"
+                  :style="stage.color ? `color:${stage.color}` : undefined"
+                  :class="!stage.color ? 'text-muted-foreground' : ''"
+                >
+                  {{ stage.display_label.charAt(0).toUpperCase() }}
+                </span>
+              </div>
+
+              <div class="flex-1 min-w-0">
+                <p class="text-[13px] font-medium text-foreground truncate">
+                  {{ stage.display_label }}
+                </p>
+                <p class="text-[10px] text-muted-foreground font-mono truncate">
+                  order: {{ stage.display_order }}
+                  <span v-if="stage.wip_limit"> · WIP: {{ stage.wip_limit }}</span>
+                </p>
+              </div>
+
+              <!-- Status badge -->
+              <span
+                class="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full border shrink-0"
+                :class="stage.status.badge"
+              >
+                <span class="h-1.5 w-1.5 rounded-full" :class="stage.status.dot" />
+                {{ stage.status.label }}
+              </span>
+
+              <!-- Chevron hint -->
+              <ChevronRight
+                class="h-3.5 w-3.5 text-muted-foreground/40 group-hover:text-muted-foreground shrink-0 transition-colors"
+              />
+            </div>
+          </div>
+
+          <!-- Overflow hint when more than 5 stages exist -->
+          <button
+            v-if="(pipeline?.stages_count ?? 0) > 5"
+            type="button"
+            class="w-full text-center text-[11px] font-medium text-muted-foreground hover:text-foreground py-1.5 rounded-lg hover:bg-muted/20 transition-colors"
+            @click="goToStages"
+          >
+            + {{ (pipeline.stages_count ?? 0) - 5 }} more stages — view all
+          </button>
+        </template>
+
+        <!-- Empty state CTA -->
+        <template v-else>
+          <div
+            class="rounded-lg border border-dashed border-border/60 bg-muted/10 px-4 py-6 flex flex-col items-center gap-2 text-center cursor-pointer hover:bg-muted/20 transition-colors"
+            @click="goToAddStage"
+          >
+            <Layers class="h-7 w-7 text-muted-foreground/25" />
+            <p class="text-[12px] font-medium text-muted-foreground/50">No stages yet</p>
+            <p class="text-[11px] text-muted-foreground/40">
+              Click to add the first stage to this pipeline.
+            </p>
+          </div>
+        </template>
       </div>
     </template>
 
@@ -79,6 +154,7 @@
 import {
   AlignLeft,
   CalendarDays,
+  ChevronRight,
   Clock,
   FolderKanban,
   Layers,
@@ -96,8 +172,8 @@ import type {
   BreadcrumbItem,
   MetaField,
 } from "@/components/common/UiDetail.vue";
-import UiDetail from "@/components/common/UiDetail.vue";
-import { notify }          from "@/helpers/toast";
+import UiDetail         from "@/components/common/UiDetail.vue";
+import { notify }       from "@/helpers/toast";
 import { usePipelineStore } from "@/stores/pipeline";
 
 const route         = useRoute();
@@ -110,8 +186,7 @@ const deleteLoading   = ref(false);
 // Shallow route: /pipelines/:id
 const pipeline = computed(() => pipelineStore.activePipeline);
 
-// ── Status helpers ────────────────────────────────────────────────────────────
-// Status may arrive as integer or full object — normalise both shapes.
+// ── Status helpers ─────────────────────────────────────────────────────────────
 
 function extractStatusValue(status: any): number | null {
   if (status == null)             return null;
@@ -124,8 +199,7 @@ function extractStatusLabel(status: any): string {
   if (typeof status === "object" && "label" in status) return status.label;
   const val   = extractStatusValue(status);
   const found = pipelineStore.statuses.find((s) => s.value === val);
-  if (found) return found.label;
-  return String(val);
+  return found?.label ?? String(val);
 }
 
 const currentStatusObj = computed(() => {
@@ -133,7 +207,8 @@ const currentStatusObj = computed(() => {
   return pipelineStore.statuses.find((s) => s.value === val);
 });
 
-// ── Status badge (header chip) ────────────────────────────────────────────────
+// ── Status badge (header chip) ─────────────────────────────────────────────────
+
 const statusBadge = computed(() => {
   if (!currentStatusObj.value) return undefined;
   return {
@@ -143,7 +218,8 @@ const statusBadge = computed(() => {
   };
 });
 
-// ── Breadcrumbs ───────────────────────────────────────────────────────────────
+// ── Breadcrumbs ────────────────────────────────────────────────────────────────
+
 const breadcrumbs = computed<BreadcrumbItem[]>(() => {
   const p = pipeline.value;
   return [
@@ -165,27 +241,26 @@ const breadcrumbs = computed<BreadcrumbItem[]>(() => {
     {
       label:   p?.project?.name ?? "Project",
       onClick: () => {
-        if (p?.project?.id) {
+        if (p?.project?.id)
           router.push({ name: "project-detail", params: { id: p.project.id } });
-        }
       },
     },
     {
       label:   "Pipelines",
       onClick: () => {
-        if (p?.project?.id) {
+        if (p?.project?.id)
           router.push({ name: "pipeline-index", params: { projectId: p.project.id } });
-        }
       },
     },
     { label: p?.name ?? "Pipeline" },
   ];
 });
 
-// ── Actions ───────────────────────────────────────────────────────────────────
+// ── Actions ────────────────────────────────────────────────────────────────────
+
 const actions = computed<ActionButton[]>(() => [
-  { id: "refresh", label: "Refresh",  icon: RefreshCcw, onClick: handleRefresh },
-  { id: "edit",    label: "Edit",     icon: SquarePen,  onClick: handleEdit },
+  { id: "refresh", label: "Refresh", icon: RefreshCcw, onClick: handleRefresh },
+  { id: "edit",    label: "Edit",    icon: SquarePen,  onClick: handleEdit },
   {
     id:      "delete",
     label:   "Delete",
@@ -195,7 +270,8 @@ const actions = computed<ActionButton[]>(() => [
   },
 ]);
 
-// ── Meta fields ───────────────────────────────────────────────────────────────
+// ── Meta fields ────────────────────────────────────────────────────────────────
+
 function formatDate(d: string | null | undefined): string {
   if (!d) return "—";
   return new Date(d).toLocaleDateString("en-US", {
@@ -211,7 +287,7 @@ const metaFields = computed<MetaField[]>(() => [
       ? {
           initials: pipeline.value.creator.name.charAt(0).toUpperCase(),
           name:     pipeline.value.creator.name,
-          sub:      pipeline.value.creator.email,
+          sub:      pipeline.value.creator.email ?? "",
         }
       : undefined,
   },
@@ -257,14 +333,16 @@ const metaFields = computed<MetaField[]>(() => [
   },
 ]);
 
-// ── Delete dialog ─────────────────────────────────────────────────────────────
+// ── Delete dialog ──────────────────────────────────────────────────────────────
+
 const deleteDialog = {
   title:        "Delete Pipeline",
   description:  "This action cannot be undone.",
   confirmLabel: "Delete Pipeline",
 };
 
-// ── Lifecycle ─────────────────────────────────────────────────────────────────
+// ── Lifecycle ──────────────────────────────────────────────────────────────────
+
 onMounted(async () => {
   const id = Number(route.params.id);
   if (!id || isNaN(id)) { router.push({ name: "workspace" }); return; }
@@ -274,7 +352,8 @@ onMounted(async () => {
   ]);
 });
 
-// ── Handlers ─────────────────────────────────────────────────────────────────
+// ── Handlers ──────────────────────────────────────────────────────────────────
+
 function handleEdit() {
   router.push({ name: "pipeline-edit", params: { id: pipeline.value?.id } });
 }
@@ -282,6 +361,28 @@ function handleEdit() {
 async function handleRefresh() {
   const id = Number(route.params.id);
   if (id) await pipelineStore.fetchPipeline(id);
+}
+
+function goToStages() {
+  if (pipeline.value?.id) {
+    router.push({
+      name:   "pipeline-stage-index",
+      params: { pipelineId: pipeline.value.id },
+    });
+  }
+}
+
+function goToStage(stageId: number) {
+  router.push({ name: "pipeline-stage-detail", params: { id: stageId } });
+}
+
+function goToAddStage() {
+  if (pipeline.value?.id) {
+    router.push({
+      name:   "pipeline-stage-add",
+      params: { pipelineId: pipeline.value.id },
+    });
+  }
 }
 
 async function confirmDelete() {
