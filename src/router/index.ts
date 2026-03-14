@@ -174,6 +174,21 @@ const routes: RouteRecordRaw[] = [
         name: "pipeline-stage-edit",
         component: () => import("@/views/pipelineStages/edit.vue"),
       },
+      {
+        path: "/pipelines/:pipelineId/tasks/add",
+        name: "task-add",
+        component: () => import("@/views/task/add.vue"),
+      },
+      {
+        path: "/tasks/:id",
+        name: "task-detail",
+        component: () => import("@/views/task/detail.vue"),
+      },
+      {
+        path: "/tasks/:id/edit",
+        name: "task-edit",
+        component: () => import("@/views/task/edit.vue"),
+      },
     ],
   },
 
