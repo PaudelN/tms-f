@@ -157,6 +157,27 @@ export const usePipelineStore = defineStore("pipeline", () => {
     return data;
   }
 
+  async function fetchStagesForKanban(
+    pipelineId: number,
+  ): Promise<PipelineStagePreview[]> {
+    try {
+      const { data } = await axios.get<{ data: PipelineStagePreview[] }>(
+        `/pipelines/${pipelineId}/stages`,
+        {
+          params: {
+            per_page: 200,
+            sort_by: "display_order",
+            sort_order: "asc",
+          },
+        },
+      );
+      return data.data ?? [];
+    } catch (err) {
+      console.error("[PipelineStore] fetchStagesForKanban failed:", err);
+      return [];
+    }
+  }
+
   /**
    * GET /pipelines/{id}   — shallow
    */
@@ -325,6 +346,7 @@ export const usePipelineStore = defineStore("pipeline", () => {
 
     // Actions
     fetchPipelines,
+    fetchStagesForKanban,
     fetchPipeline,
     fetchStatusCounts,
     createPipeline,
