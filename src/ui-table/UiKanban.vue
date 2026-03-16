@@ -4,7 +4,7 @@
     :class="
       isFullscreen
         ? 'fixed inset-0 z-50 overflow-hidden'
-        : 'relative h-full border-l border-r border-b rounded-sm'
+        : 'relative h-full px-8 rounded-sm'
     "
     style="background: rgb(var(--color-background))"
   >
@@ -12,7 +12,7 @@
          TOOLBAR
     ══════════════════════════════════════════════ -->
     <div
-      class="shrink-0 flex items-center gap-1.5 px-5 h-11 border-t border-b rounded-sm"
+      class="shrink-0 flex items-center gap-1.5 px-5 h-11 border rounded-sm"
     >
       <div class="flex items-center gap-1">
         <Tooltip>
