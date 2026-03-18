@@ -7,11 +7,9 @@
     <!-- ══════════════════════════════════════════════════════════
          STICKY HEADER
     ══════════════════════════════════════════════════════════ -->
-    <header
-      class="ui-list-header shrink-0 sticky top-0 z-30 border border-border bg-card"
-    >
+    <header class="shrink-0 sticky top-0 z-30 border border-border bg-card">
       <!-- Top row: 7 controls in a single clean bar -->
-      <div class="flex items-center gap-1 px-3 py-2 border-b border-border/50">
+      <div class="flex items-center gap-1 px-3 py-2 border-b border-border shadow-xs">
         <!-- ① Info -->
         <TooltipProvider :delay-duration="120">
           <Tooltip>
@@ -917,11 +915,6 @@
   /* ═══════════════════════════════════════════════════
    HEADER
 ═══════════════════════════════════════════════════ */
-  .ui-list-header {
-    box-shadow:
-      0 1px 0 rgb(var(--color-border)),
-      0 2px 8px -2px rgba(0, 0, 0, 0.06);
-  }
 
   .ui-hbtn {
     display: inline-flex;
