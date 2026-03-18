@@ -194,7 +194,6 @@
                 </Tooltip>
               </template>
 
-              <!-- Expanded: no Tooltip, no tooltip mount at all -->
               <template v-else>
                 <SidebarMenuButton
                   class="h-9 rounded-xl transition-colors cursor-pointer gap-2.5 px-3"
@@ -240,7 +239,7 @@
                 <Plus class="h-3.5 w-3.5" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="right" class="text-xs font-medium"
+            <TooltipContent side="top" class="text-xs font-medium"
               >New project</TooltipContent
             >
           </Tooltip>
@@ -286,7 +285,7 @@
                     <Plus class="h-3.5 w-3.5" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="left" class="text-xs font-medium"
+                <TooltipContent side="top" class="text-xs font-medium"
                   >New project</TooltipContent
                 >
               </Tooltip>
@@ -309,7 +308,7 @@
                     <FolderSearch class="h-3.5 w-3.5" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="right" class="text-xs font-medium"
+                <TooltipContent side="top" class="text-xs font-medium"
                   >View projects</TooltipContent
                 >
               </Tooltip>
@@ -407,14 +406,7 @@
                         </span>
                       </button>
 
-                      <!-- Task count -->
-                      <span
-                        v-if="getProjectTaskCount(project.id) > 0"
-                        class="shrink-0 px-1 text-[9.5px] font-bold text-muted-foreground/40"
-                        >{{ getProjectTaskCount(project.id) }}</span
-                      >
-
-                      <!-- ··· context — Popover, NOT DropdownMenu -->
+                      <!-- ··· context — Popover -->
                       <Popover
                         :open="ctxOpenId === project.id"
                         @update:open="
@@ -444,14 +436,11 @@
                             class="px-3 py-2.5 border-b border-border/40 bg-gradient-to-b from-muted/40 to-transparent"
                           >
                             <div class="flex items-center gap-2">
-                              <!-- Project Avatar -->
                               <div
                                 class="h-6 w-6 rounded-md bg-primary/10 flex items-center justify-center text-[11px] font-semibold text-primary"
                               >
                                 {{ project.name.charAt(0) }}
                               </div>
-
-                              <!-- Project Name -->
                               <p
                                 class="text-[13px] font-semibold text-foreground truncate"
                               >
@@ -462,14 +451,12 @@
 
                           <!-- Menu -->
                           <div class="p-1.5">
-                            <!-- Quick Actions Label -->
                             <p
                               class="px-2 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wide"
                             >
                               Actions
                             </p>
 
-                            <!-- Primary Actions -->
                             <div class="space-y-0.5">
                               <button
                                 type="button"
@@ -506,12 +493,10 @@
                               </button>
                             </div>
 
-                            <!-- Divider -->
                             <div
                               class="my-2 h-px bg-gradient-to-r from-transparent via-border/40 to-transparent"
                             ></div>
 
-                            <!-- Boards Section -->
                             <p
                               class="px-2 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wide"
                             >
@@ -548,7 +533,6 @@
                               </button>
                             </div>
 
-                            <!-- Divider -->
                             <div
                               class="my-2 h-px bg-linear-to-r from-transparent via-border/40 to-transparent"
                             ></div>
@@ -557,7 +541,7 @@
                       </Popover>
                     </div>
 
-                    <!-- ── Boards / Pipelines ── -->
+                    <!-- ── Pipelines (flat list, no stages) ── -->
                     <CollapsibleContent>
                       <!-- Pipeline loading -->
                       <div
@@ -583,58 +567,34 @@
                         </div>
 
                         <template v-else>
-                          <!-- Each board / pipeline -->
-                          <Collapsible
+                          <!-- Each pipeline — flat row, no collapsible, no stages -->
+                          <div
                             v-for="pipeline in projectPipelines.get(project.id)"
                             :key="pipeline.id"
-                            :open="expandedPipelines.has(pipeline.id)"
-                            @update:open="
-                              (v) => onPipelineOpenChange(pipeline, v)
+                            class="group/board flex items-center ml-5 rounded-lg transition-colors cursor-pointer"
+                            :class="
+                              isActivePipeline(pipeline.id)
+                                ? 'bg-primary/7 text-primary'
+                                : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                            "
+                            @click="
+                              router.push({
+                                name: 'pipeline-index',
+                                params: { projectId: project.id },
+                              })
                             "
                           >
-                            <!-- Board row -->
-                            <div
-                              class="group/board flex items-center ml-5 rounded-lg transition-colors"
-                              :class="
-                                isActivePipeline(pipeline.id)
-                                  ? 'bg-primary/7 text-primary'
-                                  : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-                              "
+                            <button
+                              type="button"
+                              class="flex flex-1 items-center gap-1.5 h-7 px-2 min-w-0 text-left"
                             >
-                              <CollapsibleTrigger as-child>
-                                <button
-                                  type="button"
-                                  class="flex h-7 w-5 shrink-0 items-center justify-center text-muted-foreground/30 hover:text-muted-foreground transition-colors"
-                                  @click.stop
-                                >
-                                  <ChevronRight
-                                    class="h-2.5 w-2.5 transition-transform duration-200"
-                                    :class="
-                                      expandedPipelines.has(pipeline.id)
-                                        ? 'rotate-90'
-                                        : ''
-                                    "
-                                  />
-                                </button>
-                              </CollapsibleTrigger>
-                              <button
-                                type="button"
-                                class="flex flex-1 items-center gap-1.5 h-7 min-w-0 text-left"
-                                @click="
-                                  router.push({
-                                    name: 'pipeline-detail',
-                                    params: { id: pipeline.id },
-                                  })
-                                "
+                              <Kanban class="h-3 w-3 shrink-0 opacity-60" />
+                              <span
+                                class="truncate text-[12px] font-medium text-foreground/80"
+                                >{{ pipeline.name }}</span
                               >
-                                <Kanban class="h-3 w-3 shrink-0 opacity-60" />
-                                <span
-                                  class="truncate text-[12px] font-medium text-foreground/80"
-                                  >{{ pipeline.name }}</span
-                                >
-                              </button>
-                            </div>
-                          </Collapsible>
+                            </button>
+                          </div>
 
                           <div
                             class="flex items-center gap-1.5 ml-5 px-2 py-1 rounded-lg text-[10.5px] font-medium text-muted-foreground/40 hover:text-primary hover:bg-accent transition-colors cursor-pointer"
@@ -657,7 +617,6 @@
                 <SidebarMenuItem
                   class="flex justify-between items-center mt-10"
                 >
-                  <!-- ── Expanded sidebar: pill buttons with icon + label ── -->
                   <template v-if="!isSidebarCollapsed"> </template>
 
                   <template v-else>
@@ -706,7 +665,6 @@
            FOOTER
       ══════════════════════════════ -->
       <SidebarFooter class="p-0">
-        <!-- Settings -->
         <div class="px-2 pt-1 pb-0">
           <Tooltip>
             <TooltipTrigger as-child>
@@ -739,7 +697,7 @@
           </Tooltip>
         </div>
 
-        <!-- User — Popover, NOT DropdownMenu -->
+        <!-- User popover -->
         <Popover v-model:open="userMenuOpen">
           <PopoverTrigger as-child>
             <button
@@ -920,7 +878,6 @@
 
   import { useAuthStore } from "@/stores/auth";
   import { usePipelineStore } from "@/stores/pipeline";
-  import { usePipelineStageStore } from "@/stores/pipelineStages";
   import { useProjectStore, type Project } from "@/stores/project";
   import { useWorkspaceStore, type Workspace } from "@/stores/workspace";
 
@@ -930,7 +887,6 @@
   const workspaceStore = useWorkspaceStore();
   const projectStore = useProjectStore();
   const pipelineStore = usePipelineStore();
-  const pipelineStageStore = usePipelineStageStore();
   const authStore = useAuthStore();
 
   const { state: sidebarState } = useSidebar();
@@ -978,54 +934,23 @@
   }
 
   function handleNav(entity: string): void {
-    if (entity === "dashboard") {
-      router.push({ name: "dashboard" });
-      return;
-    }
-    if (entity === "inbox") {
-      router.push({ name: "inbox" });
-      return;
-    }
-    if (entity === "analytics") {
-      router.push({ name: "analytics" });
-      return;
-    }
+    if (entity === "dashboard") { router.push({ name: "dashboard" }); return; }
+    if (entity === "inbox") { router.push({ name: "inbox" }); return; }
+    if (entity === "analytics") { router.push({ name: "analytics" }); return; }
     if (entity === "mytasks") {
       if (workspaceStore.activeWorkspace)
-        router.push({
-          name: "my-tasks",
-          params: { workspaceId: workspaceStore.activeWorkspace.id },
-        });
+        router.push({ name: "my-tasks", params: { workspaceId: workspaceStore.activeWorkspace.id } });
       return;
     }
   }
 
   // ── Colors ────────────────────────────────────────────────────────────────────
-  const WS_PALETTE = [
-    "#7C3AED",
-    "#2563EB",
-    "#059669",
-    "#D97706",
-    "#DC2626",
-    "#0891B2",
-    "#DB2777",
-    "#0F766E",
-  ];
-  const PROJ_PALETTE = [
-    "#7c6cfa",
-    "#34c77b",
-    "#f5a623",
-    "#4a9eff",
-    "#f05252",
-    "#9d7cfa",
-    "#0891B2",
-    "#DB2777",
-  ];
+  const WS_PALETTE = ["#7C3AED","#2563EB","#059669","#D97706","#DC2626","#0891B2","#DB2777","#0F766E"];
+  const PROJ_PALETTE = ["#7c6cfa","#34c77b","#f5a623","#4a9eff","#f05252","#9d7cfa","#0891B2","#DB2777"];
 
   function hashColor(name: string, palette: string[]): string {
     let h = 0;
-    for (let i = 0; i < name.length; i++)
-      h = name.charCodeAt(i) + ((h << 5) - h);
+    for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
     return palette[Math.abs(h) % palette.length];
   }
   const getWsColor = (n: string) => hashColor(n, WS_PALETTE);
@@ -1035,20 +960,11 @@
     () => workspaceStore.activeWorkspace?.name?.charAt(0).toUpperCase() ?? "W",
   );
   const wsAvatarColor = computed(() =>
-    workspaceStore.activeWorkspace
-      ? getWsColor(workspaceStore.activeWorkspace.name)
-      : "#7C3AED",
+    workspaceStore.activeWorkspace ? getWsColor(workspaceStore.activeWorkspace.name) : "#7C3AED",
   );
   const userInitials = computed(() => {
     const name = authStore.user?.name ?? "";
-    return (
-      name
-        .split(" ")
-        .map((n: string) => n[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2) || "U"
-    );
+    return name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2) || "U";
   });
 
   // ── Workspace switcher ────────────────────────────────────────────────────────
@@ -1059,9 +975,7 @@
     wsOpen.value = false;
     await workspaceStore.fetchWorkspace(ws.id);
     expandedProjects.value = new Set();
-    expandedPipelines.value = new Set();
     projectPipelines.value = new Map();
-    pipelineStages.value = new Map();
     router.push({ name: "project-index", params: { workspaceId: ws.id } });
   }
 
@@ -1076,28 +990,9 @@
   // ── Project tree state ────────────────────────────────────────────────────────
   const projectsLoading = ref(false);
   const expandedProjects = ref<Set<number>>(new Set());
-  const expandedPipelines = ref<Set<number>>(new Set());
   const pipelinesLoading = ref<Set<number>>(new Set());
-  const stagesLoading = ref<Set<number>>(new Set());
-  const projectPipelines = ref<Map<number, { id: number; name: string }[]>>(
-    new Map(),
-  );
-  const pipelineStages = ref<
-    Map<
-      number,
-      { id: number; name: string; color: string | null; tasks_count?: number }[]
-    >
-  >(new Map());
+  const projectPipelines = ref<Map<number, { id: number; name: string }[]>>(new Map());
   const ctxOpenId = ref<number | null>(null);
-
-  function getProjectTaskCount(projectId: number): number {
-    const pls = projectPipelines.value.get(projectId) ?? [];
-    let total = 0;
-    for (const p of pls)
-      for (const s of pipelineStages.value.get(p.id) ?? [])
-        total += s.tasks_count ?? 0;
-    return total;
-  }
 
   async function loadProjects(): Promise<void> {
     if (!workspaceStore.activeWorkspace) return;
@@ -1109,19 +1004,13 @@
         perPage: 100,
       });
       projectStore.projects = res.data ?? [];
-    } catch {
-      /**/
-    } finally {
+    } catch { /**/ } finally {
       projectsLoading.value = false;
     }
   }
 
   async function loadPipelinesForProject(projectId: number): Promise<void> {
-    if (
-      projectPipelines.value.has(projectId) ||
-      pipelinesLoading.value.has(projectId)
-    )
-      return;
+    if (projectPipelines.value.has(projectId) || pipelinesLoading.value.has(projectId)) return;
     pipelinesLoading.value = new Set([...pipelinesLoading.value, projectId]);
     try {
       const res = await pipelineStore.fetchPipelines({
@@ -1135,19 +1024,10 @@
       });
       projectPipelines.value = new Map([
         ...projectPipelines.value,
-        [
-          projectId,
-          (res.data ?? []).map((p: any) => ({
-            id: p.id as number,
-            name: p.name as string,
-          })),
-        ],
+        [projectId, (res.data ?? []).map((p: any) => ({ id: p.id as number, name: p.name as string }))],
       ]);
     } catch {
-      projectPipelines.value = new Map([
-        ...projectPipelines.value,
-        [projectId, []],
-      ]);
+      projectPipelines.value = new Map([...projectPipelines.value, [projectId, []]]);
     } finally {
       const next = new Set(pipelinesLoading.value);
       next.delete(projectId);
@@ -1155,44 +1035,6 @@
     }
   }
 
-  async function loadStagesForPipeline(pipelineId: number): Promise<void> {
-    if (
-      pipelineStages.value.has(pipelineId) ||
-      stagesLoading.value.has(pipelineId)
-    )
-      return;
-    stagesLoading.value = new Set([...stagesLoading.value, pipelineId]);
-    try {
-      const res = await pipelineStageStore.fetchStages({
-        pipelineId,
-        page: 1,
-        perPage: 20,
-      });
-      pipelineStages.value = new Map([
-        ...pipelineStages.value,
-        [
-          pipelineId,
-          (res.data ?? []).map((s: any) => ({
-            id: s.id as number,
-            name: s.name as string,
-            color: s.color ?? null,
-            tasks_count: s.tasks_count,
-          })),
-        ],
-      ]);
-    } catch {
-      pipelineStages.value = new Map([
-        ...pipelineStages.value,
-        [pipelineId, []],
-      ]);
-    } finally {
-      const next = new Set(stagesLoading.value);
-      next.delete(pipelineId);
-      stagesLoading.value = next;
-    }
-  }
-
-  // Expand + navigate immediately on project click
   function onProjectOpenChange(project: Project, open: boolean): void {
     const next = new Set(expandedProjects.value);
     if (open) {
@@ -1200,18 +1042,6 @@
       loadPipelinesForProject(project.id);
     } else next.delete(project.id);
     expandedProjects.value = next;
-  }
-
-  function onPipelineOpenChange(
-    pipeline: { id: number; name: string },
-    open: boolean,
-  ): void {
-    const next = new Set(expandedPipelines.value);
-    if (open) {
-      next.add(pipeline.id);
-      loadStagesForPipeline(pipeline.id);
-    } else next.delete(pipeline.id);
-    expandedPipelines.value = next;
   }
 
   // ── Active state helpers ──────────────────────────────────────────────────────
@@ -1226,25 +1056,10 @@
     const name = String(route.name ?? "");
     return (
       (name.startsWith("pipeline") && _id("id") === id) ||
-      ((name.startsWith("task") || name.startsWith("pipeline-stage")) &&
-        _id("pipelineId") === id)
-    );
-  }
-  function isActivePipelineDetail(id: number): boolean {
-    return route.name === "pipeline-detail" && _id("id") === id;
-  }
-  function isActiveTaskRoute(id: number): boolean {
-    return (
-      String(route.name ?? "").startsWith("task") && _id("pipelineId") === id
-    );
-  }
-  function isActiveStageRoute(id: number): boolean {
-    return (
-      String(route.name ?? "").startsWith("pipeline-stage") && _id("id") === id
+      ((name.startsWith("task") || name.startsWith("pipeline-stage")) && _id("pipelineId") === id)
     );
   }
 
-  // Navigate + expand simultaneously
   function navigateToProject(project: Project): void {
     router.push({ name: "project-detail", params: { id: project.id } });
     const next = new Set(expandedProjects.value);
@@ -1255,19 +1070,13 @@
 
   function addProject(): void {
     if (workspaceStore.activeWorkspace)
-      router.push({
-        name: "project-add",
-        params: { workspaceId: workspaceStore.activeWorkspace.id },
-      });
+      router.push({ name: "project-add", params: { workspaceId: workspaceStore.activeWorkspace.id } });
     else router.push({ name: "workspace" });
   }
 
   function viewProject(): void {
     if (workspaceStore.activeWorkspace)
-      router.push({
-        name: "project-index",
-        params: { workspaceId: workspaceStore.activeWorkspace.id },
-      });
+      router.push({ name: "project-index", params: { workspaceId: workspaceStore.activeWorkspace.id } });
     else router.push({ name: "workspace" });
   }
 
@@ -1294,9 +1103,7 @@
     workspacesLoading.value = true;
     try {
       await workspaceStore.fetchWorkspaces({ page: 1, perPage: 100 });
-    } catch {
-      /**/
-    } finally {
+    } catch { /**/ } finally {
       workspacesLoading.value = false;
     }
     await projectStore.fetchStatuses().catch(() => {});
@@ -1307,9 +1114,7 @@
     () => workspaceStore.activeWorkspace?.id,
     () => {
       projectPipelines.value = new Map();
-      pipelineStages.value = new Map();
       expandedProjects.value = new Set();
-      expandedPipelines.value = new Set();
       loadProjects();
     },
   );

@@ -330,9 +330,10 @@
     const ws = Array.isArray(wsId)
       ? wsId[0]
       : (wsId ?? workspaceStore.activeWorkspace?.id ?? "x");
-    return `${String(route.name ?? "page")}-ws-${ws}`;
+    const projectId = route.params.projectId ?? ""; 
+    const pipelineId = route.params.pipelineId ?? ""; 
+    return `${String(route.name ?? "page")}-ws-${ws}-p-${projectId}-pl-${pipelineId}`;
   });
-
   const routeName = computed(() => String(route.name ?? ""));
 
   const breadcrumb = computed(() => {
