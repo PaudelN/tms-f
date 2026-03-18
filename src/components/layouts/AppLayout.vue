@@ -1,618 +1,465 @@
 <template>
   <TooltipProvider :delay-duration="0">
-    <!--
-      SidebarProvider defaults:
-        --sidebar-width:      16rem  (256px) — expanded
-        --sidebar-width-icon: 3rem   (48px)  — collapsed icon-only
-      We set icon width to 52px to match our nav items.
-      Do NOT override --sidebar-width here or expansion breaks.
-    -->
-    <!--
-      h-screen on SidebarProvider sets the root height anchor.
-      Every descendant that needs to fill height uses flex + min-h-0.
-    -->
-    <SidebarProvider class="h-screen overflow-hidden" style="--sidebar-width-icon: 52px;">
+    <SidebarProvider
+      class="h-screen overflow-hidden"
+      style="--sidebar-width: 224px; --sidebar-width-icon: 50px"
+    >
+      <AppSidebar />
 
-      <AppSidebar
-        :active-entity-sidebar="activeEntitySidebar"
-        @entity-select="handleEntitySelect"
-      />
+      <SidebarInset class="flex flex-col min-w-0 h-screen overflow-hidden">
+        <header
+          class="bg-sidebar border-b shrink-0 flex h-11 items-center gap-2 px-3 z-20"
+          style="box-shadow: 0 1px 0 rgb(var(--color-border) / 0.25)"
+        >
+          <!-- Left: sidebar toggle + breadcrumb -->
+          <div class="flex items-center gap-1.5 min-w-0 flex-1">
+            <SidebarTrigger
+              class="flex items-center justify-center h-7 w-7 shrink-0 rounded-lg text-muted-foreground/70 transition-colors duration-100 hover:bg-accent hover:text-foreground"
+            />
 
-      <!--
-        SidebarInset fills the space right of the icon rail.
-        flex-row: entity panel + main column sit side-by-side.
-        overflow-hidden: children control their own scroll.
-      -->
-      <SidebarInset class="flex flex-row min-w-0 h-screen overflow-hidden">
-
-        <!-- ── Entity sidebar: Projects ───────────────────────── -->
-        <Transition name="es">
-          <ProjectSidebar
-            v-if="activeEntitySidebar === 'projects'"
-            @close="closeEntitySidebar"
-          />
-        </Transition>
-
-        <!-- ── Entity sidebar: Tasks ──────────────────────────── -->
-        <Transition name="es">
-          <TaskSidebar
-            v-if="activeEntitySidebar === 'tasks'"
-            @close="closeEntitySidebar"
-          />
-        </Transition>
-
-        <!--
-          Main column: header (shrink-0) + page (flex-1 min-h-0).
-          min-w-0 prevents flex child from overflowing its container.
-          overflow-hidden here; the inner page div does its own overflow-auto.
-        -->
-        <div class="flex flex-col flex-1 min-w-0 min-h-0 overflow-hidden">
-
-          <!-- ── Header ──────────────────────────────────────── -->
-          <header
-            class="layout-header flex h-11 shrink-0 items-center gap-2 border-b border-border bg-background/95 backdrop-blur-sm px-3 z-20"
-          >
-            <div class="flex items-center gap-2 min-w-0 flex-1">
-
-              <!-- Sidebar open/close toggle -->
-              <SidebarTrigger
-                class="h-7 w-7 shrink-0 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-              />
-
-              <Separator
-                orientation="vertical"
-                class="data-[orientation=vertical]:h-4 opacity-30 mx-0.5 shrink-0"
-              />
-
-              <!-- Breadcrumb -->
-              <nav class="flex items-center gap-1 min-w-0 flex-nowrap overflow-hidden" aria-label="Breadcrumb">
-
-                <button
-                  type="button"
-                  class="bc-btn"
-                  :class="!breadcrumb.project && !breadcrumb.pipeline && !breadcrumb.stage ? 'bc-btn--leaf' : ''"
-                  @click="goToWorkspace"
-                >
-                  <span class="h-2 w-2 rounded-sm shrink-0" :style="{ backgroundColor: wsAvatarColor }" />
-                  {{ workspaceStore.activeWorkspace?.name ?? "Workspaces" }}
-                </button>
-
-                <template v-if="breadcrumb.project">
-                  <ChevronRight class="h-3 w-3 shrink-0 text-border" />
-                  <button
-                    type="button"
-                    class="bc-btn"
-                    :class="!breadcrumb.pipeline && !breadcrumb.stage ? 'bc-btn--leaf' : ''"
-                    @click="goToProject"
-                  >{{ breadcrumb.project.name }}</button>
-                </template>
-
-                <template v-if="breadcrumb.showPipelinesIndex && !breadcrumb.pipeline">
-                  <ChevronRight class="h-3 w-3 shrink-0 text-border" />
-                  <span class="bc-btn bc-btn--leaf">
-                    <GitBranch class="h-3 w-3 shrink-0 opacity-60" />
-                    Pipelines
-                  </span>
-                </template>
-
-                <template v-if="breadcrumb.pipeline">
-                  <ChevronRight class="h-3 w-3 shrink-0 text-border" />
-                  <button
-                    type="button"
-                    class="bc-btn"
-                    :class="!breadcrumb.stage ? 'bc-btn--leaf' : ''"
-                    @click="goToPipeline"
-                  >
-                    <GitBranch class="h-3 w-3 shrink-0 opacity-50" />
-                    {{ breadcrumb.pipeline.name }}
-                  </button>
-                </template>
-
-                <template v-if="breadcrumb.stage">
-                  <ChevronRight class="h-3 w-3 shrink-0 text-border" />
-                  <span class="bc-btn bc-btn--leaf">
-                    <span
-                      v-if="breadcrumb.stage.color"
-                      class="h-2 w-2 rounded-full shrink-0"
-                      :style="`background:${breadcrumb.stage.color}`"
-                    />
-                    <Layers2 v-else class="h-3 w-3 shrink-0 opacity-50" />
-                    <span class="max-w-[100px] truncate">{{ breadcrumb.stage.displayLabel }}</span>
-                  </span>
-                </template>
-
-                <template v-if="breadcrumb.addLabel">
-                  <ChevronRight class="h-3 w-3 shrink-0 text-border" />
-                  <span class="bc-btn bc-btn--leaf">{{ breadcrumb.addLabel }}</span>
-                </template>
-
-              </nav>
-            </div>
-
-            <!-- Right actions -->
-            <div class="flex items-center gap-1 shrink-0">
-
-              <!-- Context nav pill (pipeline routes) -->
-              <div
-                v-if="contextNav.show"
-                class="hidden sm:flex items-center gap-px bg-muted rounded-lg p-1 mr-1"
-              >
-                <button
-                  v-for="item in contextNav.items"
-                  :key="item.label"
-                  type="button"
-                  class="flex items-center gap-1.5 rounded-md px-2.5 py-[5px] text-[11.5px] font-medium transition-all duration-150"
-                  :class="item.active
-                    ? 'bg-background shadow-sm text-foreground'
-                    : 'text-muted-foreground hover:text-foreground'"
-                  @click="item.onClick"
-                >
-                  <component :is="item.icon" class="h-3 w-3 shrink-0" />
-                  {{ item.label }}
-                </button>
-              </div>
-
-              <div class="w-px h-4 bg-border shrink-0 mx-0.5" />
-
-              <!-- Theme toggle -->
+            <nav
+              class="flex items-center gap-0.5 min-w-0 flex-nowrap overflow-hidden"
+              aria-label="Breadcrumb"
+            >
               <button
                 type="button"
-                class="header-btn"
-                :title="isDark ? 'Light mode' : 'Dark mode'"
-                @click="toggleMode"
+                class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[12px] font-medium text-muted-foreground/70 cursor-pointer whitespace-nowrap transition-colors duration-100 max-w-[120px] overflow-hidden text-ellipsis hover:bg-accent hover:text-foreground"
+                :class="
+                  !breadcrumb.project &&
+                  !breadcrumb.pipeline &&
+                  !breadcrumb.stage
+                    ? 'text-foreground font-semibold cursor-default hover:bg-transparent'
+                    : ''
+                "
+                @click="goToWorkspace"
               >
-                <Sun v-if="isDark" class="h-3.5 w-3.5" />
-                <Moon v-else class="h-3.5 w-3.5" />
+                <span
+                  class="h-1.5 w-1.5 rounded-sm shrink-0"
+                  :style="{ backgroundColor: wsAvatarColor }"
+                />
+                <span class="truncate max-w-[80px]">{{
+                  workspaceStore.activeWorkspace?.name ?? "Home"
+                }}</span>
               </button>
 
-              <button type="button" class="header-btn px-2.5 text-[12px] font-medium">
-                Invite
-              </button>
+              <template v-if="breadcrumb.project">
+                <ChevronRight
+                  class="h-3 w-3 shrink-0 text-muted-foreground/30"
+                />
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[12px] font-medium text-muted-foreground/70 cursor-pointer whitespace-nowrap transition-colors duration-100 max-w-[120px] overflow-hidden text-ellipsis hover:bg-accent hover:text-foreground"
+                  :class="
+                    !breadcrumb.pipeline && !breadcrumb.stage
+                      ? 'text-foreground font-semibold cursor-default hover:bg-transparent'
+                      : ''
+                  "
+                  @click="goToProject"
+                >
+                  <span class="truncate max-w-[80px]">{{
+                    breadcrumb.project.name
+                  }}</span>
+                </button>
+              </template>
 
-              <button
-                type="button"
-                class="flex items-center gap-1.5 h-7 px-3 rounded-md text-[12px] font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-                @click="handleNewTask"
+              <template
+                v-if="breadcrumb.showPipelinesIndex && !breadcrumb.pipeline"
               >
-                <Plus class="h-3.5 w-3.5" />
-                New Task
-              </button>
-            </div>
-          </header>
+                <ChevronRight
+                  class="h-3 w-3 shrink-0 text-muted-foreground/30"
+                />
+                <span
+                  class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[12px] font-semibold text-foreground cursor-default whitespace-nowrap"
+                  >Boards</span
+                >
+              </template>
 
-          <!--
-            Page content: flex-1 means "take all remaining height after the header".
-            min-h-0 breaks the default flex min-height:auto so the div can actually
-            shrink and scroll — without this, content overflows and looks half-cut.
-            overflow-auto lets the page scroll internally.
-          -->
-          <div class="flex-1 min-h-0 overflow-auto w-full">
-            <RouterView :key="routeKey" />
+              <template v-if="breadcrumb.pipeline">
+                <ChevronRight
+                  class="h-3 w-3 shrink-0 text-muted-foreground/30"
+                />
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[12px] font-medium text-muted-foreground/70 cursor-pointer whitespace-nowrap transition-colors duration-100 max-w-[120px] overflow-hidden text-ellipsis hover:bg-accent hover:text-foreground"
+                  :class="
+                    !breadcrumb.stage
+                      ? 'text-foreground font-semibold cursor-default hover:bg-transparent'
+                      : ''
+                  "
+                  @click="goToPipeline"
+                >
+                  <span class="truncate max-w-[80px]">{{
+                    breadcrumb.pipeline.name
+                  }}</span>
+                </button>
+              </template>
+
+              <template v-if="breadcrumb.stage">
+                <ChevronRight
+                  class="h-3 w-3 shrink-0 text-muted-foreground/30"
+                />
+                <span
+                  class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[12px] font-semibold text-foreground cursor-default whitespace-nowrap"
+                >
+                  <span
+                    v-if="breadcrumb.stage.color"
+                    class="h-1.5 w-1.5 rounded-full shrink-0"
+                    :style="`background:${breadcrumb.stage.color}`"
+                  />
+                  <span class="max-w-[80px] truncate">{{
+                    breadcrumb.stage.displayLabel
+                  }}</span>
+                </span>
+              </template>
+
+              <template v-if="breadcrumb.addLabel">
+                <ChevronRight
+                  class="h-3 w-3 shrink-0 text-muted-foreground/30"
+                />
+                <span
+                  class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[12px] font-semibold text-foreground cursor-default whitespace-nowrap"
+                  >{{ breadcrumb.addLabel }}</span
+                >
+              </template>
+            </nav>
           </div>
 
+          <!-- Center: search -->
+          <div
+            class="hidden md:flex items-center gap-2 h-7 rounded-[9px] px-2.5 w-52 cursor-text bg-muted/50 border border-border/40 transition-[border-color,background] duration-150 focus-within:border-primary/40 focus-within:bg-background"
+          >
+            <IconSearch class="h-3.5 w-3.5 shrink-0 text-muted-foreground/50" />
+            <input
+              placeholder="Search…"
+              class="flex-1 bg-transparent text-[12px] text-foreground placeholder:text-muted-foreground/50 outline-none"
+            />
+            <kbd
+              class="hidden sm:block text-[9px] font-bold text-muted-foreground/30"
+              >⌘K</kbd
+            >
+          </div>
+
+          <!-- Right -->
+          <div class="flex items-center gap-1 shrink-0">
+            <!-- Pipeline view tabs -->
+            <div
+              v-if="contextNav.show"
+              class="hidden sm:flex items-center gap-px bg-muted/60 border border-border/40 rounded-[9px] p-0.5 mr-1"
+            >
+              <button
+                v-for="item in contextNav.items"
+                :key="item.label"
+                type="button"
+                class="flex items-center gap-1.5 px-2.5 py-1 rounded-[7px] text-[11.5px] font-medium text-muted-foreground transition-all duration-150 cursor-pointer hover:text-foreground"
+                :class="
+                  item.active
+                    ? 'bg-background text-foreground shadow-[0_1px_3px_rgb(0_0_0/0.06)]'
+                    : ''
+                "
+                @click="item.onClick"
+              >
+                <component :is="item.icon" class="h-3 w-3 shrink-0" />
+                {{ item.label }}
+              </button>
+            </div>
+
+            <!-- Theme toggle -->
+            <Tooltip>
+              <TooltipTrigger as-child>
+                <button
+                  type="button"
+                  class="inline-flex items-center justify-center h-7 min-w-7 rounded-lg text-muted-foreground/70 bg-transparent cursor-pointer transition-colors duration-100 relative hover:bg-accent hover:text-foreground"
+                  @click="toggleMode"
+                >
+                  <IconSun v-if="isDark" class="h-3.5 w-3.5" />
+                  <IconMoon v-else class="h-3.5 w-3.5" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent class="text-xs">{{
+                isDark ? "Light mode" : "Dark mode"
+              }}</TooltipContent>
+            </Tooltip>
+
+            <!-- Notifications -->
+            <Tooltip>
+              <TooltipTrigger as-child>
+                <button
+                  type="button"
+                  class="inline-flex items-center justify-center h-7 min-w-7 rounded-lg text-muted-foreground/70 bg-transparent cursor-pointer transition-colors duration-100 relative hover:bg-accent hover:text-foreground"
+                >
+                  <IconBell class="h-3.5 w-3.5" />
+                  <span
+                    class="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-destructive"
+                  />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent class="text-xs">Notifications</TooltipContent>
+            </Tooltip>
+          </div>
+        </header>
+
+        <div class="flex-1 min-h-0 flex flex-col overflow-hidden w-full">
+          <RouterView :key="routeKey" />
         </div>
       </SidebarInset>
-
     </SidebarProvider>
   </TooltipProvider>
 </template>
 
 <script setup lang="ts">
-import {
-  ChevronRight, GitBranch, Layers2, LayoutList,
-  Moon, Plus, Sun,
-} from "lucide-vue-next"
-import { computed, onMounted, ref, watch } from "vue"
-import { RouterView, useRoute, useRouter } from "vue-router"
-import { useColorMode } from "@vueuse/core"
+  import { useColorMode } from "@vueuse/core";
+  import { ChevronRight } from "lucide-vue-next";
+  import { computed, defineComponent, h, onMounted, watch } from "vue";
+  import { RouterView, useRoute, useRouter } from "vue-router";
 
-import { Separator }                                         from "@/components/ui/separator"
-import { SidebarInset, SidebarProvider, SidebarTrigger }    from "@/components/ui/sidebar"
-import { TooltipProvider }                                   from "@/components/ui/tooltip"
+  import {
+    SidebarInset,
+    SidebarProvider,
+    SidebarTrigger,
+  } from "@/components/ui/sidebar";
+  import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+  } from "@/components/ui/tooltip";
 
-import AppSidebar      from "@/components/layouts/AppSidebar.vue"
-import ProjectSidebar  from "@/views/project/common/ProjectSidebar.vue"
-import TaskSidebar     from "@/views/task/common/TaskSidebar.vue"
+  import AppSidebar from "@/components/layouts/AppSidebar.vue";
 
-import { usePipelineStore }      from "@/stores/pipeline"
-import { usePipelineStageStore } from "@/stores/pipelineStages"
-import { useProjectStore }       from "@/stores/project"
-import { useWorkspaceStore }     from "@/stores/workspace"
+  import { usePipelineStore } from "@/stores/pipeline";
+  import { usePipelineStageStore } from "@/stores/pipelineStages";
+  import { useProjectStore } from "@/stores/project";
+  import { useWorkspaceStore } from "@/stores/workspace";
 
-// ── Routing ───────────────────────────────────────────────────────────────────
-const router             = useRouter()
-const route              = useRoute()
-const workspaceStore     = useWorkspaceStore()
-const projectStore       = useProjectStore()
-const pipelineStore      = usePipelineStore()
-const pipelineStageStore = usePipelineStageStore()
+  const IconSun = defineComponent({
+    render: () =>
+      h(
+        "svg",
+        { width: 14, height: 14, viewBox: "0 0 20 20", fill: "currentColor" },
+        [
+          h("path", {
+            "fill-rule": "evenodd",
+            d: "M10 2a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1zm4 8a4 4 0 1 1-8 0 4 4 0 0 1 8 0zm-.464 4.95.707.707a1 1 0 0 0 1.414-1.414l-.707-.707a1 1 0 0 0-1.414 1.414zm2.12-10.607a1 1 0 0 1 0 1.414l-.706.707a1 1 0 1 1-1.414-1.414l.707-.707a1 1 0 0 1 1.414 0zM17 11a1 1 0 1 0 0-2h-1a1 1 0 1 0 0 2h1zm-7 4a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0v-1a1 1 0 0 1 1-1zM5.05 6.464A1 1 0 1 0 6.465 5.05l-.708-.707a1 1 0 0 0-1.414 1.414l.707.707zm1.414 8.486-.707.707a1 1 0 0 1-1.414-1.414l.707-.707a1 1 0 0 1 1.414 1.414zM4 11a1 1 0 1 0 0-2H3a1 1 0 0 0 0 2h1z",
+            "clip-rule": "evenodd",
+          }),
+        ],
+      ),
+  });
+  const IconMoon = defineComponent({
+    render: () =>
+      h(
+        "svg",
+        { width: 14, height: 14, viewBox: "0 0 20 20", fill: "currentColor" },
+        [
+          h("path", {
+            d: "M17.293 13.293A8 8 0 0 1 6.707 2.707a8.001 8.001 0 1 0 10.586 10.586z",
+          }),
+        ],
+      ),
+  });
+  const IconBell = defineComponent({
+    render: () =>
+      h(
+        "svg",
+        { width: 14, height: 14, viewBox: "0 0 20 20", fill: "currentColor" },
+        [
+          h("path", {
+            d: "M10 2a6 6 0 0 0-6 6v3.586l-.707.707A1 1 0 0 0 4 14h12a1 1 0 0 0 .707-1.707L16 11.586V8a6 6 0 0 0-6-6zM10 18a3 3 0 0 1-3-3h6a3 3 0 0 1-3 3z",
+          }),
+        ],
+      ),
+  });
+  const IconSearch = defineComponent({
+    render: () =>
+      h(
+        "svg",
+        { width: 14, height: 14, viewBox: "0 0 20 20", fill: "currentColor" },
+        [
+          h("path", {
+            "fill-rule": "evenodd",
+            d: "M8 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM2 8a6 6 0 1 1 10.89 3.476l4.817 4.817a1 1 0 0 1-1.414 1.414l-4.816-4.816A6 6 0 0 1 2 8z",
+            "clip-rule": "evenodd",
+          }),
+        ],
+      ),
+  });
 
-// ── Theme ─────────────────────────────────────────────────────────────────────
-const mode = useColorMode({
-  selector: "html", attribute: "class",
-  modes: { light: "light", dark: "dark" },
-  initialValue: "light", storageKey: "theme-mode",
-})
-const isDark = computed(() => mode.value === "dark")
-function toggleMode() { mode.value = isDark.value ? "light" : "dark" }
+  const router = useRouter();
+  const route = useRoute();
+  const workspaceStore = useWorkspaceStore();
+  const projectStore = useProjectStore();
+  const pipelineStore = usePipelineStore();
+  const pipelineStageStore = usePipelineStageStore();
 
-// ── Workspace avatar colour (for breadcrumb pip) ──────────────────────────────
-function getWsColor(name: string): string {
-  const p = ["#7C3AED","#2563EB","#059669","#D97706","#DC2626","#0891B2","#DB2777","#0F766E"]
-  let h = 0
-  for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h)
-  return p[Math.abs(h) % p.length]
-}
-const wsAvatarColor = computed(() =>
-  workspaceStore.activeWorkspace ? getWsColor(workspaceStore.activeWorkspace.name) : "#7C3AED"
-)
+  const mode = useColorMode({
+    selector: "html",
+    attribute: "class",
+    modes: { light: "light", dark: "dark" },
+    initialValue: "light",
+    storageKey: "theme-mode",
+  });
+  const isDark = computed(() => mode.value === "dark");
+  function toggleMode() {
+    mode.value = isDark.value ? "light" : "dark";
+  }
 
-// ── Route key ─────────────────────────────────────────────────────────────────
-const routeKey = computed(() => {
-  const p = route.params.workspaceId
-  return `ws-${Array.isArray(p) ? p[0] : (p ?? workspaceStore.activeWorkspace?.id ?? "x")}`
-})
+  const WS_PALETTE = [
+    "#7C3AED",
+    "#2563EB",
+    "#059669",
+    "#D97706",
+    "#DC2626",
+    "#0891B2",
+    "#DB2777",
+    "#0F766E",
+  ];
+  function hashColor(name: string): string {
+    let h = 0;
+    for (let i = 0; i < name.length; i++)
+      h = name.charCodeAt(i) + ((h << 5) - h);
+    return WS_PALETTE[Math.abs(h) % WS_PALETTE.length];
+  }
+  const wsAvatarColor = computed(() =>
+    workspaceStore.activeWorkspace
+      ? hashColor(workspaceStore.activeWorkspace.name)
+      : "#7C3AED",
+  );
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-function getParam(key: string): number | null {
-  const raw = route.params[key]
-  const n = Number(Array.isArray(raw) ? raw[0] : raw)
-  return isNaN(n) || n === 0 ? null : n
-}
+  const routeKey = computed(() => {
+    const wsId = route.params.workspaceId;
+    const ws = Array.isArray(wsId)
+      ? wsId[0]
+      : (wsId ?? workspaceStore.activeWorkspace?.id ?? "x");
+    return `${String(route.name ?? "page")}-ws-${ws}`;
+  });
 
-// ── Entity sidebar state ──────────────────────────────────────────────────────
-type EntitySidebar = "projects" | "tasks" | null
-const activeEntitySidebar = ref<EntitySidebar>(null)
+  const routeName = computed(() => String(route.name ?? ""));
 
-function routeToEntity(name: string): EntitySidebar {
-  if (
-    name.startsWith("project") ||
-    name.startsWith("pipeline") ||
-    name.startsWith("stage")
-  ) return "projects"
-  if (name.startsWith("task")) return "tasks"
-  return null
-}
+  const breadcrumb = computed(() => {
+    const name = routeName.value;
+    const pipelineProject = pipelineStore.activePipeline?.project;
+    const stageProject = pipelineStageStore.activeStage?.pipeline?.project;
+    const rawProjectId = route.params.projectId;
+    const directProjectId = rawProjectId
+      ? Number(Array.isArray(rawProjectId) ? rawProjectId[0] : rawProjectId)
+      : null;
+    const directProject =
+      projectStore.activeProject ??
+      (directProjectId
+        ? (projectStore.projects.find((p) => p.id === directProjectId) ?? null)
+        : null);
+    const resolvedProject =
+      stageProject ?? pipelineProject ?? directProject ?? null;
+    const project = resolvedProject
+      ? { id: resolvedProject.id, name: resolvedProject.name }
+      : null;
+    const resolvedPipeline =
+      pipelineStageStore.activeStage?.pipeline ??
+      pipelineStore.activePipeline ??
+      null;
+    const pipeline =
+      name.startsWith("pipeline") && resolvedPipeline
+        ? { id: resolvedPipeline.id, name: resolvedPipeline.name }
+        : null;
+    const activeStage = pipelineStageStore.activeStage;
+    const stage =
+      (name === "pipeline-stage-detail" || name === "pipeline-stage-edit") &&
+      activeStage
+        ? {
+            id: activeStage.id,
+            displayLabel: activeStage.display_label ?? activeStage.name,
+            color: activeStage.color ?? null,
+          }
+        : null;
+    const showPipelinesIndex =
+      name === "pipeline-index" || name === "pipeline-add";
+    const addLabel = name.includes("add")
+      ? name === "workspace-add"
+        ? "New Workspace"
+        : name === "project-add"
+          ? "New Project"
+          : name === "pipeline-add"
+            ? "New Board"
+            : name === "pipeline-stage-add"
+              ? "New Stage"
+              : name === "task-add"
+                ? "New Task"
+                : null
+      : null;
+    return { project, pipeline, stage, showPipelinesIndex, addLabel };
+  });
 
-function closeEntitySidebar() {
-  activeEntitySidebar.value = null
-}
+  const contextNav = computed(() => {
+    const name = routeName.value;
+    const pl = breadcrumb.value.pipeline;
+    if (!pl)
+      return {
+        show: false,
+        items: [] as {
+          label: string;
+          icon: any;
+          active: boolean;
+          onClick: () => void;
+        }[],
+      };
+    if (
+      ["pipeline-detail", "pipeline-edit", "pipeline-index"].includes(name) ||
+      name.startsWith("pipeline-stage")
+    ) {
+      return {
+        show: true,
+      };
+    }
+    return { show: false, items: [] };
+  });
 
-// ── Main nav handler ──────────────────────────────────────────────────────────
-async function handleEntitySelect(entity: string) {
+  function goToWorkspace() {
+    if (workspaceStore.activeWorkspace)
+      router.push({
+        name: "project-index",
+        params: { workspaceId: workspaceStore.activeWorkspace.id },
+      });
+    else router.push({ name: "workspace" });
+  }
+  function goToProject() {
+    const p = breadcrumb.value.project;
+    if (p) router.push({ name: "project-detail", params: { id: p.id } });
+  }
+  function goToPipeline() {
+    const pl = breadcrumb.value.pipeline;
+    if (pl) router.push({ name: "pipeline-detail", params: { id: pl.id } });
+  }
 
-  switch (entity) {
-
-    // ── Dashboard ──────────────────────────────────────────────────────────────
-    case "dashboard":
-      activeEntitySidebar.value = null
-      router.push({ name: "dashboard" })
-      break
-
-    // ── Projects ───────────────────────────────────────────────────────────────
-    case "projects":
-      // toggle panel open/close; always navigate to project index
-      activeEntitySidebar.value =
-        activeEntitySidebar.value === "projects" ? null : "projects"
-      if (workspaceStore.activeWorkspace) {
-        router.push({
+  onMounted(async () => {
+    await projectStore.fetchStatuses().catch(() => {});
+    const rawParam = route.params.workspaceId;
+    const routeWsId = rawParam
+      ? Number(Array.isArray(rawParam) ? rawParam[0] : rawParam)
+      : null;
+    if (workspaceStore.isPersistedWorkspaceExpired)
+      workspaceStore.clearActiveWorkspace();
+    const wsId = routeWsId ?? workspaceStore.activeWorkspace?.id ?? null;
+    if (wsId) {
+      await workspaceStore.fetchWorkspace(wsId).catch(() => {});
+      if (
+        !routeWsId &&
+        workspaceStore.activeWorkspace?.id &&
+        route.name === "dashboard"
+      )
+        router.replace({
           name: "project-index",
-          params: { workspaceId: workspaceStore.activeWorkspace.id },
-        })
-      }
-      break
-
-    // ── Pipelines — close entity sidebar + navigate to pipeline list ──────────
-    case "pipelines": {
-      // Always close whatever entity sidebar was open
-      activeEntitySidebar.value = null
-
-      // Resolve a project id from the current route context
-      let projectId =
-        getParam("projectId") ??
-        getParam("id") ??            // project-detail uses :id
-        pipelineStore.activePipeline?.project?.id ??
-        projectStore.projects[0]?.id ??
-        null
-
-      // If we don't have projects yet, load them first
-      if (!projectId && workspaceStore.activeWorkspace) {
-        try {
-          const res = await projectStore.fetchProjects({
-            workspaceId: workspaceStore.activeWorkspace.id,
-            page: 1, perPage: 100,
-          })
-          projectStore.projects = res.data ?? []
-          projectId = projectStore.projects[0]?.id ?? null
-        } catch { /**/ }
-      }
-
-      if (projectId) {
-        router.push({ name: "pipeline-index", params: { projectId } })
-      } else if (workspaceStore.activeWorkspace) {
-        router.push({
-          name: "project-index",
-          params: { workspaceId: workspaceStore.activeWorkspace.id },
-        })
-      }
-      break
+          params: { workspaceId: wsId },
+        });
     }
+  });
 
-    // ── Pipeline Stages — close entity sidebar + navigate to stage list ────────
-    case "pipeline-stages": {
-      // Always close whatever entity sidebar was open
-      activeEntitySidebar.value = null
-
-      // Resolve a pipeline id from the current route context
-      let pipelineId =
-        getParam("pipelineId") ??
-        pipelineStore.activePipeline?.id ??
-        null
-
-      // If no pipeline in route/store, try to fetch one from the first project
-      if (!pipelineId) {
-        let projectId =
-          getParam("projectId") ??
-          getParam("id") ??
-          projectStore.projects[0]?.id ??
-          null
-
-        if (!projectId && workspaceStore.activeWorkspace) {
-          try {
-            const res = await projectStore.fetchProjects({
-              workspaceId: workspaceStore.activeWorkspace.id,
-              page: 1, perPage: 100,
-            })
-            projectStore.projects = res.data ?? []
-            projectId = projectStore.projects[0]?.id ?? null
-          } catch { /**/ }
-        }
-
-        if (projectId) {
-          try {
-            const res = await pipelineStore.fetchPipelines({
-              projectId, page: 1, perPage: 50,
-              search: "", sortBy: "name", sortOrder: "asc", filters: [],
-            })
-            pipelineId = (res.data ?? [])[0]?.id ?? null
-          } catch { /**/ }
-        }
-      }
-
-      if (pipelineId) {
-        router.push({ name: "pipeline-stage-index", params: { pipelineId } })
-      } else if (workspaceStore.activeWorkspace) {
-        // Nowhere sensible to go — land on project index as fallback
-        router.push({
-          name: "project-index",
-          params: { workspaceId: workspaceStore.activeWorkspace.id },
-        })
-      }
-      break
-    }
-
-    // ── Tasks ──────────────────────────────────────────────────────────────────
-    case "tasks":
-      activeEntitySidebar.value =
-        activeEntitySidebar.value === "tasks" ? null : "tasks"
-      {
-        const pipelineId =
-          getParam("pipelineId") ?? pipelineStore.activePipeline?.id ?? null
-        if (pipelineId) {
-          router.push({ name: "task-index", params: { pipelineId } })
-        }
-      }
-      break
-
-    case "settings":
-      activeEntitySidebar.value = null
-      router.push({ name: "dashboard" })
-      break
-  }
-}
-
-// Sync entity sidebar with back-navigation / direct URL
-// Pipelines and stages navigate without a panel — only projects and tasks open one.
-watch(
-  () => route.name,
-  (name) => {
-    const str = String(name ?? "")
-    // Pipeline and stage routes: ensure sidebar is closed
-    if (str.startsWith("pipeline") || str.startsWith("stage")) {
-      activeEntitySidebar.value = null
-      return
-    }
-    const entity = routeToEntity(str)
-    if (entity && activeEntitySidebar.value === null) {
-      activeEntitySidebar.value = entity
-    }
-  },
-)
-
-// ── Breadcrumb ─────────────────────────────────────────────────────────────────
-const routeName = computed(() => String(route.name ?? ""))
-
-const breadcrumb = computed(() => {
-  const name = routeName.value
-
-  // Resolve project
-  const pipelineProject  = pipelineStore.activePipeline?.project
-  const stageProject     = pipelineStageStore.activeStage?.pipeline?.project
-  const rawProjectId     = route.params.projectId
-  const directProjectId  = rawProjectId
-    ? Number(Array.isArray(rawProjectId) ? rawProjectId[0] : rawProjectId)
-    : null
-  const directProject = projectStore.activeProject
-    ?? (directProjectId ? projectStore.projects.find(p => p.id === directProjectId) ?? null : null)
-  const resolvedProject  = stageProject ?? pipelineProject ?? directProject ?? null
-  const project = resolvedProject ? { id: resolvedProject.id, name: resolvedProject.name } : null
-
-  // Resolve pipeline
-  const resolvedPipeline =
-    pipelineStageStore.activeStage?.pipeline ??
-    pipelineStore.activePipeline ??
-    null
-  const pipeline = name.startsWith("pipeline") && resolvedPipeline
-    ? { id: resolvedPipeline.id, name: resolvedPipeline.name }
-    : null
-
-  // Resolve stage
-  const activeStage = pipelineStageStore.activeStage
-  const stage = (name === "pipeline-stage-detail" || name === "pipeline-stage-edit") && activeStage
-    ? {
-        id: activeStage.id,
-        displayLabel: activeStage.display_label ?? activeStage.name,
-        color: activeStage.color ?? null,
-      }
-    : null
-
-  const showPipelinesIndex = name === "pipeline-index" || name === "pipeline-add"
-
-  const addLabel = name.includes("add")
-    ? name === "workspace-add"       ? "New Workspace"
-    : name === "project-add"         ? "New Project"
-    : name === "pipeline-add"        ? "New Pipeline"
-    : name === "pipeline-stage-add"  ? "New Stage"
-    : name === "task-add"            ? "New Task"
-    : null
-    : null
-
-  return { project, pipeline, stage, showPipelinesIndex, addLabel }
-})
-
-// ── Context nav pill (pipeline routes) ────────────────────────────────────────
-const contextNav = computed(() => {
-  const name = routeName.value
-  const pl   = breadcrumb.value.pipeline
-  if (!pl) return { show: false, items: [] as any[] }
-
-  if (
-    name === "pipeline-detail" || name === "pipeline-edit" ||
-    name === "pipeline-index"  || name.startsWith("pipeline-stage")
-  ) {
-    return {
-      show: true,
-      items: [
-        {
-          label:   "Stages",
-          icon:    LayoutList,
-          active:  name === "pipeline-index" || name.startsWith("pipeline-stage"),
-          onClick: () => router.push({ name: "pipeline-index", params: { pipelineId: pl.id } }),
-        },
-        {
-          label:   "Overview",
-          icon:    GitBranch,
-          active:  name === "pipeline-detail" || name === "pipeline-edit",
-          onClick: () => router.push({ name: "pipeline-detail", params: { id: pl.id } }),
-        },
-      ],
-    }
-  }
-  return { show: false, items: [] as any[] }
-})
-
-// ── Breadcrumb navigation ─────────────────────────────────────────────────────
-function goToWorkspace() {
-  if (workspaceStore.activeWorkspace)
-    router.push({ name: "project-index", params: { workspaceId: workspaceStore.activeWorkspace.id } })
-  else router.push({ name: "workspace" })
-}
-function goToProject() {
-  const p = breadcrumb.value.project
-  if (p) router.push({ name: "project-detail", params: { id: p.id } })
-}
-function goToPipeline() {
-  const pl = breadcrumb.value.pipeline
-  if (pl) router.push({ name: "pipeline-detail", params: { id: pl.id } })
-}
-function handleNewTask() { /* wire up modal later */ }
-
-// ── Lifecycle ─────────────────────────────────────────────────────────────────
-onMounted(async () => {
-  await projectStore.fetchStatuses().catch(() => {})
-
-  const rawParam  = route.params.workspaceId
-  const routeWsId = rawParam ? Number(Array.isArray(rawParam) ? rawParam[0] : rawParam) : null
-
-  if (workspaceStore.isPersistedWorkspaceExpired) workspaceStore.clearActiveWorkspace()
-
-  const wsId = routeWsId ?? workspaceStore.activeWorkspace?.id ?? null
-  if (wsId) {
-    await workspaceStore.fetchWorkspace(wsId).catch(() => {})
-    if (!routeWsId && workspaceStore.activeWorkspace?.id && route.name === "dashboard")
-      router.replace({ name: "project-index", params: { workspaceId: wsId } })
-  }
-
-  // Set initial entity sidebar from current route
-  // Pipeline and stage routes start with no entity panel open
-  const initName = String(route.name ?? "")
-  if (!initName.startsWith("pipeline") && !initName.startsWith("stage")) {
-    activeEntitySidebar.value = routeToEntity(initName)
-  }
-})
-
-watch(() => route.params.workspaceId, async (newId) => {
-  if (!newId) return
-  const id = Number(Array.isArray(newId) ? newId[0] : newId)
-  if (!isNaN(id) && workspaceStore.activeWorkspace?.id !== id)
-    await workspaceStore.fetchWorkspace(id).catch(() => {})
-})
+  watch(
+    () => route.params.workspaceId,
+    async (newId) => {
+      if (!newId) return;
+      const id = Number(Array.isArray(newId) ? newId[0] : newId);
+      if (!isNaN(id) && workspaceStore.activeWorkspace?.id !== id)
+        await workspaceStore.fetchWorkspace(id).catch(() => {});
+    },
+  );
 </script>
-
-<style scoped>
-/* ── Entity sidebar slide-in/out ──────────────────────── */
-.es-enter-active {
-  transition: width 220ms cubic-bezier(0.4, 0, 0.2, 1), opacity 180ms ease;
-  overflow: hidden;
-}
-.es-leave-active {
-  transition: width 180ms cubic-bezier(0.4, 0, 0.2, 1), opacity 120ms ease;
-  overflow: hidden;
-}
-.es-enter-from,
-.es-leave-to  { width: 0 !important; opacity: 0; }
-.es-enter-to,
-.es-leave-from { opacity: 1; }
-
-/* ── Header ───────────────────────────────────────────── */
-.layout-header {
-  box-shadow: 0 1px 0 hsl(var(--border));
-}
-
-/* ── Breadcrumb buttons ───────────────────────────────── */
-.bc-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 2px 6px;
-  border-radius: 5px;
-  font-size: 12.5px;
-  font-weight: 500;
-  white-space: nowrap;
-  color: hsl(var(--muted-foreground));
-  cursor: pointer;
-  transition: background 100ms ease, color 100ms ease;
-  max-width: 130px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.bc-btn:hover         { background: hsl(var(--accent)); color: hsl(var(--foreground)); }
-.bc-btn--leaf         { color: hsl(var(--foreground)); font-weight: 600; cursor: default; }
-.bc-btn--leaf:hover   { background: transparent; }
-
-/* ── Generic icon header buttons ─────────────────────── */
-.header-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 28px;
-  min-width: 28px;
-  border-radius: 6px;
-  font-size: 12px;
-  color: hsl(var(--muted-foreground));
-  background: transparent;
-  cursor: pointer;
-  transition: background 100ms ease, color 100ms ease;
-}
-.header-btn:hover { background: hsl(var(--accent)); color: hsl(var(--foreground)); }
-</style>
