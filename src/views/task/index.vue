@@ -157,7 +157,7 @@
                 class="h-9 w-9 rounded-xl bg-primary/15 flex items-center justify-center shrink-0"
               >
                 <span class="text-primary text-[10px] font-bold font-mono">
-                  {{ row.task_number?.slice(-4) ?? "?" }}
+                  {{ row.task_number?.slice(-3) ?? "?" }}
                 </span>
               </div>
               <div class="min-w-0">
@@ -206,7 +206,7 @@
                 :style="{ background: row.stage.color ?? '#94a3b8' }"
               />
               <span class="text-sm text-foreground">{{
-                row.stage.display_label
+                row.stage.display_label ?? row.stage.name
               }}</span>
             </div>
             <span v-else class="text-sm text-muted-foreground">—</span>
@@ -518,7 +518,7 @@
 
   // Detects whether we are on /tasks/my (my-tasks route) vs a pipeline task list
   const isMyTasks = computed(() => route.name === "my-tasks");
-  const isAllTasks = computed(() => route.name === "task-all"); 
+  const isAllTasks = computed(() => route.name === "task-all");
   const pipelineId = computed(() => Number(route.params.pipelineId));
 
   // ── View ──────────────────────────────────────────────────────────────────────
