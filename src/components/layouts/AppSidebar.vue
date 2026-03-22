@@ -493,10 +493,6 @@
                               </button>
                             </div>
 
-                            <div
-                              class="my-2 h-px bg-gradient-to-r from-transparent via-border/40 to-transparent"
-                            ></div>
-
                             <p
                               class="px-2 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wide"
                             >
@@ -520,7 +516,7 @@
                                 class="group flex w-full items-center gap-2 px-2.5 py-1.5 rounded-lg text-[12.5px] font-medium hover:bg-accent transition"
                                 @click="ctxViewPipelines(project)"
                               >
-                                <LayoutList
+                                <ViewIcon
                                   class="h-4 w-4 text-muted-foreground group-hover:text-foreground transition shrink-0"
                                 />
                                 <span class="flex-1 text-left"
@@ -563,7 +559,14 @@
                             })
                           "
                         >
-                          <Plus class="h-2.5 w-2.5 shrink-0" /> Add board
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            class="cursor-pointer h-7"
+                          >
+                            Add board
+                          </Button>
                         </div>
 
                         <template v-else>
@@ -588,7 +591,7 @@
                               type="button"
                               class="flex flex-1 items-center gap-1.5 h-7 px-2 min-w-0 text-left"
                             >
-                              <Kanban class="h-3 w-3 shrink-0 opacity-60" />
+                              <Monitor class="h-3 w-3 shrink-0 opacity-60" />
                               <span
                                 class="truncate text-[12px] font-medium text-foreground/80"
                                 >{{ pipeline.name }}</span
@@ -605,7 +608,14 @@
                               })
                             "
                           >
-                            <Plus class="h-2.5 w-2.5 shrink-0" /> Add board
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              class="cursor-pointer h-7"
+                            >
+                              Add board
+                            </Button>
                           </div>
                         </template>
                       </template>
@@ -819,16 +829,17 @@
     FolderOpen,
     FolderSearch,
     Kanban,
-    LayoutDashboard,
-    LayoutList,
+    LayoutPanelLeft,
     Loader2,
     LogOut,
     MessageCircle,
+    Monitor,
     MoreHorizontal,
     Pencil,
     Plus,
     Settings,
     UserCircle,
+    ViewIcon,
   } from "lucide-vue-next";
   import { computed, onMounted, ref, watch } from "vue";
   import { useRoute, useRouter } from "vue-router";
@@ -897,7 +908,7 @@
     {
       entity: "dashboard",
       label: "Dashboard",
-      icon: LayoutDashboard,
+      icon: LayoutPanelLeft,
       badge: null,
       badgeMuted: false,
     },
@@ -934,23 +945,54 @@
   }
 
   function handleNav(entity: string): void {
-    if (entity === "dashboard") { router.push({ name: "dashboard" }); return; }
-    if (entity === "inbox") { router.push({ name: "inbox" }); return; }
-    if (entity === "analytics") { router.push({ name: "analytics" }); return; }
+    if (entity === "dashboard") {
+      router.push({ name: "dashboard" });
+      return;
+    }
+    if (entity === "inbox") {
+      router.push({ name: "inbox" });
+      return;
+    }
+    if (entity === "analytics") {
+      router.push({ name: "analytics" });
+      return;
+    }
     if (entity === "mytasks") {
       if (workspaceStore.activeWorkspace)
-        router.push({ name: "my-tasks", params: { workspaceId: workspaceStore.activeWorkspace.id } });
+        router.push({
+          name: "my-tasks",
+          params: { workspaceId: workspaceStore.activeWorkspace.id },
+        });
       return;
     }
   }
 
   // ── Colors ────────────────────────────────────────────────────────────────────
-  const WS_PALETTE = ["#7C3AED","#2563EB","#059669","#D97706","#DC2626","#0891B2","#DB2777","#0F766E"];
-  const PROJ_PALETTE = ["#7c6cfa","#34c77b","#f5a623","#4a9eff","#f05252","#9d7cfa","#0891B2","#DB2777"];
+  const WS_PALETTE = [
+    "#7C3AED",
+    "#2563EB",
+    "#059669",
+    "#D97706",
+    "#DC2626",
+    "#0891B2",
+    "#DB2777",
+    "#0F766E",
+  ];
+  const PROJ_PALETTE = [
+    "#7c6cfa",
+    "#34c77b",
+    "#f5a623",
+    "#4a9eff",
+    "#f05252",
+    "#9d7cfa",
+    "#0891B2",
+    "#DB2777",
+  ];
 
   function hashColor(name: string, palette: string[]): string {
     let h = 0;
-    for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
+    for (let i = 0; i < name.length; i++)
+      h = name.charCodeAt(i) + ((h << 5) - h);
     return palette[Math.abs(h) % palette.length];
   }
   const getWsColor = (n: string) => hashColor(n, WS_PALETTE);
@@ -960,11 +1002,20 @@
     () => workspaceStore.activeWorkspace?.name?.charAt(0).toUpperCase() ?? "W",
   );
   const wsAvatarColor = computed(() =>
-    workspaceStore.activeWorkspace ? getWsColor(workspaceStore.activeWorkspace.name) : "#7C3AED",
+    workspaceStore.activeWorkspace
+      ? getWsColor(workspaceStore.activeWorkspace.name)
+      : "#7C3AED",
   );
   const userInitials = computed(() => {
     const name = authStore.user?.name ?? "";
-    return name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2) || "U";
+    return (
+      name
+        .split(" ")
+        .map((n: string) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2) || "U"
+    );
   });
 
   // ── Workspace switcher ────────────────────────────────────────────────────────
@@ -991,7 +1042,9 @@
   const projectsLoading = ref(false);
   const expandedProjects = ref<Set<number>>(new Set());
   const pipelinesLoading = ref<Set<number>>(new Set());
-  const projectPipelines = ref<Map<number, { id: number; name: string }[]>>(new Map());
+  const projectPipelines = ref<Map<number, { id: number; name: string }[]>>(
+    new Map(),
+  );
   const ctxOpenId = ref<number | null>(null);
 
   async function loadProjects(): Promise<void> {
@@ -1004,13 +1057,19 @@
         perPage: 100,
       });
       projectStore.projects = res.data ?? [];
-    } catch { /**/ } finally {
+    } catch {
+      /**/
+    } finally {
       projectsLoading.value = false;
     }
   }
 
   async function loadPipelinesForProject(projectId: number): Promise<void> {
-    if (projectPipelines.value.has(projectId) || pipelinesLoading.value.has(projectId)) return;
+    if (
+      projectPipelines.value.has(projectId) ||
+      pipelinesLoading.value.has(projectId)
+    )
+      return;
     pipelinesLoading.value = new Set([...pipelinesLoading.value, projectId]);
     try {
       const res = await pipelineStore.fetchPipelines({
@@ -1024,10 +1083,19 @@
       });
       projectPipelines.value = new Map([
         ...projectPipelines.value,
-        [projectId, (res.data ?? []).map((p: any) => ({ id: p.id as number, name: p.name as string }))],
+        [
+          projectId,
+          (res.data ?? []).map((p: any) => ({
+            id: p.id as number,
+            name: p.name as string,
+          })),
+        ],
       ]);
     } catch {
-      projectPipelines.value = new Map([...projectPipelines.value, [projectId, []]]);
+      projectPipelines.value = new Map([
+        ...projectPipelines.value,
+        [projectId, []],
+      ]);
     } finally {
       const next = new Set(pipelinesLoading.value);
       next.delete(projectId);
@@ -1056,7 +1124,8 @@
     const name = String(route.name ?? "");
     return (
       (name.startsWith("pipeline") && _id("id") === id) ||
-      ((name.startsWith("task") || name.startsWith("pipeline-stage")) && _id("pipelineId") === id)
+      ((name.startsWith("task") || name.startsWith("pipeline-stage")) &&
+        _id("pipelineId") === id)
     );
   }
 
@@ -1070,13 +1139,19 @@
 
   function addProject(): void {
     if (workspaceStore.activeWorkspace)
-      router.push({ name: "project-add", params: { workspaceId: workspaceStore.activeWorkspace.id } });
+      router.push({
+        name: "project-add",
+        params: { workspaceId: workspaceStore.activeWorkspace.id },
+      });
     else router.push({ name: "workspace" });
   }
 
   function viewProject(): void {
     if (workspaceStore.activeWorkspace)
-      router.push({ name: "project-index", params: { workspaceId: workspaceStore.activeWorkspace.id } });
+      router.push({
+        name: "project-index",
+        params: { workspaceId: workspaceStore.activeWorkspace.id },
+      });
     else router.push({ name: "workspace" });
   }
 
@@ -1103,7 +1178,9 @@
     workspacesLoading.value = true;
     try {
       await workspaceStore.fetchWorkspaces({ page: 1, perPage: 100 });
-    } catch { /**/ } finally {
+    } catch {
+      /**/
+    } finally {
       workspacesLoading.value = false;
     }
     await projectStore.fetchStatuses().catch(() => {});

@@ -169,6 +169,7 @@
                     >
                       <!-- Tab strip -->
                       <div class="shrink-0 relative border-b border-border/50">
+                        <!-- subtle background tint on strip -->
                         <div
                           class="absolute inset-0 bg-muted/[0.04] pointer-events-none"
                         />
@@ -180,15 +181,18 @@
                             :value="DETAIL_TAB_ID"
                             class="group relative h-10 px-5 bg-transparent rounded-none border-0 shadow-none text-[11px] font-semibold tracking-[0.07em] uppercase text-muted-foreground/50 hover:text-muted-foreground data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none transition-colors duration-150 focus-visible:outline-none"
                           >
+                            <!-- Active indicator bar -->
                             <span
                               class="absolute bottom-0 left-0 right-0 h-[2px] rounded-t-sm bg-primary scale-x-0 group-data-[state=active]:scale-x-100 transition-transform duration-200 ease-out origin-center"
                             />
+                            <!-- Hover indicator bar -->
                             <span
                               class="absolute bottom-0 left-0 right-0 h-[2px] rounded-t-sm bg-border scale-x-0 group-hover:scale-x-100 group-data-[state=active]:hidden transition-transform duration-150 ease-out origin-center"
                             />
                             Detail
                           </TabsTrigger>
 
+                          <!-- Separator dot -->
                           <span
                             class="self-center w-px h-3.5 bg-border/60 mx-0.5 shrink-0"
                           />
@@ -213,6 +217,7 @@
                                 class="h-3 w-3"
                               />
                               {{ tab.label }}
+                              <!-- Badge pill on tab -->
                               <span
                                 v-if="tab.badge != null"
                                 class="inline-flex items-center justify-center min-w-[17px] h-[17px] px-1 rounded-full text-[9px] font-bold leading-none bg-muted/80 text-muted-foreground/60 group-data-[state=active]:bg-primary/15 group-data-[state=active]:text-primary transition-colors duration-150"
@@ -243,52 +248,25 @@
                         </ScrollArea>
                       </TabsContent>
 
-                      <!--
-                        ── Dynamic tab contents ──────────────────────────────────────
-                        CHANGE: when tab.flush is true the padding/scroll wrapper is
-                        omitted so the slot content (e.g. UiList) can fill the panel
-                        edge-to-edge and manage its own sticky header / footer / scroll.
-                        flush: false (default) → original px-7 py-6 ScrollArea wrapper
-                        flush: true            → bare slot, fills flex-1 container
-                      -->
+                      <!-- Dynamic tab contents -->
                       <TabsContent
                         v-for="tab in tabs"
                         :key="tab.id"
                         :value="tab.id"
-                        class="m-0 outline-none data-[state=inactive]:hidden"
-                        :class="
-                          tab.flush
-                            ? 'flex-1 flex flex-col min-h-0 overflow-hidden'
-                            : 'flex-1 overflow-hidden'
-                        "
+                        class="flex-1 overflow-hidden m-0 outline-none data-[state=inactive]:hidden"
                       >
-                        <!-- NON-flush: original scrollable padded content area -->
-                        <template v-if="!tab.flush">
-                          <ScrollArea class="h-full">
-                            <div class="px-7 py-6 space-y-6">
-                              <slot :name="`tab-${tab.id}`">
-                                <div
-                                  class="flex flex-col items-center justify-center h-40 gap-2 text-muted-foreground/40"
-                                >
-                                  <FileText class="h-8 w-8" />
-                                  <p class="text-xs">Nothing here yet</p>
-                                </div>
-                              </slot>
-                            </div>
-                          </ScrollArea>
-                        </template>
-
-                        <!-- FLUSH: slot owns the full panel height / scroll -->
-                        <template v-else>
-                          <slot :name="`tab-${tab.id}`">
-                            <div
-                              class="flex flex-col items-center justify-center h-40 gap-2 text-muted-foreground/40"
-                            >
-                              <FileText class="h-8 w-8" />
-                              <p class="text-xs">Nothing here yet</p>
-                            </div>
-                          </slot>
-                        </template>
+                        <ScrollArea class="h-full">
+                          <div class="px-7 py-6 space-y-6">
+                            <slot :name="`tab-${tab.id}`">
+                              <div
+                                class="flex flex-col items-center justify-center h-40 gap-2 text-muted-foreground/40"
+                              >
+                                <FileText class="h-8 w-8" />
+                                <p class="text-xs">Nothing here yet</p>
+                              </div>
+                            </slot>
+                          </div>
+                        </ScrollArea>
                       </TabsContent>
                     </Tabs>
                   </template>
@@ -483,6 +461,10 @@
   import { useDotColor } from "@/composables/useDotColor";
   const { getDotColor } = useDotColor();
 
+  // ─────────────────────────────────────────
+  // Constants
+  // ─────────────────────────────────────────
+
   const DETAIL_TAB_ID = "detail" as const;
 
   // ─────────────────────────────────────────
@@ -532,21 +514,14 @@
   /**
    * A single extra tab rendered after the built-in "Detail" tab.
    * Its content slot is named `tab-{id}`.
-   *
-   * CHANGE: added `flush?: boolean`
-   *   false (default) → wraps slot in ScrollArea + px-7 py-6 padding (original behaviour)
-   *   true            → slot fills the full panel height; the slotted component owns
-   *                     scrolling and layout (e.g. UiList with its own sticky header/footer)
    */
   export interface TabItem {
     id: string;
     label: string;
+    /** Optional icon rendered to the left of the label */
     icon?: Component;
+    /** Optional numeric count badge shown on the tab */
     badge?: number | null;
-    /** When true, removes the ScrollArea + padding wrapper so the slot content fills
-     *  the panel flush. Use this when dropping in a self-contained component like UiList
-     *  that manages its own scroll, sticky header, and footer. */
-    flush?: boolean;
   }
 
   // ─────────────────────────────────────────
@@ -566,6 +541,11 @@
       deleteLoading?: boolean;
       deleteDialog?: DeleteDialog;
       activityComingSoon?: boolean;
+      /**
+       * Extra tabs rendered after the built-in "Detail" tab.
+       * Each tab gets a slot: `tab-{id}`.
+       * Pass `[]` (or omit) to hide the tab bar entirely.
+       */
       tabs?: TabItem[];
     }>(),
     {
@@ -590,6 +570,10 @@
   const emit = defineEmits<{
     "update:deleteOpen": [value: boolean];
     "confirm-delete": [];
+    /**
+     * Fires ONLY when the user actively clicks a tab — never on mount.
+     * `tabId` is "detail" or a custom id from your `tabs` array.
+     */
     "tab-change": [tabId: string];
   }>();
 
@@ -597,6 +581,7 @@
   // Internal state
   // ─────────────────────────────────────────
 
+  /** Tracks currently active tab — starts on Detail, never triggers an emit. */
   const activeTab = ref<string>(DETAIL_TAB_ID);
   const internalDeleteOpen = ref(props.deleteOpen);
 
@@ -610,6 +595,10 @@
     emit("update:deleteOpen", v);
   });
 
+  /**
+   * Called only when the user clicks a tab trigger.
+   * Updates internal state and bubbles up to the parent via `tab-change`.
+   */
   function handleTabChange(value: string | number) {
     const id = String(value);
     activeTab.value = id;
