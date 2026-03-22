@@ -118,10 +118,9 @@
                             {{ ws.name.charAt(0).toUpperCase() }}
                           </AvatarFallback>
                         </Avatar>
-                        <span
-                          class="flex-1 truncate text-[12.5px] font-medium"
-                          >{{ ws.name }}</span
-                        >
+                        <span class="flex-1 truncate text-[12.5px] font-medium">
+                          {{ ws.name }}
+                        </span>
                         <div
                           v-if="workspaceStore.activeWorkspace?.id === ws.id"
                           class="h-1.5 w-1.5 rounded-full bg-primary shrink-0"
@@ -187,9 +186,9 @@
                   </TooltipTrigger>
                   <TooltipContent side="right" class="text-xs font-medium">
                     {{ item.label }}
-                    <span v-if="item.badge" class="ml-1 opacity-60"
-                      >({{ item.badge }})</span
-                    >
+                    <span v-if="item.badge" class="ml-1 opacity-60">
+                      ({{ item.badge }})
+                    </span>
                   </TooltipContent>
                 </Tooltip>
               </template>
@@ -200,9 +199,9 @@
                   @click="handleNav(item.entity)"
                 >
                   <component :is="item.icon" />
-                  <span class="flex-1 text-[12.5px] font-medium">{{
-                    item.label
-                  }}</span>
+                  <span class="flex-1 text-[12.5px] font-medium">
+                    {{ item.label }}
+                  </span>
                   <Badge
                     v-if="item.badge"
                     variant="outline"
@@ -239,9 +238,9 @@
                 <Plus class="h-3.5 w-3.5" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="top" class="text-xs font-medium"
-              >New project</TooltipContent
-            >
+            <TooltipContent side="top" class="text-xs font-medium">
+              New project
+            </TooltipContent>
           </Tooltip>
 
           <Tooltip>
@@ -255,9 +254,9 @@
                 <FolderSearch class="h-3.5 w-3.5" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="right" class="text-xs font-medium"
-              >View projects</TooltipContent
-            >
+            <TooltipContent side="right" class="text-xs font-medium">
+              View projects
+            </TooltipContent>
           </Tooltip>
         </SidebarGroup>
 
@@ -285,9 +284,9 @@
                     <Plus class="h-3.5 w-3.5" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="top" class="text-xs font-medium"
-                  >New project</TooltipContent
-                >
+                <TooltipContent side="top" class="text-xs font-medium">
+                  New project
+                </TooltipContent>
               </Tooltip>
 
               <Tooltip>
@@ -308,9 +307,9 @@
                     <FolderSearch class="h-3.5 w-3.5" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="top" class="text-xs font-medium"
-                  >View projects</TooltipContent
-                >
+                <TooltipContent side="top" class="text-xs font-medium">
+                  View projects
+                </TooltipContent>
               </Tooltip>
             </div>
           </div>
@@ -466,13 +465,14 @@
                                 <Eye
                                   class="h-4 w-4 text-muted-foreground group-hover:text-foreground transition shrink-0"
                                 />
-                                <span class="flex-1 text-left"
-                                  >View details</span
-                                >
+                                <span class="flex-1 text-left">
+                                  View details
+                                </span>
                                 <span
                                   class="text-[10px] text-muted-foreground opacity-0 group-hover:opacity-100 transition"
-                                  >↵</span
                                 >
+                                  ↵
+                                </span>
                               </button>
 
                               <button
@@ -483,13 +483,14 @@
                                 <Pencil
                                   class="h-4 w-4 text-muted-foreground group-hover:text-foreground transition shrink-0"
                                 />
-                                <span class="flex-1 text-left"
-                                  >Edit project</span
-                                >
+                                <span class="flex-1 text-left">
+                                  Edit project
+                                </span>
                                 <span
                                   class="text-[10px] text-muted-foreground opacity-0 group-hover:opacity-100 transition"
-                                  >E</span
                                 >
+                                  E
+                                </span>
                               </button>
                             </div>
 
@@ -519,19 +520,20 @@
                                 <ViewIcon
                                   class="h-4 w-4 text-muted-foreground group-hover:text-foreground transition shrink-0"
                                 />
-                                <span class="flex-1 text-left"
-                                  >View boards</span
-                                >
+                                <span class="flex-1 text-left">
+                                  View boards
+                                </span>
                                 <span
                                   class="text-[10px] text-muted-foreground opacity-0 group-hover:opacity-100 transition"
-                                  >⌘B</span
                                 >
+                                  ⌘B
+                                </span>
                               </button>
                             </div>
 
                             <div
                               class="my-2 h-px bg-linear-to-r from-transparent via-border/40 to-transparent"
-                            ></div>
+                            />
                           </div>
                         </PopoverContent>
                       </Popover>
@@ -539,7 +541,6 @@
 
                     <!-- ── Pipelines (flat list, no stages) ── -->
                     <CollapsibleContent>
-                      <!-- Pipeline loading -->
                       <div
                         v-if="pipelinesLoading.has(project.id)"
                         class="ml-5 mr-2 mt-0.5 h-4 rounded-lg bg-muted/60 animate-pulse"
@@ -570,7 +571,6 @@
                         </div>
 
                         <template v-else>
-                          <!-- Each pipeline — flat row, no collapsible, no stages -->
                           <div
                             v-for="pipeline in projectPipelines.get(project.id)"
                             :key="pipeline.id"
@@ -594,8 +594,9 @@
                               <Monitor class="h-3 w-3 shrink-0 opacity-60" />
                               <span
                                 class="truncate text-[12px] font-medium text-foreground/80"
-                                >{{ pipeline.name }}</span
                               >
+                                {{ pipeline.name }}
+                              </span>
                             </button>
                           </div>
 
@@ -627,7 +628,7 @@
                 <SidebarMenuItem
                   class="flex justify-between items-center mt-10"
                 >
-                  <template v-if="!isSidebarCollapsed"> </template>
+                  <template v-if="!isSidebarCollapsed" />
 
                   <template v-else>
                     <Tooltip>
@@ -642,9 +643,9 @@
                           <Plus class="h-3.5 w-3.5 shrink-0" />
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent side="right" class="text-xs font-medium"
-                        >Add project</TooltipContent
-                      >
+                      <TooltipContent side="right" class="text-xs font-medium">
+                        Add project
+                      </TooltipContent>
                     </Tooltip>
 
                     <Tooltip>
@@ -659,9 +660,9 @@
                           <FolderSearch class="h-3.5 w-3.5 shrink-0" />
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent side="right" class="text-xs font-medium"
-                        >View all projects</TooltipContent
-                      >
+                      <TooltipContent side="right" class="text-xs font-medium">
+                        View all projects
+                      </TooltipContent>
                     </Tooltip>
                   </template>
                 </SidebarMenuItem>
@@ -694,16 +695,18 @@
                 <span
                   v-if="!isSidebarCollapsed"
                   class="text-[12.5px] font-medium"
-                  >Settings</span
                 >
+                  Settings
+                </span>
               </SidebarMenuButton>
             </TooltipTrigger>
             <TooltipContent
               v-if="isSidebarCollapsed"
               side="right"
               class="text-xs"
-              >Settings</TooltipContent
             >
+              Settings
+            </TooltipContent>
           </Tooltip>
         </div>
 
@@ -764,8 +767,9 @@
                 />
                 <AvatarFallback
                   class="text-[10px] font-bold bg-primary text-primary-foreground"
-                  >{{ userInitials }}</AvatarFallback
                 >
+                  {{ userInitials }}
+                </AvatarFallback>
               </Avatar>
               <div class="min-w-0">
                 <p class="text-[13px] font-semibold text-foreground truncate">
@@ -813,6 +817,13 @@
 
       <SidebarRail />
     </Sidebar>
+
+    <!-- ── Task secondary sidebar ───────────────────────────────────────────── -->
+    <TaskSidebar
+      :open="taskSidebarOpen"
+      :collapsed="isSidebarCollapsed"
+      @close="taskSidebarOpen = false"
+    />
   </TooltipProvider>
 </template>
 
@@ -828,7 +839,6 @@
     Folder,
     FolderOpen,
     FolderSearch,
-    Kanban,
     LayoutPanelLeft,
     Loader2,
     LogOut,
@@ -892,6 +902,9 @@
   import { useProjectStore, type Project } from "@/stores/project";
   import { useWorkspaceStore, type Workspace } from "@/stores/workspace";
 
+  // ── NEW: Task secondary sidebar ───────────────────────────────────────────────
+  import TaskSidebar from "@/views/task/common/TaskSidebar.vue";
+
   // ── Stores ────────────────────────────────────────────────────────────────────
   const router = useRouter();
   const route = useRoute();
@@ -903,7 +916,29 @@
   const { state: sidebarState } = useSidebar();
   const isSidebarCollapsed = computed(() => sidebarState.value === "collapsed");
 
+  // ── Task sidebar state ────────────────────────────────────────────────────────
+  const taskSidebarOpen = ref(false);
+
+  // Close task sidebar when navigating away from task routes
+  watch(
+    () => route.name,
+    (name) => {
+      const taskRoutes = [
+        "task-all",
+        "my-tasks",
+        "task-index",
+        "task-detail",
+        "task-edit",
+        "task-add",
+      ];
+      if (!taskRoutes.includes(String(name))) {
+        taskSidebarOpen.value = false;
+      }
+    },
+  );
+
   // ── Primary nav ───────────────────────────────────────────────────────────────
+  // CHANGED: "My Tasks" → "Tasks" (label only, entity key unchanged)
   const primaryNav = [
     {
       entity: "dashboard",
@@ -921,7 +956,7 @@
     },
     {
       entity: "task-index",
-      label: "My Tasks",
+      label: "Tasks", // ← was "My Tasks"
       icon: ClipboardList,
       badge: 152,
       badgeMuted: true,
@@ -938,31 +973,32 @@
   function isNavActive(entity: string): boolean {
     const name = String(route.name ?? "");
     if (entity === "dashboard") return name === "dashboard";
-    if (entity === "mytasks") return name === "my-tasks";
+    if (entity === "task-index")
+      return name === "task-all" || name === "my-tasks";
     if (entity === "inbox") return name === "inbox";
     if (entity === "analytics") return name === "analytics";
     return false;
   }
 
+  // CHANGED: task-index now toggles the task sidebar instead of navigating
   function handleNav(entity: string): void {
     if (entity === "dashboard") {
+      taskSidebarOpen.value = false;
       router.push({ name: "dashboard" });
       return;
     }
+    if (entity === "task-index") {
+      taskSidebarOpen.value = !taskSidebarOpen.value; // ← toggle secondary sidebar
+      return;
+    }
     if (entity === "inbox") {
+      taskSidebarOpen.value = false;
       router.push({ name: "inbox" });
       return;
     }
     if (entity === "analytics") {
+      taskSidebarOpen.value = false;
       router.push({ name: "analytics" });
-      return;
-    }
-    if (entity === "mytasks") {
-      if (workspaceStore.activeWorkspace)
-        router.push({
-          name: "my-tasks",
-          params: { workspaceId: workspaceStore.activeWorkspace.id },
-        });
       return;
     }
   }

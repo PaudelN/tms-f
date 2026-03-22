@@ -80,7 +80,7 @@
                 :default-size="metaDefaultSize"
                 :min-size="10"
                 :max-size="30"
-                class="border-r border-border/40 bg-muted/[0.03]"
+                class="border-r border-border/50 bg-muted/10"
               >
                 <ScrollArea class="h-full">
                   <div class="px-4 py-4">
@@ -89,12 +89,8 @@
                       :key="field.label"
                     >
                       <div
-                        class="py-3"
-                        :class="
-                          i < metaFields.length - 1
-                            ? 'border-b border-border/25'
-                            : ''
-                        "
+                        class="py-4"
+                        :class="i < metaFields.length - 1 ? '' : ''"
                       >
                         <p
                           class="text-[10px] font-semibold tracking-[0.08em] uppercase text-muted-foreground/50 mb-1.5 select-none"
@@ -425,38 +421,38 @@
 
 <script setup lang="ts">
   import type { Component } from "vue";
-  import { ref, watch } from "vue";
+import { ref, watch } from "vue";
 
   import { Button } from "@/components/ui/button";
-  import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-  } from "@/components/ui/dialog";
-  import {
-    ResizableHandle,
-    ResizablePanel,
-    ResizablePanelGroup,
-  } from "@/components/ui/resizable";
-  import { ScrollArea } from "@/components/ui/scroll-area";
-  import {
-    Tabs,
-    TabsContent,
-    TabsList,
-    TabsTrigger,
-  } from "@/components/ui/tabs";
-  import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-  } from "@/components/ui/tooltip";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
   import Badge from "@/components/ui/badge/Badge.vue";
-  import { FileText, Loader2, MessageSquare, Trash2 } from "lucide-vue-next";
+import { FileText, Loader2, MessageSquare, Trash2 } from "lucide-vue-next";
 
   import { useDotColor } from "@/composables/useDotColor";
   const { getDotColor } = useDotColor();

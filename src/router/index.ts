@@ -195,6 +195,17 @@ const routes: RouteRecordRaw[] = [
         name: "task-edit",
         component: () => import("@/views/task/edit.vue"),
       },
+      {
+        path: "tasks/my",
+        name: "my-tasks",
+        component: () => import("@/views/task/index.vue"),
+      },
+
+      {
+        path: "tasks/all",
+        name: "task-all",
+        component: () => import("@/views/task/index.vue"),
+      },
     ],
   },
 

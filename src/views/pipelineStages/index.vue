@@ -10,6 +10,7 @@
         create-label="Add Stage"
         show-search
         :search-value="searchQuery"
+        :show-kanban="false"
         search-placeholder="Search stages..."
         show-filter
         :active-filter-count="activeFilterCount"

@@ -250,6 +250,38 @@ export const useTaskStore = defineStore("task", () => {
     }
   }
 
+  async function fetchMyTasks(
+    params?: UniversalFetchParams,
+  ): Promise<UniversalApiResponse<Task>> {
+    const { data } = await axios.get<UniversalApiResponse<Task>>("/tasks/my", {
+      params: {
+        page: params?.page ?? 1,
+        per_page: params?.perPage ?? 25,
+        search: params?.search || undefined,
+        sort_by: params?.sortBy || undefined,
+        sort_order: params?.sortOrder || undefined,
+        ...buildFilterParams(params?.filters),
+      },
+    });
+    return data;
+  }
+
+  async function fetchAllTasks(
+    params?: UniversalFetchParams,
+  ): Promise<UniversalApiResponse<Task>> {
+    const { data } = await axios.get<UniversalApiResponse<Task>>("/tasks/all", {
+      params: {
+        page: params?.page ?? 1,
+        per_page: params?.perPage ?? 25,
+        search: params?.search || undefined,
+        sort_by: params?.sortBy || undefined,
+        sort_order: params?.sortOrder || undefined,
+        ...buildFilterParams(params?.filters),
+      },
+    });
+    return data;
+  }
+
   // ── Utilities ───────────────────────────────────────────────────────────────
   function clearError(): void {
     error.value = null;
@@ -279,6 +311,8 @@ export const useTaskStore = defineStore("task", () => {
     hasError,
     errorMessage,
     fetchTasks,
+    fetchMyTasks,
+    fetchAllTasks,
     fetchTask,
     createTask,
     updateTask,

@@ -8,20 +8,19 @@
             class="inline-block w-1 h-6 rounded-full bg-primary shrink-0"
             style="box-shadow: 0 0 8px rgb(var(--color-primary) / 0.6)"
           />
-          <h1 class="text-xl text-primary font-bold font-mono tracking-normal text-foreground leading-none">
+          <h1
+            class="text-xl text-primary font-bold font-mono tracking-normal text-foreground leading-none"
+          >
             {{ title }}
           </h1>
         </div>
 
         <!-- Stats chips -->
-        <div v-if="stats && stats.length" class="flex items-center gap-1.5 pl-3.5">
+        <div
+          v-if="stats && stats.length"
+          class="flex items-center gap-1.5 pl-3.5"
+        >
           <template v-for="stat in stats" :key="stat.label">
-            <!--
-              Color priority for the dot/badge:
-                1. stat.color — raw hex from backend (highest priority, bypasses Tailwind mapping)
-                2. stat.dot   — Tailwind class string, resolved via useDotColor()
-                3. fallback   — useDotColor default (#8b5cf6)
-            -->
             <Badge :color="resolveStatColor(stat)">
               {{ stat.value }} {{ stat.label }}
             </Badge>
@@ -44,7 +43,7 @@
         <!-- View toggles -->
         <TooltipProvider v-if="showViews" :delay-duration="200">
           <div class="flex items-center gap-3">
-            <Tooltip v-for="view in views" :key="view.id">
+            <Tooltip v-for="view in visibleViews" :key="view.id">
               <TooltipTrigger as-child>
                 <Button
                   type="button"
@@ -59,7 +58,11 @@
                   <component :is="view.icon" class="h-4.5 w-4.5" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="bottom" :side-offset="8" class="text-xs font-medium">
+              <TooltipContent
+                side="bottom"
+                :side-offset="8"
+                class="text-xs font-medium"
+              >
                 {{ view.label }}
               </TooltipContent>
             </Tooltip>
@@ -89,13 +92,19 @@
                     v-if="activeFilterCount > 0"
                     class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground"
                   >
-                    {{ activeFilterCount > 9 ? '9+' : activeFilterCount }}
+                    {{ activeFilterCount > 9 ? "9+" : activeFilterCount }}
                   </span>
                 </Transition>
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="bottom" :side-offset="8" class="text-xs font-medium">
-              Filters{{ activeFilterCount > 0 ? ` (${activeFilterCount} active)` : '' }}
+            <TooltipContent
+              side="bottom"
+              :side-offset="8"
+              class="text-xs font-medium"
+            >
+              Filters{{
+                activeFilterCount > 0 ? ` (${activeFilterCount} active)` : ""
+              }}
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -116,7 +125,11 @@
                 />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="bottom" :side-offset="8" class="text-xs font-medium">
+            <TooltipContent
+              side="bottom"
+              :side-offset="8"
+              class="text-xs font-medium"
+            >
               Refresh
             </TooltipContent>
           </Tooltip>
@@ -157,135 +170,128 @@
 </template>
 
 <script setup lang="ts">
-import ExpandableSearch from '@/components/common/ExpandableSearch.vue'
-import Badge from '@/components/ui/badge/Badge.vue'
-import Button from '@/components/ui/button/Button.vue'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
-import { useDotColor } from '@/composables/useDotColor'
-import type { ViewMode } from '@/ui-table/types/table.types'
-import {
-  Plus,
-  RefreshCcw,
-  SlidersHorizontal,
-  SquareKanban,
-  Table,
-  TableOfContents,
-} from 'lucide-vue-next'
-import { ref } from 'vue'
-import UiFilter from './UiFilter.vue'
-import type { FilterOption } from './UiFilter.vue'
-import type { ActiveFilters } from '../../types/filter.types'
+  import ExpandableSearch from "@/components/common/ExpandableSearch.vue";
+  import Badge from "@/components/ui/badge/Badge.vue";
+  import Button from "@/components/ui/button/Button.vue";
+  import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+  } from "@/components/ui/tooltip";
+  import { useDotColor } from "@/composables/useDotColor";
+  import type { ViewMode } from "@/ui-table/types/table.types";
+  import {
+    Plus,
+    RefreshCcw,
+    SlidersHorizontal,
+    SquareKanban,
+    Table,
+    TableOfContents,
+  } from "lucide-vue-next";
+  import { computed, ref } from "vue";
+  import type { ActiveFilters } from "../../types/filter.types";
+  import type { FilterOption } from "./UiFilter.vue";
+  import UiFilter from "./UiFilter.vue";
 
-export type { FilterOption }
+  export type { FilterOption };
 
-const { getDotColor } = useDotColor()
+  const { getDotColor } = useDotColor();
 
-const filterOpen = ref(false)
+  const filterOpen = ref(false);
 
-export type UiHeaderStat = {
-  label: string
-  value: number | string
-  /**
-   * Raw hex color from backend — takes priority over `dot`.
-   * Example: "#10b981"
-   * When present, useDotColor() is bypassed entirely.
-   */
-  color?: string
-  /**
-   * Tailwind dot class — legacy / fallback.
-   * Example: "bg-emerald-500"
-   * Resolved to hex via useDotColor() only when `color` is absent.
-   */
-  dot?: string
-  badge?: string
-}
+  export type UiHeaderStat = {
+    label: string;
+    value: number | string;
+    color?: string;
+    dot?: string;
+    badge?: string;
+  };
 
-const views = [
-  {
-    id: 'table' as ViewMode,
-    label: 'Table',
-    icon: Table,
-    activeClass: 'bg-primary border border-gray-500 text-white active-no-hover',
-  },
-  {
-    id: 'list' as ViewMode,
-    label: 'List',
-    icon: TableOfContents,
-    activeClass: 'bg-primary border border-gray-500 text-white active-no-hover',
-  },
-  {
-    id: 'kanban' as ViewMode,
-    label: 'Kanban',
-    icon: SquareKanban,
-    activeClass: 'bg-primary border border-gray-500 text-white active-no-hover',
-  },
-]
+  const allViews = [
+    {
+      id: "table" as ViewMode,
+      label: "Table",
+      icon: Table,
+      activeClass:
+        "bg-primary border border-gray-500 text-white active-no-hover",
+    },
+    {
+      id: "list" as ViewMode,
+      label: "List",
+      icon: TableOfContents,
+      activeClass:
+        "bg-primary border border-gray-500 text-white active-no-hover",
+    },
+    {
+      id: "kanban" as ViewMode,
+      label: "Kanban",
+      icon: SquareKanban,
+      activeClass:
+        "bg-primary border border-gray-500 text-white active-no-hover",
+    },
+  ];
 
-withDefaults(
-  defineProps<{
-    title: string
-    stats?: UiHeaderStat[]
-    showViews?: boolean
-    currentView?: ViewMode
-    createLabel?: string
-    showRefresh?: boolean
-    loading?: boolean
-    showSearch?: boolean
-    searchValue?: string
-    searchPlaceholder?: string
-    showFilter?: boolean
-    activeFilterCount?: number
-    showSort?: boolean
-    isSortActive?: boolean
-    showExport?: boolean
-    filterCreatorOptions?: FilterOption[]
-    filterTagOptions?: FilterOption[]
-    filterValues?: ActiveFilters
-  }>(),
-  {
-    showSearch: false,
-    searchPlaceholder: 'Search...',
-    showFilter: false,
-    activeFilterCount: 0,
-    showSort: false,
-    isSortActive: false,
-    showExport: false,
-    filterCreatorOptions: () => [],
-    filterTagOptions: () => [],
-    filterValues: () => ({}),
-  },
-)
+  const props = withDefaults(
+    defineProps<{
+      title: string;
+      stats?: UiHeaderStat[];
+      showViews?: boolean;
+      showKanban?: boolean;
+      currentView?: ViewMode;
+      createLabel?: string;
+      showRefresh?: boolean;
+      loading?: boolean;
+      showSearch?: boolean;
+      searchValue?: string;
+      searchPlaceholder?: string;
+      showFilter?: boolean;
+      activeFilterCount?: number;
+      showSort?: boolean;
+      isSortActive?: boolean;
+      showExport?: boolean;
+      filterCreatorOptions?: FilterOption[];
+      filterTagOptions?: FilterOption[];
+      filterValues?: ActiveFilters;
+    }>(),
+    {
+      showSearch: false,
+      searchPlaceholder: "Search...",
+      showFilter: false,
+      activeFilterCount: 0,
+      showSort: false,
+      isSortActive: false,
+      showExport: false,
+      showKanban: true,
+      filterCreatorOptions: () => [],
+      filterTagOptions: () => [],
+      filterValues: () => ({}),
+    },
+  );
 
-const emit = defineEmits<{
-  (e: 'update:currentView', value: ViewMode): void
-  (e: 'create'): void
-  (e: 'refresh'): void
-  (e: 'update:searchValue', value: string): void
-  (e: 'filter'): void
-  (e: 'sort'): void
-  (e: 'export', format: 'csv' | 'json' | 'pdf'): void
-  (e: 'apply-filters', filters: ActiveFilters): void
-}>()
+  // Filter out kanban when showKanban is false
+  const visibleViews = computed(() =>
+    props.showKanban ? allViews : allViews.filter((v) => v.id !== "kanban"),
+  );
 
-/**
- * Resolve the accent hex color for a stat badge/dot.
- *
- * Priority:
- *   1. stat.color — raw hex from backend (bypasses all Tailwind mapping)
- *   2. stat.dot   — Tailwind class resolved via useDotColor()
- *   3. useDotColor() default fallback (#8b5cf6)
- */
-function resolveStatColor(stat: UiHeaderStat): string {
-  // Raw hex wins — no mapping needed
-  if (stat.color && (stat.color.startsWith('#') || stat.color.startsWith('rgb'))) {
-    return stat.color
+  const emit = defineEmits<{
+    (e: "update:currentView", value: ViewMode): void;
+    (e: "create"): void;
+    (e: "refresh"): void;
+    (e: "update:searchValue", value: string): void;
+    (e: "filter"): void;
+    (e: "sort"): void;
+    (e: "export", format: "csv" | "json" | "pdf"): void;
+    (e: "apply-filters", filters: ActiveFilters): void;
+  }>();
+
+  function resolveStatColor(stat: UiHeaderStat): string {
+    if (
+      stat.color &&
+      (stat.color.startsWith("#") || stat.color.startsWith("rgb"))
+    ) {
+      return stat.color;
+    }
+    return getDotColor(stat.dot ?? stat.color ?? "");
   }
-  // Tailwind class fallback
-  return getDotColor(stat.dot ?? stat.color ?? '')
-}
 </script>
