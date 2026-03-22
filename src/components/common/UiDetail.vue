@@ -1,5 +1,5 @@
 <template>
-  <div class="flex-1 flex flex-col min-h-0 w-full bg-background">
+  <div class="flex-1 flex min-h-0 w-full flex-col bg-background">
     <!-- ── Loading State ── -->
     <div v-if="loading" class="flex-1 flex items-center justify-center">
       <div class="flex flex-col items-center gap-3">
@@ -23,7 +23,7 @@
     <div v-else class="flex-1 flex flex-col min-h-0">
       <!-- Top Bar -->
       <div
-        class="px-5 pt-3.5 pb-2.5 flex items-center justify-between shrink-0"
+        class="crud-shell mx-3 mt-3 flex shrink-0 items-center justify-between rounded-[28px] border border-border/60 bg-card/92 px-5 py-4 shadow-[0_20px_50px_rgb(15_23_42/0.08)]"
       >
         <div v-if="statusBadge" class="ml-2">
           <Badge :color="getDotColor(statusBadge.dot ?? '')">
@@ -67,10 +67,10 @@
       </div>
 
       <!-- ── Resizable Layout ── -->
-      <div class="flex-1 min-h-0 px-2 pb-3">
+      <div class="flex-1 min-h-0 px-3 pb-4 pt-3">
         <ResizablePanelGroup
           direction="vertical"
-          class="h-full rounded-lg border border-border/50 overflow-hidden shadow-sm"
+          class="crud-shell h-full overflow-hidden rounded-[30px] border border-border/60 bg-card/90 shadow-[0_26px_70px_rgb(15_23_42/0.08)]"
         >
           <!-- UPPER PANEL -->
           <ResizablePanel :default-size="62" :min-size="35">
@@ -80,7 +80,7 @@
                 :default-size="metaDefaultSize"
                 :min-size="10"
                 :max-size="30"
-                class="border-r border-border/40 bg-muted/[0.03]"
+                class="border-r border-border/40 bg-background/70"
               >
                 <ScrollArea class="h-full">
                   <div class="px-4 py-4">
@@ -168,17 +168,17 @@
                       @update:model-value="handleTabChange"
                     >
                       <!-- Tab strip -->
-                      <div class="shrink-0 relative border-b border-border/50">
+                      <div class="shrink-0 relative border-b border-border/40 bg-background/70">
                         <div
-                          class="absolute inset-0 bg-muted/[0.04] pointer-events-none"
+                          class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(var(--color-primary),0.08),transparent_55%)] pointer-events-none"
                         />
                         <TabsList
-                          class="relative h-auto bg-transparent p-0 gap-0 rounded-none flex items-end pl-2"
+                          class="relative flex h-auto items-end gap-1 bg-transparent p-2"
                         >
                           <!-- Detail tab (always first) -->
                           <TabsTrigger
                             :value="DETAIL_TAB_ID"
-                            class="group relative h-10 px-5 bg-transparent rounded-none border-0 shadow-none text-[11px] font-semibold tracking-[0.07em] uppercase text-muted-foreground/50 hover:text-muted-foreground data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none transition-colors duration-150 focus-visible:outline-none"
+                            class="group relative h-11 rounded-2xl px-4 bg-transparent border border-transparent shadow-none text-[11px] font-semibold tracking-[0.07em] uppercase text-muted-foreground/70 hover:text-foreground data-[state=active]:text-primary data-[state=active]:bg-card data-[state=active]:border-primary/20 data-[state=active]:shadow-[0_12px_24px_rgb(var(--color-primary)/0.12)] transition-all duration-150 focus-visible:outline-none"
                           >
                             <span
                               class="absolute bottom-0 left-0 right-0 h-[2px] rounded-t-sm bg-primary scale-x-0 group-data-[state=active]:scale-x-100 transition-transform duration-200 ease-out origin-center"
@@ -189,16 +189,14 @@
                             Detail
                           </TabsTrigger>
 
-                          <span
-                            class="self-center w-px h-3.5 bg-border/60 mx-0.5 shrink-0"
-                          />
+                          
 
                           <!-- Dynamic tabs -->
                           <TabsTrigger
                             v-for="tab in tabs"
                             :key="tab.id"
                             :value="tab.id"
-                            class="group relative h-10 px-5 bg-transparent rounded-none border-0 shadow-none text-[11px] font-semibold tracking-[0.07em] uppercase text-muted-foreground/50 hover:text-muted-foreground data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none transition-colors duration-150 focus-visible:outline-none"
+                            class="group relative h-11 rounded-2xl px-4 bg-transparent border border-transparent shadow-none text-[11px] font-semibold tracking-[0.07em] uppercase text-muted-foreground/70 hover:text-foreground data-[state=active]:text-primary data-[state=active]:bg-card data-[state=active]:border-primary/20 data-[state=active]:shadow-[0_12px_24px_rgb(var(--color-primary)/0.12)] transition-all duration-150 focus-visible:outline-none"
                           >
                             <span
                               class="absolute bottom-0 left-0 right-0 h-[2px] rounded-t-sm bg-primary scale-x-0 group-data-[state=active]:scale-x-100 transition-transform duration-200 ease-out origin-center"

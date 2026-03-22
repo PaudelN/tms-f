@@ -2,14 +2,14 @@
   <div
     ref="rootEl"
     class="flex flex-col"
-    :class="isFullscreen ? 'z-50 rounded-none overflow-hidden' : 'rounded-sm '"
+    :class="isFullscreen ? 'z-50 rounded-none overflow-hidden' : 'rounded-[28px] '"
   >
     <!-- ══════════════════════════════════════════════════════════
          STICKY HEADER
     ══════════════════════════════════════════════════════════ -->
-    <header class="shrink-0 sticky top-0 z-30 border border-border bg-card">
+    <header class="shrink-0 sticky top-0 z-30 rounded-t-[28px] border border-border/60 bg-card/90 backdrop-blur-xl">
       <!-- Top row: 7 controls in a single clean bar -->
-      <div class="flex items-center gap-1 px-3 py-2 border-b border-border shadow-xs">
+      <div class="flex items-center gap-1 px-3 py-2.5 border-b border-border/50 bg-background/70">
         <!-- ① Info -->
         <TooltipProvider :delay-duration="120">
           <Tooltip>

@@ -1,14 +1,14 @@
 <template>
   <div
-    class="rounded-sm overflow-hidden border border-border bg-card transition-all duration-300 flex flex-col max-h-full"
+    class="crud-shell overflow-hidden rounded-[28px] border border-border/60 bg-card/92 transition-all duration-300 flex flex-col max-h-full shadow-[0_20px_60px_rgb(15_23_42/0.08)]"
     :class="
       isFullscreen
-        ? 'fixed inset-0 z-50 h-screen flex flex-col rounded-none overflow-hidden bg-background p-20'
+        ? 'fixed inset-0 z-50 h-screen flex flex-col rounded-none overflow-hidden bg-background p-10 md:p-16'
         : ''
     "
   >
     <div
-      class="flex flex-wrap items-center justify-between gap-3 px-5 py-3 border-b border-border bg-background"
+      class="flex flex-wrap items-center justify-between gap-3 px-5 py-3 border-b border-border/50 bg-background/80 backdrop-blur-xl"
     >
       <div class="flex items-center gap-3">
         <div class="relative group/info">

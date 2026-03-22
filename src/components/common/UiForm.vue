@@ -1,216 +1,221 @@
 <template>
-  <div class="flex flex-col bg-background p-2">
-    <div
-      class="sticky top-0 z-50 shrink-0 h-10"
-      style="box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.06)"
-    >
+  <div class="flex min-h-full flex-col bg-background">
+    <div class="sticky top-0 z-40 border-b border-border/60 bg-background/86 backdrop-blur-xl">
       <div
-        class="h-full max-w-full mx-auto px-4 flex items-center justify-between gap-4"
+        class="mx-auto flex h-16 max-w-[1600px] items-center justify-between gap-4 px-4 sm:px-6"
       >
-        <!-- Left: back + breadcrumbs -->
-        <div class="flex items-center gap-3 min-w-0">
-          <Breadcrumb>
-            <BreadcrumbList class="gap-1 flex-nowrap min-w-0">
-              <template v-for="(crumb, i) in breadcrumbs" :key="i">
-                <BreadcrumbItem class="min-w-0">
-                  <BreadcrumbPage
-                    v-if="i === breadcrumbs.length - 1"
-                    class="text-[12px] font-semibold text-foreground truncate max-w-40"
-                  >
-                    {{ crumb.label }}
-                  </BreadcrumbPage>
-                  <BreadcrumbLink
-                    v-else
-                    as="button"
-                    class="text-[12px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer whitespace-nowrap"
-                    @click="crumb.onClick?.()"
-                  >
-                    {{ crumb.label }}
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator
-                  v-if="i < breadcrumbs.length - 1"
-                  class="text-muted-foreground"
-                />
-              </template>
-            </BreadcrumbList>
-          </Breadcrumb>
-          <Transition name="fade-fast">
-            <Badge
-              v-if="hasChanges && mode === 'edit'"
-              variant="default"
-              class="text-[10px] bg-primary font-bold uppercase tracking-wider px-2 py-0.5 rounded-xs"
-            >
-              Unsaved changes
-            </Badge>
-          </Transition>
-        </div>
-
-        <div class="flex items-center gap-3 shrink-0">
+        <div class="flex min-w-0 items-center gap-3">
           <Button
             type="button"
             variant="header"
             shape="circle"
             size="icon"
-            class="relative cursor-pointer flex items-center justify-center w-8 h-8 rounded-[9999px] transition-all duration-200 text-primary bg-primary-20"
+            class="flex h-10 w-10 items-center justify-center rounded-2xl border border-border/60 bg-card text-primary shadow-[0_10px_30px_rgb(15_23_42/0.08)] transition-all duration-200 hover:-translate-y-0.5 hover:text-foreground"
             @click="onCancel"
           >
             <ArrowLeft class="h-4 w-4" />
+          </Button>
+
+          <div class="min-w-0 space-y-1">
+            <Breadcrumb>
+              <BreadcrumbList class="min-w-0 flex-nowrap gap-1 text-[12px]">
+                <template v-for="(crumb, i) in breadcrumbs" :key="i">
+                  <BreadcrumbItem class="min-w-0">
+                    <BreadcrumbPage
+                      v-if="i === breadcrumbs.length - 1"
+                      class="max-w-48 truncate font-semibold text-foreground"
+                    >
+                      {{ crumb.label }}
+                    </BreadcrumbPage>
+                    <BreadcrumbLink
+                      v-else
+                      as="button"
+                      class="cursor-pointer whitespace-nowrap text-muted-foreground transition-colors hover:text-foreground"
+                      @click="crumb.onClick?.()"
+                    >
+                      {{ crumb.label }}
+                    </BreadcrumbLink>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator
+                    v-if="i < breadcrumbs.length - 1"
+                    class="text-muted-foreground/50"
+                  />
+                </template>
+              </BreadcrumbList>
+            </Breadcrumb>
+
+            <div class="flex flex-wrap items-center gap-2">
+              <p class="text-xs text-muted-foreground">
+                {{ mode === "edit" ? "Review changes and publish when ready." : "Complete the required fields to create a polished record." }}
+              </p>
+              <Transition name="fade-fast">
+                <Badge
+                  v-if="hasChanges && mode === 'edit'"
+                  variant="default"
+                  class="rounded-full bg-primary/12 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-primary"
+                >
+                  Draft changes
+                </Badge>
+              </Transition>
+            </div>
+          </div>
+        </div>
+
+        <div class="hidden items-center gap-2 rounded-2xl border border-border/60 bg-card/80 p-2 shadow-[0_8px_30px_rgb(15_23_42/0.06)] md:flex">
+          <div class="rounded-xl bg-muted/80 px-3 py-2 text-right">
+            <p class="text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">Shortcut</p>
+            <p class="text-xs font-medium text-foreground">⌘ / Ctrl + S</p>
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            class="h-11 rounded-xl px-4 text-sm font-medium text-muted-foreground hover:bg-muted"
+            @click="onCancel"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            variant="default"
+            class="h-11 rounded-xl px-5 text-sm font-semibold shadow-[0_12px_24px_rgb(var(--color-primary)/0.22)]"
+            :disabled="submitting || (mode === 'edit' && !hasChanges)"
+            @click="onSubmit"
+          >
+            <Loader2 v-if="submitting" class="mr-2 h-4 w-4 animate-spin" />
+            {{ submitLabel ?? (mode === "edit" ? "Save Changes" : "Create") }}
           </Button>
         </div>
       </div>
     </div>
 
-    <!-- ── Loading State ─────────────────────────────────────────────────── -->
-    <div v-if="loading" class="flex-1 flex items-center justify-center">
-      <div class="flex flex-col items-center gap-5">
-        <div class="relative h-12 w-12">
-          <div class="absolute inset-0 rounded-full border-2 border-muted" />
+    <div v-if="loading" class="flex flex-1 items-center justify-center px-6 py-16">
+      <div class="crud-shell flex w-full max-w-md flex-col items-center gap-5 rounded-[32px] border border-border/60 bg-card/90 px-8 py-12 text-center shadow-[0_28px_60px_rgb(15_23_42/0.10)]">
+        <div class="relative h-14 w-14">
+          <div class="absolute inset-0 rounded-full border border-primary/20" />
           <div
-            class="absolute inset-0 rounded-full border-2 border-transparent animate-spin"
-            style="border-top-color: rgb(var(--color-primary))"
+            class="absolute inset-1 rounded-full border-2 border-transparent border-t-primary animate-spin"
           />
+          <div class="absolute inset-4 rounded-full bg-primary/10" />
         </div>
-        <div class="text-center">
-          <p class="text-[13px] font-semibold text-foreground">
-            {{ loadingText }}
-          </p>
-          <p class="text-[11px] text-muted-foreground mt-0.5">Please wait…</p>
+        <div class="space-y-1">
+          <p class="text-sm font-semibold text-foreground">{{ loadingText }}</p>
+          <p class="text-xs text-muted-foreground">Preparing the workspace and form sections…</p>
         </div>
       </div>
     </div>
 
     <div v-else class="flex-1 overflow-y-auto">
-      <div class="max-w-full mx-auto p-10">
-        <div
-          class="grid grid-cols-1 xl:grid-cols-[minmax(0,2fr)_450px] gap-10 items-start"
-        >
-          <!-- Form Column -->
-          <div class="space-y-5">
-            <Transition name="slide-down">
-              <Alert
-                v-if="errorMessage"
-                variant="destructive"
-                class="border-destructive bg-card"
-                style="box-shadow: 0 0 0 4px rgb(239 68 68 / 0.08)"
-              >
-                <AlertCircle class="h-4 w-4" />
-                <AlertTitle class="text-[13px] font-semibold"
-                  >Something went wrong</AlertTitle
-                >
-                <AlertDescription class="text-[12px] leading-relaxed mt-0.5">
-                  {{ errorMessage }}
-                </AlertDescription>
-              </Alert>
-            </Transition>
+      <div class="mx-auto flex max-w-[1600px] flex-col gap-6 px-4 py-6 sm:px-6 xl:flex-row xl:items-start">
+        <div class="min-w-0 flex-1 space-y-5">
+          <Transition name="slide-down">
+            <Alert
+              v-if="errorMessage"
+              variant="destructive"
+              class="rounded-[24px] border-destructive/30 bg-destructive/5 shadow-[0_14px_30px_rgb(239_68_68/0.12)]"
+            >
+              <AlertCircle class="h-4 w-4" />
+              <AlertTitle class="text-[13px] font-semibold">Something went wrong</AlertTitle>
+              <AlertDescription class="mt-0.5 text-[12px] leading-relaxed">
+                {{ errorMessage }}
+              </AlertDescription>
+            </Alert>
+          </Transition>
 
-            <!-- Card wrapper for form -->
-            <Card class="border-border rounded-sm shadow-soft overflow-hidden">
+          <div class="crud-shell rounded-[32px] border border-border/60 bg-card/92 shadow-[0_24px_60px_rgb(15_23_42/0.08)] backdrop-blur">
+            <div class="border-b border-border/50 px-6 py-5 sm:px-8">
+              <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div class="space-y-2">
+                  <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-primary/70">
+                    {{ mode === "edit" ? "Edit record" : "Create record" }}
+                  </p>
+                  <h2 class="text-2xl font-semibold tracking-tight text-foreground">
+                    {{ submitLabel ?? (mode === "edit" ? "Save Changes" : "Create") }}
+                  </h2>
+                  <p class="max-w-2xl text-sm text-muted-foreground">
+                    Use this workspace to capture the most important information first, then enrich it with context and scheduling details.
+                  </p>
+                </div>
+
+                <div class="grid gap-3 sm:grid-cols-2">
+                  <div class="rounded-2xl border border-border/60 bg-background/80 px-4 py-3">
+                    <p class="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Progress</p>
+                    <p class="mt-1 text-sm font-medium text-foreground">
+                      {{ hasChanges ? "Edits ready for review" : mode === "edit" ? "No changes yet" : "Start with key details" }}
+                    </p>
+                  </div>
+                  <div class="rounded-2xl border border-border/60 bg-background/80 px-4 py-3">
+                    <p class="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Navigation</p>
+                    <p class="mt-1 text-sm font-medium text-foreground">Sticky actions stay visible while you move through the form.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <Card class="border-0 bg-transparent shadow-none">
               <CardContent class="p-0">
                 <slot name="fields" />
               </CardContent>
             </Card>
           </div>
+        </div>
 
-          <!-- Sidebar Column -->
-          <div class="space-y-3">
-            <slot name="sidebar">
-              <!-- Default: form guidance card -->
-              <Card class="border-border">
-                <CardHeader class="pb-3 pt-5 px-5">
-                  <div class="flex items-center gap-2">
-                    <div
-                      class="h-7 w-7 rounded-lg bg-primary-20 flex items-center justify-center"
-                    >
-                      <Info class="h-3.5 w-3.5 text-primary" />
-                    </div>
-                    <CardTitle class="text-[13px] font-semibold"
-                      >About this form</CardTitle
-                    >
-                  </div>
-                </CardHeader>
-                <CardContent class="px-5 pb-5 pt-0 space-y-3">
-                  <p class="text-[12px] text-muted-foreground leading-relaxed">
-                    Fill in all required fields marked with
-                    <span class="text-destructive font-bold">*</span>. Your
-                    changes are not saved until you click the
-                    <strong class="text-foreground font-semibold">{{
-                      submitLabel ??
-                      (mode === "edit" ? "Save Changes" : "Create")
-                    }}</strong>
-                    button.
+        <aside class="w-full shrink-0 xl:sticky xl:top-24 xl:max-w-[400px]">
+          <div class="space-y-4">
+            <div class="crud-shell rounded-[28px] border border-border/60 bg-card/92 p-5 shadow-[0_20px_50px_rgb(15_23_42/0.07)]">
+              <div class="flex items-start gap-3">
+                <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 ring-1 ring-primary/15">
+                  <Info class="h-4 w-4 text-primary" />
+                </div>
+                <div class="space-y-2">
+                  <h3 class="text-sm font-semibold text-foreground">Form guidance</h3>
+                  <p class="text-xs leading-relaxed text-muted-foreground">
+                    Required fields are highlighted automatically. Keep the name concise, descriptions actionable, and dates aligned with milestones.
                   </p>
-                  <Separator />
-                  <div class="space-y-2">
-                    <div
-                      class="flex items-center gap-2 text-[11px] text-muted-foreground"
-                    >
-                      <kbd
-                        class="inline-flex h-5 items-center px-1.5 rounded border border-border bg-muted font-mono text-[10px] font-medium"
-                        >⌘S</kbd
-                      >
-                      <span>Save changes</span>
-                    </div>
-                    <div
-                      class="flex items-center gap-2 text-[11px] text-muted-foreground"
-                    >
-                      <kbd
-                        class="inline-flex h-5 items-center px-1.5 rounded border border-border bg-muted font-mono text-[10px] font-medium"
-                        >Esc</kbd
-                      >
-                      <span>Discard & go back</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </slot>
-          </div>
-
-          <div
-            v-if="!loading"
-            style="box-shadow: 0 -4px 16px rgb(0 0 0 / 0.06)"
-            class=""
-          >
-            <div class="max-w-7xl mx-auto flex items-center justify-between">
-              <div
-                class="flex items-center gap-1.5 text-[11px] text-muted-foreground"
-              >
-                <kbd
-                  class="inline-flex h-5 items-center px-1.5 rounded border border-border bg-muted font-mono text-[10px] font-medium"
-                  >cmd/⌘ + S</kbd
-                >
-                <span>to save</span>
+                </div>
               </div>
 
-              <div class="flex items-center gap-4">
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="sm"
-                  class="h-9 px-4 cursor-pointer text-[13px] hover:text-foreground rounded-sm"
-                  @click="onCancel"
-                >
-                  Cancel
-                </Button>
-
-                <Button
-                  type="button"
-                  variant="default"
-                  size="sm"
-                  class="h-9 px-5 cursor-pointer text-[13px] font-semibold rounded-sm gap-2 hover:bg-violet-600"
-                  style="box-shadow: 0 1px 3px rgb(0 0 0 / 0.15)"
-                  :disabled="submitting || (mode === 'edit' && !hasChanges)"
-                  @click="onSubmit"
-                >
-                  <Loader2 v-if="submitting" class="h-3.5 w-3.5 animate-spin" />
-                  {{
-                    submitLabel ?? (mode === "edit" ? "Save Changes" : "Create")
-                  }}
-                </Button>
+              <div class="mt-4 grid gap-3">
+                <div class="rounded-2xl border border-border/60 bg-background/80 px-4 py-3">
+                  <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Best practice</p>
+                  <p class="mt-1 text-xs text-foreground">Capture purpose, ownership, and timing so every record is clear at a glance.</p>
+                </div>
+                <div class="rounded-2xl border border-border/60 bg-background/80 px-4 py-3">
+                  <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Keyboard</p>
+                  <div class="mt-1 flex items-center gap-2 text-xs text-foreground">
+                    <kbd class="rounded-lg border border-border bg-card px-2 py-1 font-mono text-[11px]">⌘S</kbd>
+                    <kbd class="rounded-lg border border-border bg-card px-2 py-1 font-mono text-[11px]">Ctrl+S</kbd>
+                    <span class="text-muted-foreground">Save quickly</span>
+                  </div>
+                </div>
               </div>
             </div>
+
+            <slot name="sidebar" />
           </div>
-        </div>
+        </aside>
+      </div>
+    </div>
+
+    <div class="sticky bottom-0 z-30 border-t border-border/60 bg-background/88 backdrop-blur-xl md:hidden">
+      <div class="mx-auto flex max-w-[1600px] items-center gap-3 px-4 py-3 sm:px-6">
+        <Button
+          type="button"
+          variant="ghost"
+          class="h-11 flex-1 rounded-2xl border border-border/60 bg-card text-muted-foreground"
+          @click="onCancel"
+        >
+          Cancel
+        </Button>
+        <Button
+          type="button"
+          variant="default"
+          class="h-11 flex-[1.2] rounded-2xl text-sm font-semibold shadow-[0_12px_24px_rgb(var(--color-primary)/0.22)]"
+          :disabled="submitting || (mode === 'edit' && !hasChanges)"
+          @click="onSubmit"
+        >
+          <Loader2 v-if="submitting" class="mr-2 h-4 w-4 animate-spin" />
+          {{ submitLabel ?? (mode === "edit" ? "Save Changes" : "Create") }}
+        </Button>
       </div>
     </div>
   </div>
@@ -231,13 +236,7 @@
     BreadcrumbSeparator,
   } from "@/components/ui/breadcrumb";
   import { Button } from "@/components/ui/button";
-  import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-  } from "@/components/ui/card";
-  import { Separator } from "@/components/ui/separator";
+  import { Card, CardContent } from "@/components/ui/card";
 
   export interface FormBreadcrumb {
     label: string;
