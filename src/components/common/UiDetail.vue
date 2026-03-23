@@ -40,8 +40,9 @@
                 <TooltipTrigger as-child>
                   <Button
                     type="button"
+                    variant="header"
                     :disabled="action.disabled"
-                    class="relative cursor-pointer flex items-center justify-center w-9 h-9 rounded-md transition-all duration-150"
+                    class="relative cursor-pointer flex items-center justify-center w-10 h-10 rounded-sm transition-all duration-200 bg-primary-20"
                     :class="getActionClass(action)"
                     @click="action.onClick"
                   >
@@ -70,86 +71,11 @@
       <div class="flex-1 min-h-0 px-2 pb-3">
         <ResizablePanelGroup
           direction="vertical"
-          class="h-full rounded-lg border border-border/50 overflow-hidden shadow-sm"
+          class="h-full rounded-lg overflow-hidden shadow-sm"
         >
           <!-- UPPER PANEL -->
           <ResizablePanel :default-size="62" :min-size="35">
             <ResizablePanelGroup direction="horizontal" class="h-full">
-              <!-- LEFT: meta sidebar -->
-              <ResizablePanel
-                :default-size="metaDefaultSize"
-                :min-size="10"
-                :max-size="30"
-                class="border-r border-border/50 bg-muted/10"
-              >
-                <ScrollArea class="h-full">
-                  <div class="px-4 py-4">
-                    <template
-                      v-for="(field, i) in metaFields"
-                      :key="field.label"
-                    >
-                      <div
-                        class="py-4"
-                        :class="i < metaFields.length - 1 ? '' : ''"
-                      >
-                        <p
-                          class="text-[10px] font-semibold tracking-[0.08em] uppercase text-muted-foreground/50 mb-1.5 select-none"
-                        >
-                          {{ field.label }}
-                        </p>
-                        <div class="flex items-center gap-1.5">
-                          <component
-                            v-if="field.icon"
-                            :is="field.icon"
-                            class="h-3 w-3 text-muted-foreground/35 flex-shrink-0"
-                          />
-                          <Badge
-                            v-if="field.type === 'badge'"
-                            :color="getDotColor((field as any).dot ?? '')"
-                          >
-                            {{ field.value }}
-                          </Badge>
-                          <div
-                            v-else-if="
-                              field.type === 'avatar' && field.avatarData
-                            "
-                            class="flex items-center gap-2"
-                          >
-                            <div
-                              class="h-6 w-6 rounded-full ring-1 ring-primary/25 bg-primary/10 flex items-center justify-center flex-shrink-0"
-                            >
-                              <span class="text-[10px] font-bold text-primary">
-                                {{ field.avatarData.initials }}
-                              </span>
-                            </div>
-                            <div class="min-w-0">
-                              <p
-                                class="text-[12px] font-semibold truncate leading-tight"
-                              >
-                                {{ field.avatarData.name }}
-                              </p>
-                              <p
-                                class="text-[10px] text-muted-foreground/70 truncate"
-                              >
-                                {{ field.avatarData.sub }}
-                              </p>
-                            </div>
-                          </div>
-                          <span
-                            v-else
-                            class="text-[12px] font-medium text-foreground leading-snug"
-                          >
-                            {{ field.value }}
-                          </span>
-                        </div>
-                      </div>
-                    </template>
-                  </div>
-                </ScrollArea>
-              </ResizablePanel>
-
-              <ResizableHandle with-handle />
-
               <!-- RIGHT: tabbed content -->
               <ResizablePanel
                 :default-size="100 - metaDefaultSize"
@@ -164,7 +90,7 @@
                       @update:model-value="handleTabChange"
                     >
                       <!-- Tab strip -->
-                      <div class="shrink-0 relative border-b border-border/50">
+                      <div class="shrink-0 relative border-border/50">
                         <!-- subtle background tint on strip -->
                         <div
                           class="absolute inset-0 bg-muted/[0.04] pointer-events-none"
@@ -283,6 +209,109 @@
                     </ScrollArea>
                   </template>
                 </div>
+              </ResizablePanel>
+
+              <ResizableHandle with-handle />
+
+              <!-- LEFT: meta sidebar -->
+              <ResizablePanel
+                :default-size="metaDefaultSize"
+                :min-size="10"
+                :max-size="30"
+              >
+                <ScrollArea class="h-full">
+                  <div class="px-3 py-3 space-y-1">
+                    <template
+                      v-for="(field, i) in metaFields"
+                      :key="field.label"
+                    >
+                      <div
+                        class="group relative rounded-lg px-3 py-3 transition-all duration-150 hover:bg-muted/60 border border-transparent hover:border-border"
+                      >
+                        <!-- Label row -->
+                        <div class="flex items-center gap-1.5 mb-2 font-bold">
+                          <component
+                            v-if="field.icon"
+                            :is="field.icon"
+                            class="h-3 w-3 text-muted-foreground/35 shrink-0 group-hover:text-primary transition-colors duration-150"
+                          />
+                          <p
+                            class="text-[9px] tracking-[0.12em] uppercase text-muted-foreground/40 group-hover:text-muted-foreground/60 transition-colors duration-150 select-none"
+                          >
+                            {{ field.label }}
+                          </p>
+                        </div>
+
+                        <!-- Value row -->
+                        <div class="pl-0.5">
+                          <!-- Badge type -->
+                          <Badge
+                            v-if="field.type === 'badge'"
+                            :color="getDotColor((field as any).dot ?? '')"
+                          >
+                            {{ field.value }}
+                          </Badge>
+
+                          <!-- Avatar type -->
+                          <div
+                            v-else-if="
+                              field.type === 'avatar' && field.avatarData
+                            "
+                            class="flex items-center gap-2.5"
+                          >
+                            <div class="relative shrink-0">
+                              <div
+                                class="h-7 w-7 rounded-full bg-primary-10 border border-border flex items-center justify-center shadow-subtle"
+                              >
+                                <span
+                                  class="text-[11px] font-black text-primary leading-none"
+                                >
+                                  {{ field.avatarData.initials }}
+                                </span>
+                              </div>
+                              <!-- online dot -->
+                              <span
+                                class="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-background border border-border"
+                              >
+                                <span
+                                  class="block h-full w-full rounded-full bg-primary-20"
+                                />
+                              </span>
+                            </div>
+                            <div class="min-w-0">
+                              <p
+                                class="text-[12px] font-semibold text-foreground truncate leading-tight"
+                              >
+                                {{ field.avatarData.name }}
+                              </p>
+                              <p
+                                class="text-[10px] text-muted-foreground truncate leading-snug mt-0.5"
+                              >
+                                {{ field.avatarData.sub }}
+                              </p>
+                            </div>
+                          </div>
+
+                          <!-- Text type -->
+                          <span
+                            v-else
+                            class="text-[12px] ml-4 font-medium text-foreground leading-snug"
+                          >
+                            {{ field.value ?? "—" }}
+                          </span>
+                        </div>
+
+                        <!-- Left accent line — appears on hover -->
+                        <span
+                          class="absolute left-0 top-2 bottom-2 w-[2px] rounded-r-full bg-primary opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+                        />
+                      </div>
+
+                      <!-- Divider between items -->
+                      <div v-if="i < metaFields.length - 1" class="mx-3 h-px" />
+                    </template>
+                  </div>
+                </ScrollArea>
               </ResizablePanel>
             </ResizablePanelGroup>
           </ResizablePanel>

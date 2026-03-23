@@ -6,7 +6,7 @@
     :status-badge="statusBadge"
     :actions="actions"
     :meta-fields="metaFields"
-    :meta-default-size="18"
+    :meta-default-size="22"
     :tabs="detailTabs"
     :delete-open="deleteModalOpen"
     :delete-loading="deleteLoading"
@@ -57,127 +57,62 @@
          calls fetchProject once, then works client-side from then on.
     ──────────────────────────────────────────────────────────────────────── -->
     <template #tab-pipelines>
-      <UiList
-        v-if="pipelinesTabActivated"
-        list-id="project-pipelines"
-        :fetch-fn="pipelinesFetchFn"
-        :features="pipelinesFeatures"
-        item-key="id"
-        class="h-full"
-        @row-click="(pl) => goToPipeline(pl.id)"
-      >
-        <!-- ── Row summary ────────────────────────────────────────────── -->
-        <template #item-summary="{ item: pl }">
-          <div class="flex items-center gap-3 min-w-0">
-            <div
-              class="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 group-hover/row:bg-primary/15 transition-colors"
-            >
-              <Monitor class="h-3.5 w-3.5 text-primary" />
-            </div>
-
-            <div class="min-w-0 flex-1">
-              <p
-                class="text-[13px] font-semibold text-foreground truncate leading-tight"
-              >
-                {{ pl.name }}
-              </p>
-              <p
-                v-if="pl.description"
-                class="text-[11px] text-muted-foreground/70 truncate mt-0.5"
-              >
-                {{ pl.description }}
-              </p>
-            </div>
-
-            <div
-              v-if="pl.stages_count != null"
-              class="hidden sm:flex items-center gap-1 shrink-0"
-            >
-              <Layers class="h-3 w-3 text-muted-foreground/40" />
-              <span class="text-[11px] text-muted-foreground/60 tabular-nums">
-                {{ pl.stages_count }}
-                {{ pl.stages_count === 1 ? "stage" : "stages" }}
-              </span>
-            </div>
-
-            <span
-              class="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-full border shrink-0"
-              :class="resolvePipelineBadge(pl.status)"
-            >
-              <span
-                class="h-1.5 w-1.5 rounded-full"
-                :class="resolvePipelineDot(pl.status)"
-              />
-              {{ resolvePipelineLabel(pl.status) }}
-            </span>
-
-            <ChevronRight
-              class="h-3.5 w-3.5 text-muted-foreground/30 shrink-0 group-hover/row:text-primary/50 transition-colors"
-            />
-          </div>
-        </template>
-
-        <!-- ── Expanded detail ───────────────────────────────────────── -->
-        <template #item-expanded="{ item: pl }">
-          <div class="grid grid-cols-2 gap-x-6 gap-y-3 py-1">
-            <div v-if="pl.description" class="col-span-2">
-              <p
-                class="text-[10px] font-semibold tracking-[0.07em] uppercase text-muted-foreground/50 mb-1"
-              >
-                Description
-              </p>
-              <p class="text-[12px] text-foreground/70 leading-relaxed">
-                {{ pl.description }}
-              </p>
-            </div>
-
-            <div v-if="pl.stages_count != null">
-              <p
-                class="text-[10px] font-semibold tracking-[0.07em] uppercase text-muted-foreground/50 mb-1"
-              >
-                Stages
-              </p>
-              <div class="flex items-center gap-1.5">
-                <Layers class="h-3 w-3 text-muted-foreground/40" />
-                <span
-                  class="text-[12px] font-medium text-foreground/80 tabular-nums"
-                  >{{ pl.stages_count }}</span
+      <div class="h-full flex flex-col">
+        <UiList
+          v-if="pipelinesTabActivated"
+          bare
+          disable-row-click
+          list-id="project-pipelines"
+          :fetch-fn="pipelinesFetchFn"
+          :features="pipelinesFeatures"
+          item-key="id"
+          class="h-full"
+          @row-click="(pl) => goToPipeline(pl.id)"
+        >
+          <!-- ── Row summary ────────────────────────────────────────────── -->
+          <template #item-summary="{ item: pl }">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="min-w-0 flex-1">
+                <p
+                  class="text-[13px] font-semibold text-foreground truncate leading-tight"
                 >
+                  {{ pl.name }}
+                </p>
+                <p
+                  v-if="pl.description"
+                  class="text-[11px] text-muted-foreground/70 truncate mt-0.5"
+                >
+                  {{ pl.description }}
+                </p>
               </div>
-            </div>
 
-            <div>
-              <p
-                class="text-[10px] font-semibold tracking-[0.07em] uppercase text-muted-foreground/50 mb-1"
+              <div
+                v-if="pl.stages_count != null"
+                class="hidden sm:flex items-center gap-1 shrink-0"
               >
-                Status
-              </p>
-              <span
-                class="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-full border"
-                :class="resolvePipelineBadge(pl.status)"
-              >
-                <span
-                  class="h-1.5 w-1.5 rounded-full"
-                  :class="resolvePipelineDot(pl.status)"
-                />
+                <Layers class="h-3 w-3 text-muted-foreground/40" />
+                <span class="text-[11px] text-muted-foreground/60 tabular-nums">
+                  {{ pl.stages_count }}
+                  {{ pl.stages_count === 1 ? "stage" : "stages" }}
+                </span>
+              </div>
+              <Badge :color="getDotColor(pl.status?.dot ?? '')">
                 {{ resolvePipelineLabel(pl.status) }}
-              </span>
+              </Badge>
             </div>
-          </div>
-        </template>
-      </UiList>
-
-      <!-- Pre-activation skeleton matching UiList's header height -->
-      <div v-else class="flex flex-col h-full">
-        <div
-          class="h-[46px] border-b border-border bg-card/50 animate-pulse shrink-0"
-        />
-        <div
-          v-for="i in 5"
-          :key="i"
-          class="h-[56px] border-b border-border/40 bg-card animate-pulse"
-          :style="`opacity:${1 - i * 0.15}`"
-        />
+          </template>
+        </UiList>
+        <div class="pt-3 flex justify-end">
+          <Button
+            type="button"
+            variant="header"
+            size="sm"
+            class="text-xs font-medium hover:bg-violet-200"
+            @click="goToAllPipelines"
+          >
+            Explore Boards
+          </Button>
+        </div>
       </div>
     </template>
 
@@ -213,22 +148,23 @@
 
   import { notify } from "@/helpers/toast";
 
+  import Badge from "@/components/ui/badge/Badge.vue";
+  import Button from "@/components/ui/button/Button.vue";
+  import { useDotColor } from "@/composables/useDotColor";
   import {
     AlignLeft,
     CalendarDays,
-    ChevronRight,
     Clock,
+    Columns3,
     Eye,
-    GitBranch,
     ImageIcon,
     Layers,
-    Monitor,
-    Radio,
     RefreshCcw,
     SquarePen,
     Trash2,
-    User,
   } from "lucide-vue-next";
+
+  const { getDotColor } = useDotColor();
 
   // ── Inline SectionHeader (unchanged) ──────────────────────────────────────
   const SectionHeader = defineComponent({
@@ -354,7 +290,7 @@
     {
       id: "pipelines",
       label: "Pipelines",
-      icon: GitBranch,
+      icon: Columns3,
       // Count comes from the initial fetchProject; no extra request needed.
       badge:
         (project.value as any)?.active_pipelines_count ??
@@ -388,16 +324,6 @@
     return typeof status === "object" && "label" in status
       ? status.label
       : String(status);
-  }
-  function resolvePipelineDot(status: any): string {
-    return typeof status === "object" && status !== null && "dot" in status
-      ? status.dot
-      : "bg-muted-foreground";
-  }
-  function resolvePipelineBadge(status: any): string {
-    return typeof status === "object" && status !== null && "badge" in status
-      ? status.badge
-      : "";
   }
 
   // ── Field extractors (unchanged) ──────────────────────────────────────────
@@ -503,14 +429,6 @@
           }
         : undefined,
     },
-    {
-      label: "Status",
-      type: "badge",
-      icon: Radio,
-      value: statusLabel.value,
-      badgeClass: currentStatusObj.value?.badge,
-      dot: currentStatusObj.value?.dot,
-    },
     { label: "Visibility", icon: Eye, value: visibilityLabel.value },
     {
       label: "Workspace",
@@ -519,7 +437,7 @@
     },
     {
       label: "Pipelines",
-      icon: GitBranch,
+      icon: Columns3,
       value: project.value
         ? `${(project.value as any).active_pipelines_count ?? activePipelines.value.length} active`
         : "—",
@@ -537,17 +455,12 @@
     {
       label: "Created At",
       icon: CalendarDays,
-      value: formatDate(project.value?.created_at),
+      value: project.value?.created_at ? project.value.created_at : "—",
     },
     {
       label: "Last Updated",
       icon: Clock,
-      value: formatDate(project.value?.updated_at),
-    },
-    {
-      label: "Creator ID",
-      icon: User,
-      value: project.value?.creator?.id ? `#${project.value.creator.id}` : "—",
+      value: project.value?.updated_at ? project.value.updated_at : "—",
     },
   ]);
 
@@ -576,14 +489,13 @@
   function goToPipeline(pipelineId: number) {
     router.push({ name: "pipeline-detail", params: { id: pipelineId } });
   }
-  function goToAddPipeline() {
-    if (project.value?.id)
-      router.push({
-        name: "pipeline-add",
-        params: { projectId: project.value.id },
-      });
-  }
 
+  function goToAllPipelines() {
+    router.push({
+      name: "pipeline-index",
+      params: { projectId: project.value?.id },
+    });
+  }
   // ── Handlers ─────────────────────────────────────────────────────────────
   function handleEdit() {
     router.push({ name: "project-edit", params: { id: project.value?.id } });

@@ -7,9 +7,14 @@
     <!-- ══════════════════════════════════════════════════════════
          STICKY HEADER
     ══════════════════════════════════════════════════════════ -->
-    <header class="shrink-0 sticky top-0 z-30 border border-border bg-card">
+    <header
+      v-if="!bare"
+      class="shrink-0 sticky top-0 z-30 border border-border bg-card"
+    >
       <!-- Top row: 7 controls in a single clean bar -->
-      <div class="flex items-center gap-1 px-3 py-2 border-b border-border shadow-xs">
+      <div
+        class="flex items-center gap-1 px-3 py-2 border-b border-border shadow-xs"
+      >
         <!-- ① Info -->
         <TooltipProvider :delay-duration="120">
           <Tooltip>
@@ -325,8 +330,11 @@
     ══════════════════════════════════════════════════════════ -->
     <div
       ref="scrollContainer"
-      class="ui-list-body border border-border bg-card"
-      :class="isFullscreen ? 'flex-1 min-h-0 overflow-y-auto ' : ''"
+      class="ui-list-body bg-card"
+      :class="[
+        isFullscreen ? 'flex-1 min-h-0 overflow-y-auto' : '',
+        bare ? '' : 'border border-border',
+      ]"
     >
       <!-- ── Initial skeleton ── -->
       <template v-if="isInitialLoading">
@@ -426,13 +434,12 @@
               <!-- Row -->
               <div
                 :class="[
-                  'ui-row group/row flex items-center justify-between cursor-pointer border-b border-border/50',
+                  'ui-row group/row flex items-center justify-between border-b border-border/50',
                   itemPaddingClass,
+                  disableRowClick ? 'cursor-default' : 'cursor-pointer',
                 ]"
-                @click="emit('row-click', item)"
+                @click="!props.disableRowClick && emit('row-click', item)"
               >
-                <div class="ui-row-pip shrink-0" />
-
                 <div class="flex-1 min-w-0 pl-2">
                   <slot
                     name="item-summary"
@@ -449,7 +456,7 @@
                   </slot>
                 </div>
 
-                <div class="flex items-center gap-2 shrink-0 ml-4" @click.stop>
+                <div v-if="!props?.disableRowClick" class="flex items-center gap-2 shrink-0 ml-4" @click.stop>
                   <slot name="item-actions" :item="item" :index="localIdx" />
                   <button
                     type="button"
@@ -516,7 +523,7 @@
          STICKY FOOTER
     ══════════════════════════════════════════════════════════ -->
     <footer
-      v-if="!isInitialLoading && !error"
+      v-if="!bare && !isInitialLoading && !error"
       class="ui-list-footer shrink-0 sticky bottom-0 z-30 border border-border bg-card"
     >
       <div class="ui-footer-bar-track">
@@ -690,11 +697,15 @@
     externalSearch?: string;
     externalFilter?: Record<string, any> | null;
     itemKey?: string | ((item: any) => string | number);
+    bare?: boolean;
+    disableRowClick?: boolean;
   }
 
   const props = withDefaults(defineProps<Props>(), {
     config: () => ({}),
     itemKey: "id",
+    bare: false,
+    disableRowClick: false,
   });
 
   const emit = defineEmits<{ "row-click": [item: any] }>();

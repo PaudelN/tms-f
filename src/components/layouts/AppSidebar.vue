@@ -591,7 +591,7 @@
                               type="button"
                               class="flex flex-1 items-center gap-1.5 h-7 px-2 min-w-0 text-left"
                             >
-                              <Monitor class="h-3 w-3 shrink-0 opacity-60" />
+                              <Columns3 class="h-3 w-3 shrink-0 opacity-60" />
                               <span
                                 class="truncate text-[12px] font-medium text-foreground/80"
                               >
@@ -843,7 +843,6 @@
     Loader2,
     LogOut,
     MessageCircle,
-    Monitor,
     MoreHorizontal,
     Pencil,
     Plus,

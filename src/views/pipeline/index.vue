@@ -6,15 +6,15 @@
     >
       <div :class="currentView === 'kanban' ? 'px-8 pt-8 shrink-0' : ''">
         <UiHeader
-          title="Pipelines"
+          title="Boards"
           :stats="headerStats"
           :show-views="true"
           :show-refresh="true"
           :current-view="currentView"
-          create-label="Add Pipeline"
+          create-label="Add Board"
           show-search
           :search-value="searchQuery"
-          search-placeholder="Search pipelines..."
+          search-placeholder="Search boards..."
           show-filter
           :active-filter-count="activeFilterCount"
           :filter-values="commonFilter"
@@ -347,7 +347,7 @@
               </div>
               <p class="text-sm font-semibold">No stages yet</p>
               <p class="text-xs text-muted-foreground max-w-xs">
-                This pipeline has no stages. Add stages to see the kanban board.
+                This board has no stages. Add stages to see the kanban board.
               </p>
               <button
                 type="button"
@@ -421,7 +421,7 @@
     <Dialog v-model:open="deleteModalOpen">
       <DialogContent class="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Delete Pipeline</DialogTitle>
+          <DialogTitle>Delete Board</DialogTitle>
           <DialogDescription>
             Are you sure you want to delete
             <strong class="text-destructive">{{
@@ -531,7 +531,7 @@ import TaskKanbanCard from "../task/common/TaskKanbanCard.vue";
   const projectId = computed(() => Number(route.params.projectId));
 
   // ── View ──────────────────────────────────────────────────────────────────────
-  const currentView = ref<ViewMode>("table");
+  const currentView = ref<ViewMode>("kanban");
   const tableRef = ref();
   const listRef = ref();
   const kanbanRef = ref();

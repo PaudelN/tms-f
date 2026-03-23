@@ -209,7 +209,7 @@
           <div
             class="flex flex-col flex-1 min-h-0 overflow-hidden"
             :style="{
-              background: `color-mix(in srgb, ${stageColor(si)} 13%, rgb(var(--color-background)))`,
+              background: `color-mix(in srgb, ${stageColor(si)} 12%, rgb(var(--color-background)))`,
             }"
           >
             <p
