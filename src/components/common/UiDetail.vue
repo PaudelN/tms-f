@@ -105,13 +105,13 @@
                           >
                             <!-- Active indicator bar -->
                             <span
-                              class="absolute bottom-0 left-0 right-0 h-[2px] rounded-t-sm bg-primary scale-x-0 group-data-[state=active]:scale-x-100 transition-transform duration-200 ease-out origin-center"
+                              class="absolute bottom-0 left-0 right-0 h-0.5 rounded-t-sm bg-primary scale-x-0 group-data-[state=active]:scale-x-100 transition-transform duration-200 ease-out origin-center"
                             />
                             <!-- Hover indicator bar -->
                             <span
-                              class="absolute bottom-0 left-0 right-0 h-[2px] rounded-t-sm bg-border scale-x-0 group-hover:scale-x-100 group-data-[state=active]:hidden transition-transform duration-150 ease-out origin-center"
+                              class="absolute bottom-0 left-0 right-0 h-0.5 rounded-t-sm bg-border scale-x-0 group-hover:scale-x-100 group-data-[state=active]:hidden transition-transform duration-150 ease-out origin-center"
                             />
-                            Detail
+                            Overview
                           </TabsTrigger>
 
                           <!-- Separator dot -->
@@ -127,10 +127,10 @@
                             class="group relative h-10 px-5 bg-transparent rounded-none border-0 shadow-none text-[11px] font-semibold tracking-[0.07em] uppercase text-muted-foreground/50 hover:text-muted-foreground data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none transition-colors duration-150 focus-visible:outline-none"
                           >
                             <span
-                              class="absolute bottom-0 left-0 right-0 h-[2px] rounded-t-sm bg-primary scale-x-0 group-data-[state=active]:scale-x-100 transition-transform duration-200 ease-out origin-center"
+                              class="absolute bottom-0 left-0 right-0 h-0.5 rounded-t-sm bg-primary scale-x-0 group-data-[state=active]:scale-x-100 transition-transform duration-200 ease-out origin-center"
                             />
                             <span
-                              class="absolute bottom-0 left-0 right-0 h-[2px] rounded-t-sm bg-border scale-x-0 group-hover:scale-x-100 group-data-[state=active]:hidden transition-transform duration-150 ease-out origin-center"
+                              class="absolute bottom-0 left-0 right-0 h-0.5 rounded-t-sm bg-border scale-x-0 group-hover:scale-x-100 group-data-[state=active]:hidden transition-transform duration-150 ease-out origin-center"
                             />
                             <span class="relative flex items-center gap-1.5">
                               <component
@@ -142,7 +142,7 @@
                               <!-- Badge pill on tab -->
                               <span
                                 v-if="tab.badge != null"
-                                class="inline-flex items-center justify-center min-w-[17px] h-[17px] px-1 rounded-full text-[9px] font-bold leading-none bg-muted/80 text-muted-foreground/60 group-data-[state=active]:bg-primary/15 group-data-[state=active]:text-primary transition-colors duration-150"
+                                class="inline-flex items-center justify-center min-w-4.25 h-4.25 px-1 rounded-full text-[9px] font-bold leading-none bg-muted/80 text-muted-foreground/60 group-data-[state=active]:bg-primary/15 group-data-[state=active]:text-primary transition-colors duration-150"
                               >
                                 {{ tab.badge }}
                               </span>

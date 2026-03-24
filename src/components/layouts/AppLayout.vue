@@ -32,20 +32,9 @@
                     : ''
                 "
                 @click="goToWorkspace"
-              >
-                <span
-                  class="h-1.5 w-1.5 rounded-sm shrink-0"
-                  :style="{ backgroundColor: wsAvatarColor }"
-                />
-                <span class="truncate max-w-[80px]">{{
-                  workspaceStore.activeWorkspace?.name ?? "Home"
-                }}</span>
-              </button>
+              ></button>
 
               <template v-if="breadcrumb.project">
-                <ChevronRight
-                  class="h-3 w-3 shrink-0 text-muted-foreground/30"
-                />
                 <button
                   type="button"
                   class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[12px] font-medium text-muted-foreground/70 cursor-pointer whitespace-nowrap transition-colors duration-100 max-w-[120px] overflow-hidden text-ellipsis hover:bg-accent hover:text-foreground"
@@ -330,8 +319,8 @@
     const ws = Array.isArray(wsId)
       ? wsId[0]
       : (wsId ?? workspaceStore.activeWorkspace?.id ?? "x");
-    const projectId = route.params.projectId ?? ""; 
-    const pipelineId = route.params.pipelineId ?? ""; 
+    const projectId = route.params.projectId ?? "";
+    const pipelineId = route.params.pipelineId ?? "";
     return `${String(route.name ?? "page")}-ws-${ws}-p-${projectId}-pl-${pipelineId}`;
   });
   const routeName = computed(() => String(route.name ?? ""));

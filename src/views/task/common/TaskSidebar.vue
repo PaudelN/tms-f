@@ -17,81 +17,72 @@
         <div class="fixed inset-0 z-[-1]" @click="emit('close')" />
 
         <TooltipProvider :delay-duration="0">
-          <Sidebar
-            collapsible="none"
-            class="task-sidebar select-none h-full"
+          <div
+            class="task-sidebar h-full flex flex-col overflow-hidden"
             :style="{
               width: isCollapsed ? '54px' : '220px',
-              borderRight: 'none',
               transition: 'width 220ms cubic-bezier(0.4, 0, 0.2, 1)',
             }"
           >
             <!-- ════════════════════════════
                  HEADER
             ════════════════════════════ -->
-            <SidebarHeader class="p-0 shrink-0 task-sidebar-header">
-              <SidebarMenu>
-                <SidebarMenuItem class="p-2">
-                  <!-- Expanded header -->
-                  <div
-                    v-if="!isCollapsed"
-                    class="flex items-center gap-2.5 px-1.5 h-11"
-                  >
-                    <!-- Icon badge with glow -->
-                    <div class="task-icon-badge shrink-0">
-                      <ClipboardList class="h-3.5 w-3.5" />
-                    </div>
+            <div class="task-sidebar-header shrink-0 px-2 py-2">
+              <!-- Expanded header -->
+              <div
+                v-if="!isCollapsed"
+                class="flex items-center gap-2.5 px-1.5 h-11"
+              >
+                <div class="task-icon-badge shrink-0">
+                  <ClipboardList class="h-3.5 w-3.5" />
+                </div>
 
-                    <div class="flex-1 min-w-0">
-                      <p class="task-sidebar-title truncate">Tasks</p>
-                      <div class="flex items-center gap-1.5 mt-0.5">
-                        <span class="task-sidebar-subtitle">Task views</span>
-                        <span class="task-count-badge">5</span>
-                      </div>
-                    </div>
-
-                    <Tooltip>
-                      <TooltipTrigger as-child>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          class="task-collapse-btn h-7 w-7 shrink-0"
-                          @click="isCollapsed = true"
-                        >
-                          <PanelLeftClose class="h-3.5 w-3.5" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="right" class="text-xs font-medium">
-                        Collapse
-                      </TooltipContent>
-                    </Tooltip>
+                <div class="flex-1 min-w-0">
+                  <p class="task-sidebar-title truncate">Tasks</p>
+                  <div class="flex items-center gap-1.5 mt-0.5">
+                    <span class="task-sidebar-subtitle">Task views</span>
+                    <span class="task-count-badge">{{
+                      navItems.filter((i) => !i.disabled).length
+                    }}</span>
                   </div>
+                </div>
 
-                  <!-- Collapsed header -->
-                  <div v-else class="flex items-center justify-center h-11">
-                    <Tooltip>
-                      <TooltipTrigger as-child>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          class="task-collapse-btn h-9 w-9"
-                          @click="isCollapsed = false"
-                        >
-                          <PanelLeftOpen class="h-3.5 w-3.5" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="right" class="text-xs font-medium">
-                        Tasks
-                      </TooltipContent>
-                    </Tooltip>
-                  </div>
-                </SidebarMenuItem>
-              </SidebarMenu>
-            </SidebarHeader>
+                <Tooltip>
+                  <TooltipTrigger as-child>
+                    <button
+                      type="button"
+                      class="task-collapse-btn h-7 w-7 shrink-0 rounded-lg flex items-center justify-center"
+                      @click="isCollapsed = true"
+                    >
+                      <PanelLeftClose class="h-3.5 w-3.5" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" class="text-xs font-medium">
+                    Collapse
+                  </TooltipContent>
+                </Tooltip>
+              </div>
 
-            <!-- ════════════════════════════
-                 DIVIDER WITH LABEL
-            ════════════════════════════ -->
+              <!-- Collapsed header -->
+              <div v-else class="flex items-center justify-center h-11">
+                <Tooltip>
+                  <TooltipTrigger as-child>
+                    <button
+                      type="button"
+                      class="task-collapse-btn h-9 w-9 rounded-lg flex items-center justify-center"
+                      @click="isCollapsed = false"
+                    >
+                      <PanelLeftOpen class="h-3.5 w-3.5" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" class="text-xs font-medium">
+                    Tasks
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            </div>
+
+            <!-- Section label -->
             <div v-if="!isCollapsed" class="task-section-label px-4 pb-1">
               <span>Views</span>
               <div class="task-section-line" />
@@ -101,115 +92,105 @@
             <!-- ════════════════════════════
                  NAV ITEMS
             ════════════════════════════ -->
-            <SidebarContent class="gap-0 overflow-x-hidden">
-              <SidebarGroup class="px-2 pt-1 pb-2">
-                <SidebarMenu class="gap-0.5">
-                  <SidebarMenuItem
-                    v-for="(item, index) in navItems"
-                    :key="item.id"
-                    :style="{ '--item-index': index }"
-                    class="task-nav-item-wrapper"
-                  >
-                    <!-- ── Collapsed: icon + tooltip ── -->
-                    <template v-if="isCollapsed">
-                      <Tooltip>
-                        <TooltipTrigger as-child>
-                          <SidebarMenuButton
-                            class="task-nav-btn task-nav-btn--collapsed"
-                            :class="[
-                              isActive(item.route) && 'task-nav-btn--active',
-                              item.disabled && 'task-nav-btn--disabled',
-                            ]"
-                            :disabled="item.disabled"
-                            @click="navigate(item)"
-                          >
-                            <!-- Active pip -->
-                            <span
-                              v-if="isActive(item.route)"
-                              class="task-active-pip"
-                            />
-                            <component
-                              :is="item.icon"
-                              class="h-4 w-4 shrink-0"
-                            />
-                          </SidebarMenuButton>
-                        </TooltipTrigger>
-                        <TooltipContent
-                          side="right"
-                          class="text-xs font-medium"
+            <div class="flex-1 overflow-y-auto px-2 pt-1 pb-2">
+              <div class="flex flex-col gap-0.5">
+                <div
+                  v-for="(item, index) in navItems"
+                  :key="item.id"
+                  class="task-nav-item-wrapper"
+                  :style="{ '--item-index': index }"
+                >
+                  <!-- Collapsed: icon + tooltip -->
+                  <template v-if="isCollapsed">
+                    <Tooltip>
+                      <TooltipTrigger as-child>
+                        <button
+                          type="button"
+                          class="task-nav-btn task-nav-btn--collapsed"
+                          :class="[
+                            isActive(item.route) && 'task-nav-btn--active',
+                            item.disabled && 'task-nav-btn--disabled',
+                          ]"
+                          :disabled="item.disabled"
+                          @click="navigate(item)"
                         >
-                          {{ item.label }}
-                          <span v-if="item.disabled" class="ml-1 opacity-50"
-                            >(Soon)</span
-                          >
-                        </TooltipContent>
-                      </Tooltip>
-                    </template>
+                          <span
+                            v-if="isActive(item.route)"
+                            class="task-active-pip"
+                          />
+                          <component :is="item.icon" class="h-4 w-4 shrink-0" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" class="text-xs font-medium">
+                        {{ item.label }}
+                        <span v-if="item.disabled" class="ml-1 opacity-50"
+                          >(Soon)</span
+                        >
+                      </TooltipContent>
+                    </Tooltip>
+                  </template>
 
-                    <!-- ── Expanded: full row ── -->
-                    <template v-else>
-                      <SidebarMenuButton
-                        class="task-nav-btn task-nav-btn--expanded"
-                        :class="[
-                          isActive(item.route) && 'task-nav-btn--active',
-                          item.disabled && 'task-nav-btn--disabled',
-                        ]"
-                        :disabled="item.disabled"
-                        @click="navigate(item)"
+                  <!-- Expanded: full row -->
+                  <template v-else>
+                    <button
+                      type="button"
+                      class="task-nav-btn task-nav-btn--expanded w-full"
+                      :class="[
+                        isActive(item.route) && 'task-nav-btn--active',
+                        item.disabled && 'task-nav-btn--disabled',
+                      ]"
+                      :disabled="item.disabled"
+                      @click="navigate(item)"
+                    >
+                      <!-- Shimmer on active -->
+                      <span
+                        v-if="isActive(item.route)"
+                        class="task-active-shimmer"
+                      />
+
+                      <!-- Icon container -->
+                      <span
+                        class="task-nav-icon-wrap"
+                        :class="
+                          isActive(item.route) && 'task-nav-icon-wrap--active'
+                        "
                       >
-                        <!-- Shimmer layer for active -->
-                        <span
-                          v-if="isActive(item.route)"
-                          class="task-active-shimmer"
-                        />
+                        <component :is="item.icon" class="h-3.5 w-3.5" />
+                      </span>
 
-                        <!-- Icon container -->
-                        <span
-                          class="task-nav-icon-wrap"
-                          :class="
-                            isActive(item.route) && 'task-nav-icon-wrap--active'
-                          "
-                        >
-                          <component :is="item.icon" class="h-3.5 w-3.5" />
-                        </span>
+                      <span class="flex-1 task-nav-label truncate text-left">
+                        {{ item.label }}
+                      </span>
 
-                        <span class="flex-1 task-nav-label truncate">{{
-                          item.label
-                        }}</span>
+                      <!-- "Soon" badge -->
+                      <span v-if="item.disabled" class="task-soon-badge">
+                        Soon
+                      </span>
 
-                        <!-- "Soon" badge -->
-                        <Badge
-                          v-if="item.disabled"
-                          variant="outline"
-                          class="task-soon-badge"
-                        >
-                          Soon
-                        </Badge>
-
-                        <!-- Active indicator dot -->
-                        <span
-                          v-if="isActive(item.route)"
-                          class="task-active-dot"
-                        />
-                      </SidebarMenuButton>
-                    </template>
-                  </SidebarMenuItem>
-                </SidebarMenu>
-              </SidebarGroup>
-            </SidebarContent>
+                      <!-- Active dot -->
+                      <span
+                        v-if="isActive(item.route)"
+                        class="task-active-dot"
+                      />
+                    </button>
+                  </template>
+                </div>
+              </div>
+            </div>
 
             <!-- ════════════════════════════
                  FOOTER
             ════════════════════════════ -->
-            <div v-if="!isCollapsed" class="task-sidebar-footer px-3 py-2.5">
+            <div
+              v-if="!isCollapsed"
+              class="task-sidebar-footer px-3 py-2.5 shrink-0"
+            >
               <div class="task-footer-inner">
                 <Zap class="h-3 w-3 text-primary opacity-70 shrink-0" />
                 <span class="task-footer-text">Pro workspace</span>
               </div>
             </div>
-
-            <SidebarRail />
-          </Sidebar>
+          </div>
         </TooltipProvider>
       </div>
     </Transition>
@@ -220,18 +201,6 @@
   import { ref } from "vue";
   import { useRoute, useRouter } from "vue-router";
 
-  import { Badge } from "@/components/ui/badge";
-  import { Button } from "@/components/ui/button";
-  import {
-    Sidebar,
-    SidebarContent,
-    SidebarGroup,
-    SidebarHeader,
-    SidebarMenu,
-    SidebarMenuButton,
-    SidebarMenuItem,
-    SidebarRail,
-  } from "@/components/ui/sidebar";
   import {
     Tooltip,
     TooltipContent,
@@ -254,6 +223,7 @@
   // ── Props / emits ─────────────────────────────────────────────────────────────
   defineProps<{
     open: boolean;
+    /** Whether the main AppSidebar is in collapsed/icon mode */
     mainCollapsed: boolean;
   }>();
 
@@ -331,7 +301,6 @@
     overflow: hidden;
   }
 
-  /* Subtle vertical gradient wash */
   .task-sidebar::before {
     content: "";
     position: absolute;
@@ -361,7 +330,6 @@
     z-index: 1;
   }
 
-  /* Icon badge — glowing orb */
   .task-icon-badge {
     height: 30px;
     width: 30px;
@@ -380,12 +348,6 @@
       0 0 0 3px rgb(var(--color-primary) / 0.06),
       inset 0 1px 0 rgb(255 255 255 / 0.12);
     transition: box-shadow 200ms ease;
-  }
-
-  .task-icon-badge:hover {
-    box-shadow:
-      0 0 0 4px rgb(var(--color-primary) / 0.1),
-      inset 0 1px 0 rgb(255 255 255 / 0.15);
   }
 
   .task-sidebar-title {
@@ -421,7 +383,6 @@
 
   .task-collapse-btn {
     color: rgb(var(--color-muted-foreground) / 0.5);
-    border-radius: 8px;
     transition: all 150ms ease;
   }
 
@@ -492,20 +453,20 @@
     }
   }
 
-  /* ── Base button ── */
   .task-nav-btn {
     position: relative;
     overflow: hidden;
-    border-radius: 10px !important;
+    border-radius: 10px;
     transition:
       background 160ms ease,
       color 160ms ease,
       box-shadow 160ms ease,
       transform 120ms ease;
     cursor: pointer;
+    border: none;
+    background: transparent;
   }
 
-  /* ── Expanded layout ── */
   .task-nav-btn--expanded {
     height: 36px;
     padding: 0 10px;
@@ -514,7 +475,6 @@
     align-items: center;
   }
 
-  /* ── Collapsed layout ── */
   .task-nav-btn--collapsed {
     height: 36px;
     width: 36px;
@@ -525,7 +485,6 @@
     padding: 0;
   }
 
-  /* ── Default idle ── */
   .task-nav-btn:not(.task-nav-btn--active):not(.task-nav-btn--disabled) {
     color: rgb(var(--color-muted-foreground));
   }
@@ -537,7 +496,6 @@
     transform: translateX(1px);
   }
 
-  /* ── Active state ── */
   .task-nav-btn--active {
     background: linear-gradient(
       135deg,
@@ -550,14 +508,12 @@
       0 1px 4px rgb(var(--color-primary) / 0.1);
   }
 
-  /* ── Disabled ── */
   .task-nav-btn--disabled {
     opacity: 0.38;
     cursor: not-allowed;
     pointer-events: none;
   }
 
-  /* Shimmer on active */
   .task-active-shimmer {
     position: absolute;
     inset: 0;
@@ -570,7 +526,6 @@
     pointer-events: none;
   }
 
-  /* Active pip (collapsed) */
   .task-active-pip {
     position: absolute;
     left: 2px;
@@ -583,7 +538,6 @@
     box-shadow: 0 0 6px rgb(var(--color-primary) / 0.5);
   }
 
-  /* Active indicator dot (expanded) */
   .task-active-dot {
     width: 5px;
     height: 5px;
@@ -593,7 +547,6 @@
     box-shadow: 0 0 0 2.5px rgb(var(--color-primary) / 0.2);
   }
 
-  /* ── Icon container ── */
   .task-nav-icon-wrap {
     display: flex;
     align-items: center;
@@ -618,7 +571,6 @@
     box-shadow: 0 0 0 1px rgb(var(--color-primary) / 0.2);
   }
 
-  /* ── Label ── */
   .task-nav-label {
     font-size: 12.5px;
     font-weight: 500;
@@ -626,7 +578,6 @@
     line-height: 1;
   }
 
-  /* ── "Soon" badge ── */
   .task-soon-badge {
     height: 16px;
     padding: 0 6px;
@@ -650,7 +601,6 @@
     border-top: 1px solid rgb(var(--color-border) / 0.4);
     position: relative;
     z-index: 1;
-    margin-top: auto;
   }
 
   .task-footer-inner {
@@ -671,7 +621,7 @@
   }
 
   /* ══════════════════════════════════════════
-   DARK MODE OVERRIDES
+   DARK MODE
 ══════════════════════════════════════════ */
   .dark .task-sidebar {
     box-shadow:

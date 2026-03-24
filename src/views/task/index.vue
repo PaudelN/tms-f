@@ -176,17 +176,13 @@
 
           <!-- Priority -->
           <template #cell-priority="{ row }">
-            <span
+            <Badge
               v-if="extractPriorityObj(row.priority)"
-              class="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full border"
               :class="extractPriorityObj(row.priority)!.badge"
+              :color="resolveStatColor(row.priority)"
             >
-              <span
-                class="h-1.5 w-1.5 rounded-full"
-                :class="extractPriorityObj(row.priority)!.dot"
-              />
               {{ extractPriorityObj(row.priority)!.label }}
-            </span>
+            </Badge>
             <span v-else class="text-sm text-muted-foreground">—</span>
           </template>
 
@@ -201,40 +197,39 @@
           <!-- Stage -->
           <template #cell-stage="{ row }">
             <div v-if="row.stage" class="flex items-center gap-1.5">
-              <span
-                class="h-2 w-2 rounded-full shrink-0"
-                :style="{ background: row.stage.color ?? '#94a3b8' }"
-              />
-              <span class="text-sm text-foreground">{{
-                row.stage.display_label ?? row.stage.name
-              }}</span>
+              <Badge
+                class="border-2 border-border"
+                :style="{ background: row.stage.color ?? '' }"
+              >
+                {{ row.stage.display_label ?? row.stage.name }}
+              </Badge>
             </div>
             <span v-else class="text-sm text-muted-foreground">—</span>
           </template>
 
           <!-- Due date -->
           <template #cell-due_date="{ row }">
-            <span
+            <div
               v-if="row.due_date"
-              class="text-sm tabular-nums"
+              class="flex items-start flex-col gap-1.5 text-xs tabular-nums px-2 py-1 rounded-md"
               :class="
                 row.is_overdue
-                  ? 'text-red-500 font-semibold'
-                  : row.is_due_today
-                    ? 'text-amber-500 font-semibold'
-                    : 'text-foreground'
+                  ? 'bg-red-50 text-red-600  border-red-200'
+                  : 'bg-muted/40 text-muted-foreground border-transparent'
               "
             >
-              {{ formatDate(row.due_date) }}
-              <span v-if="row.is_overdue" class="text-[10px] font-bold ml-1"
-                >Overdue</span
+              <span>
+                {{ formatDate(row.due_date) }}
+              </span>
+
+              <Badge
+                v-if="row.is_overdue"
+                variant="destructive"
+                class="text-[10px] font-semibold uppercase tracking-wide"
               >
-              <span
-                v-else-if="row.is_due_today"
-                class="text-[10px] font-bold ml-1"
-                >Today</span
-              >
-            </span>
+                Overdue
+              </Badge>
+            </div>
             <span v-else class="text-sm text-muted-foreground">—</span>
           </template>
 
@@ -258,7 +253,7 @@
                 <PopoverContent
                   align="end"
                   :side-offset="6"
-                  class="w-40 p-1.5 rounded-xl border border-border bg-popover shadow-xl"
+                  class="w-40 p-3 py-4 rounded-xl border border-border bg-popover shadow-xl"
                 >
                   <button
                     type="button"
@@ -340,9 +335,10 @@
                 </p>
               </div>
 
-              <span
+              <Badge
                 v-if="extractPriorityObj(item.priority)"
-                class="inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full border shrink-0"
+                variant="outline"
+                class="inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full shrink-0"
                 :class="extractPriorityObj(item.priority)!.badge"
               >
                 <span
@@ -350,7 +346,7 @@
                   :class="extractPriorityObj(item.priority)!.dot"
                 />
                 {{ extractPriorityObj(item.priority)!.label }}
-              </span>
+              </Badge>
             </div>
           </template>
 
@@ -463,53 +459,55 @@
 
 <script setup lang="ts">
   import axios from "@/lib/axios";
-  import {
-    ArchiveIcon,
-    Check,
-    Eye,
-    MoreHorizontal,
-    Pencil,
-    Trash2,
-    Trash2Icon,
-  } from "lucide-vue-next";
-  import { computed, onMounted, ref } from "vue";
-  import { useRoute, useRouter } from "vue-router";
+import {
+  ArchiveIcon,
+  Check,
+  Eye,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+  Trash2Icon,
+} from "lucide-vue-next";
+import { computed, onMounted, ref } from "vue";
+import { useRoute, useRouter } from "vue-router";
 
-  import UiHeader from "@/components/common/UiHeader.vue";
-  import UiList from "@/ui-table/UiList.vue";
-  import UiTable from "@/ui-table/UiTable.vue";
+  import UiHeader, { UiHeaderStat } from "@/components/common/UiHeader.vue";
+import Badge from "@/components/ui/badge/Badge.vue";
+import UiList from "@/ui-table/UiList.vue";
+import UiTable from "@/ui-table/UiTable.vue";
 
   import Button from "@/components/ui/button/Button.vue";
-  import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-  } from "@/components/ui/dialog";
-  import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-  } from "@/components/ui/popover";
-  import Spinner from "@/components/ui/spinner/Spinner.vue";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import Spinner from "@/components/ui/spinner/Spinner.vue";
 
   import { notify } from "@/helpers/toast";
-  import { useTaskStore, type Task } from "@/stores/task";
-  import { useUniversalInteractions } from "@/ui-table/composables/useUniversalInteractions";
+import { useTaskStore, type Task } from "@/stores/task";
+import { useUniversalInteractions } from "@/ui-table/composables/useUniversalInteractions";
 
-  import type { TaskPriorityObject } from "@/stores/task";
-  import type { ListConfig, ListFeatures } from "@/ui-table/types/list.types";
-  import type {
-    TableColumn,
-    TableConfig,
-    TableFeatures,
-  } from "@/ui-table/types/table.types";
-  import type {
-    UniversalFetchParams,
-    ViewMode,
-  } from "@/ui-table/types/universal.types";
+  import { useDotColor } from "@/composables/useDotColor";
+import type { TaskPriorityObject } from "@/stores/task";
+import type { ListConfig, ListFeatures } from "@/ui-table/types/list.types";
+import type {
+  TableColumn,
+  TableConfig,
+  TableFeatures,
+} from "@/ui-table/types/table.types";
+import type {
+  UniversalFetchParams,
+  ViewMode,
+} from "@/ui-table/types/universal.types";
 
   // ── Core ──────────────────────────────────────────────────────────────────────
   const route = useRoute();
@@ -544,6 +542,8 @@
     applyFilters,
     commonFilter,
   } = useUniversalInteractions({ debounceMs: 400 });
+
+  const { getDotColor } = useDotColor();
 
   // ── Stages (only loaded in pipeline context) ──────────────────────────────────
   const stages = ref<
@@ -757,6 +757,16 @@
       day: "numeric",
       year: "numeric",
     });
+  }
+
+  function resolveStatColor(stat: UiHeaderStat): string {
+    if (
+      stat.color &&
+      (stat.color.startsWith("#") || stat.color.startsWith("rgb"))
+    ) {
+      return stat.color;
+    }
+    return getDotColor(stat.dot ?? stat.color ?? "");
   }
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────────

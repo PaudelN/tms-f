@@ -222,6 +222,116 @@
 
         <div class="mx-4 my-2 h-px border" />
 
+        <!-- ══════════════════════════════
+             PINNED BOARDS SECTION
+        ══════════════════════════════ -->
+        <template v-if="!isSidebarCollapsed && pinnedBoards.length > 0">
+          <SidebarGroup class="px-2 pt-1 pb-1 shrink-0">
+            <div class="flex items-center justify-between px-1 mb-1 shrink-0">
+              <span
+                class="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50 flex items-center gap-1.5"
+              >
+                <Pin class="h-2.5 w-2.5" />
+                Pinned
+              </span>
+            </div>
+            <SidebarMenu class="gap-0">
+              <SidebarMenuItem
+                v-for="board in pinnedBoards"
+                :key="`pin-${board.pipelineId}`"
+              >
+                <div
+                  class="group/pinned flex items-center rounded-xl transition-colors cursor-pointer px-2 py-1.5 gap-2 hover:bg-accent"
+                  :class="
+                    isActivePipeline(board.pipelineId)
+                      ? 'bg-primary/8 text-primary'
+                      : 'text-muted-foreground'
+                  "
+                  @click="navigateToPipeline(board)"
+                >
+                  <div
+                    class="h-5 w-5 rounded-md flex items-center justify-center shrink-0"
+                    :style="{
+                      backgroundColor:
+                        getProjectColor(board.projectName) + '22',
+                    }"
+                  >
+                    <Columns3
+                      class="h-3 w-3 shrink-0"
+                      :style="{ color: getProjectColor(board.projectName) }"
+                    />
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <p
+                      class="text-[12px] font-medium text-foreground truncate leading-tight"
+                    >
+                      {{ board.pipelineName }}
+                    </p>
+                    <p
+                      class="text-[9.5px] text-muted-foreground truncate leading-none mt-0.5"
+                    >
+                      {{ board.projectName }}
+                    </p>
+                  </div>
+                  <Tooltip>
+                    <TooltipTrigger as-child>
+                      <button
+                        type="button"
+                        class="h-5 w-5 rounded-md flex items-center justify-center opacity-0 group-hover/pinned:opacity-100 hover:bg-destructive/10 hover:text-destructive transition-all shrink-0"
+                        @click.stop="unpinBoard(board.pipelineId)"
+                      >
+                        <PinOff class="h-3 w-3" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right" class="text-xs">
+                      Unpin
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroup>
+          <div class="mx-4 my-1 h-px border" />
+        </template>
+
+        <!-- Collapsed pinned section — icon-only -->
+        <template v-if="isSidebarCollapsed && pinnedBoards.length > 0">
+          <SidebarGroup
+            class="flex flex-col items-center gap-1 px-2 pt-2 pb-1 shrink-0"
+          >
+            <Tooltip
+              v-for="board in pinnedBoards"
+              :key="`cpin-${board.pipelineId}`"
+            >
+              <TooltipTrigger as-child>
+                <button
+                  type="button"
+                  class="group/cpin relative h-8 w-8 rounded-xl flex items-center justify-center transition-colors hover:bg-accent"
+                  :class="
+                    isActivePipeline(board.pipelineId)
+                      ? 'bg-primary/10 text-primary'
+                      : 'text-muted-foreground'
+                  "
+                  @click="navigateToPipeline(board)"
+                >
+                  <span
+                    class="absolute top-0.5 right-0.5 h-1.5 w-1.5 rounded-full"
+                    :style="{
+                      backgroundColor: getProjectColor(board.projectName),
+                    }"
+                  />
+                  <Columns3 class="h-3.5 w-3.5" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right" class="text-xs font-medium">
+                <span class="font-semibold">{{ board.pipelineName }}</span>
+                <span class="opacity-60 ml-1">· {{ board.projectName }}</span>
+              </TooltipContent>
+            </Tooltip>
+          </SidebarGroup>
+          <div class="mx-3 my-1 h-px border" />
+        </template>
+
         <!-- Projects section — collapsed: show just the two action buttons -->
         <SidebarGroup
           v-if="isSidebarCollapsed"
@@ -598,6 +708,35 @@
                                 {{ pipeline.name }}
                               </span>
                             </button>
+
+                            <!-- Pin / Unpin button -->
+                            <Tooltip>
+                              <TooltipTrigger as-child>
+                                <button
+                                  type="button"
+                                  class="h-5 w-5 mr-1.5 rounded-md flex items-center justify-center transition-all shrink-0"
+                                  :class="
+                                    isPinned(pipeline.id)
+                                      ? 'text-primary opacity-100'
+                                      : 'opacity-0 group-hover/board:opacity-100 text-muted-foreground/50 hover:text-primary'
+                                  "
+                                  @click.stop="togglePin(pipeline, project)"
+                                >
+                                  <Pin
+                                    v-if="!isPinned(pipeline.id)"
+                                    class="h-3 w-3"
+                                  />
+                                  <PinOff v-else class="h-3 w-3" />
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent side="right" class="text-xs">
+                                {{
+                                  isPinned(pipeline.id)
+                                    ? "Unpin board"
+                                    : "Pin board"
+                                }}
+                              </TooltipContent>
+                            </Tooltip>
                           </div>
 
                           <div
@@ -821,7 +960,7 @@
     <!-- ── Task secondary sidebar ───────────────────────────────────────────── -->
     <TaskSidebar
       :open="taskSidebarOpen"
-      :collapsed="isSidebarCollapsed"
+      :main-collapsed="isSidebarCollapsed"
       @close="taskSidebarOpen = false"
     />
   </TooltipProvider>
@@ -845,6 +984,8 @@
     MessageCircle,
     MoreHorizontal,
     Pencil,
+    Pin,
+    PinOff,
     Plus,
     Settings,
     UserCircle,
@@ -901,8 +1042,15 @@
   import { useProjectStore, type Project } from "@/stores/project";
   import { useWorkspaceStore, type Workspace } from "@/stores/workspace";
 
-  // ── NEW: Task secondary sidebar ───────────────────────────────────────────────
   import TaskSidebar from "@/views/task/common/TaskSidebar.vue";
+
+  // ── Types ─────────────────────────────────────────────────────────────────────
+  interface PinnedBoard {
+    pipelineId: number;
+    pipelineName: string;
+    projectId: number;
+    projectName: string;
+  }
 
   // ── Stores ────────────────────────────────────────────────────────────────────
   const router = useRouter();
@@ -918,7 +1066,6 @@
   // ── Task sidebar state ────────────────────────────────────────────────────────
   const taskSidebarOpen = ref(false);
 
-  // Close task sidebar when navigating away from task routes
   watch(
     () => route.name,
     (name) => {
@@ -936,8 +1083,77 @@
     },
   );
 
+  // ── Pinned boards ─────────────────────────────────────────────────────────────
+  const PINNED_STORAGE_KEY = computed(
+    () => `pinned-boards-ws-${workspaceStore.activeWorkspace?.id ?? "global"}`,
+  );
+
+  function loadPinned(): PinnedBoard[] {
+    try {
+      const raw = localStorage.getItem(PINNED_STORAGE_KEY.value);
+      return raw ? (JSON.parse(raw) as PinnedBoard[]) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function savePinned(boards: PinnedBoard[]): void {
+    try {
+      localStorage.setItem(PINNED_STORAGE_KEY.value, JSON.stringify(boards));
+    } catch {
+      /**/
+    }
+  }
+
+  const pinnedBoards = ref<PinnedBoard[]>(loadPinned());
+
+  // Reload pinned when workspace changes
+  watch(
+    () => workspaceStore.activeWorkspace?.id,
+    () => {
+      pinnedBoards.value = loadPinned();
+    },
+  );
+
+  function isPinned(pipelineId: number): boolean {
+    return pinnedBoards.value.some((b) => b.pipelineId === pipelineId);
+  }
+
+  function togglePin(
+    pipeline: { id: number; name: string },
+    project: Project,
+  ): void {
+    if (isPinned(pipeline.id)) {
+      unpinBoard(pipeline.id);
+    } else {
+      const next = [
+        ...pinnedBoards.value,
+        {
+          pipelineId: pipeline.id,
+          pipelineName: pipeline.name,
+          projectId: project.id,
+          projectName: project.name,
+        },
+      ];
+      pinnedBoards.value = next;
+      savePinned(next);
+    }
+  }
+
+  function unpinBoard(pipelineId: number): void {
+    const next = pinnedBoards.value.filter((b) => b.pipelineId !== pipelineId);
+    pinnedBoards.value = next;
+    savePinned(next);
+  }
+
+  function navigateToPipeline(board: PinnedBoard): void {
+    router.push({
+      name: "pipeline-index",
+      params: { projectId: board.projectId },
+    });
+  }
+
   // ── Primary nav ───────────────────────────────────────────────────────────────
-  // CHANGED: "My Tasks" → "Tasks" (label only, entity key unchanged)
   const primaryNav = [
     {
       entity: "dashboard",
@@ -955,7 +1171,7 @@
     },
     {
       entity: "task-index",
-      label: "Tasks", // ← was "My Tasks"
+      label: "Tasks",
       icon: ClipboardList,
       badge: 152,
       badgeMuted: true,
@@ -969,17 +1185,6 @@
     },
   ];
 
-  function isNavActive(entity: string): boolean {
-    const name = String(route.name ?? "");
-    if (entity === "dashboard") return name === "dashboard";
-    if (entity === "task-index")
-      return name === "task-all" || name === "my-tasks";
-    if (entity === "inbox") return name === "inbox";
-    if (entity === "analytics") return name === "analytics";
-    return false;
-  }
-
-  // CHANGED: task-index now toggles the task sidebar instead of navigating
   function handleNav(entity: string): void {
     if (entity === "dashboard") {
       taskSidebarOpen.value = false;
@@ -987,7 +1192,7 @@
       return;
     }
     if (entity === "task-index") {
-      taskSidebarOpen.value = !taskSidebarOpen.value; // ← toggle secondary sidebar
+      taskSidebarOpen.value = !taskSidebarOpen.value;
       return;
     }
     if (entity === "inbox") {

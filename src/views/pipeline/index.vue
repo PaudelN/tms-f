@@ -300,31 +300,6 @@
           Move    = optimistic local only for now
         -->
         <template v-else-if="currentView === 'kanban'">
-          <!-- Pipeline tab bar — shown when project has multiple pipelines -->
-          <div
-            v-if="kanbanPipelineList.length > 1"
-            class="shrink-0 flex items-center gap-2 px-1 py-2 border-b border-border overflow-x-auto"
-          >
-            <button
-              v-for="p in kanbanPipelineList"
-              :key="p.id"
-              type="button"
-              class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all"
-              :class="
-                kanbanActivePipelineId === p.id
-                  ? 'border-primary/40 bg-primary/8 text-foreground'
-                  : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground'
-              "
-              @click="onKanbanPipelineSwitch(p.id)"
-            >
-              <span
-                class="h-1.5 w-1.5 rounded-full shrink-0"
-                :style="{ background: p._color }"
-              />
-              {{ p.name }}
-            </button>
-          </div>
-
           <!-- Board area -->
           <div class="flex-1 min-h-0 relative">
             <!-- Stages loading -->
@@ -491,7 +466,6 @@
   import { useUniversalInteractions } from "@/ui-table/composables/useUniversalInteractions";
 
   import type { Pipeline, PipelineStagePreview } from "@/stores/pipeline";
-  import { usePipelineStageStore } from "@/stores/pipelineStages";
   import { Task, useTaskStore } from "@/stores/task";
   import { useKanbanApi } from "@/ui-table/composables/useKanbanApi";
   import type {
@@ -511,7 +485,7 @@
     UniversalFetchParams,
     ViewMode,
   } from "@/ui-table/types/universal.types";
-import TaskKanbanCard from "../task/common/TaskKanbanCard.vue";
+  import TaskKanbanCard from "../task/common/TaskKanbanCard.vue";
 
   // ── Core ──────────────────────────────────────────────────────────────────────
   const route = useRoute();
@@ -538,7 +512,6 @@ import TaskKanbanCard from "../task/common/TaskKanbanCard.vue";
 
   function onViewChange(view: ViewMode) {
     currentView.value = view;
-    // Lazy-load kanban data on first switch
     if (
       view === "kanban" &&
       kanbanStages.value.length === 0 &&
@@ -631,13 +604,6 @@ import TaskKanbanCard from "../task/common/TaskKanbanCard.vue";
         position: "bottom-right",
       });
     }
-  }
-
-  function onKanbanPipelineSwitch(id: number): void {
-    if (kanbanActivePipelineId.value === id) return;
-    kanbanActivePipelineId.value = id;
-    rawStages.value = [];
-    reloadKanbanStages();
   }
 
   // ── Stage column definitions ──────────────────────────────────────────────────
@@ -743,17 +709,6 @@ import TaskKanbanCard from "../task/common/TaskKanbanCard.vue";
       _avatarColor: ass.color,
       _due: FAKE_DUES[i % FAKE_DUES.length],
     };
-  }
-
-  function seedFakeTasks(): void {
-    _seed = 0;
-    const map: Record<string, FakeTask[]> = {};
-    rawStages.value.forEach((s, idx) => {
-      const key = String(s.id);
-      const count = (idx % 3) + 1; // 1, 2, or 3 cards per column
-      map[key] = Array.from({ length: count }, () => makeFakeTask(key));
-    });
-    fakeTasks.value = map;
   }
 
   // ── Kanban fetch fn ────────────────────────────────────────────────────────────
@@ -985,7 +940,9 @@ import TaskKanbanCard from "../task/common/TaskKanbanCard.vue";
   onMounted(async () => {
     await pipelineStore.fetchStatuses();
     pipelineStore.fetchStatusCounts(projectId.value);
-    // Pre-load pipeline list in background so tab bar is instant on first kanban switch
     loadKanbanPipelineList();
+    if (currentView.value === "kanban") {
+      initKanban();
+    }
   });
 </script>

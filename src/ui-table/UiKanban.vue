@@ -167,11 +167,10 @@
           <div
             class="kb3-col-cap shrink-0 flex items-center gap-1.5 px-3 py-2.5"
             :style="{
-              background: `linear-gradient(135deg, ${stageColor(si)}22 0%, ${stageColor(si)}0e 100%)`,
-              borderTop: `3px solid ${stageColor(si)}`,
+              borderTop: `4.5px solid ${stageColor(si)}35`,
               borderLeft: `1px solid ${stageColor(si)}28`,
               borderRight: `1px solid ${stageColor(si)}28`,
-              borderRadius: '10px 10px 0 0',
+              borderRadius: '20px 20px 0 0',
             }"
           >
             <component
@@ -207,9 +206,9 @@
 
           <!-- Column body -->
           <div
-            class="flex flex-col flex-1 min-h-0 overflow-hidden"
+            class="flex flex-col flex-1 border min-h-0 overflow-hidden"
             :style="{
-              background: `color-mix(in srgb, ${stageColor(si)} 12%, rgb(var(--color-background)))`,
+              background: `color-mix(in srgb, ${stageColor(si)} 1%, rgb(var(--color-background)))`,
             }"
           >
             <p
