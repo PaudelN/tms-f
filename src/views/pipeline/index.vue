@@ -16,6 +16,8 @@
           :search-value="searchQuery"
           search-placeholder="Search boards..."
           show-filter
+          show-add-task
+          :pipeline-id="kanbanActivePipelineId ?? undefined"
           :active-filter-count="activeFilterCount"
           :filter-values="commonFilter"
           :filter-creator-options="[]"
@@ -25,6 +27,7 @@
           @update:search-value="handleSearch"
           @refresh="onRefresh"
           @apply-filters="applyFilters"
+          @task-created="onRefresh"
         >
           <template #filter-extra="{ draft, on }">
             <div class="space-y-2.5">

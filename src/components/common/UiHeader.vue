@@ -40,33 +40,26 @@
           @update:model-value="(v) => emit('update:searchValue', v)"
         />
 
-        <!-- View toggles -->
-        <TooltipProvider v-if="showViews" :delay-duration="200">
-          <div class="flex items-center gap-3">
-            <Tooltip v-for="view in visibleViews" :key="view.id">
-              <TooltipTrigger as-child>
-                <Button
-                  type="button"
-                  class="relative cursor-pointer flex items-center justify-center w-10 h-10 rounded-sm transition-all duration-200 bg-primary-20"
-                  :class="
-                    currentView === view.id
-                      ? [view.activeClass, 'scale-[1.02]']
-                      : 'text-primary hover:text-foreground hover:bg-background/60'
-                  "
-                  @click="emit('update:currentView', view.id)"
-                >
-                  <component :is="view.icon" class="h-4.5 w-4.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent
-                side="bottom"
-                :side-offset="8"
-                class="text-xs font-medium"
+        <!-- Add Task button (pipeline index only) -->
+        <TooltipProvider v-if="showAddTask" :delay-duration="200">
+          <Tooltip>
+            <TooltipTrigger as-child>
+              <Button
+                type="button"
+                class="relative cursor-pointer flex items-center justify-center w-10 h-10 rounded-sm transition-all duration-200 bg-primary-20 text-primary hover:text-foreground hover:bg-background/60"
+                @click="taskDialogOpen = true"
               >
-                {{ view.label }}
-              </TooltipContent>
-            </Tooltip>
-          </div>
+                <ClipboardPlus class="h-4.5 w-4.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent
+              side="bottom"
+              :side-offset="8"
+              class="text-xs font-medium"
+            >
+              Add Task
+            </TooltipContent>
+          </Tooltip>
         </TooltipProvider>
 
         <!-- Filter button -->
@@ -107,6 +100,35 @@
               }}
             </TooltipContent>
           </Tooltip>
+        </TooltipProvider>
+
+        <!-- View toggles -->
+        <TooltipProvider v-if="showViews" :delay-duration="200">
+          <div class="flex items-center gap-3">
+            <Tooltip v-for="view in visibleViews" :key="view.id">
+              <TooltipTrigger as-child>
+                <Button
+                  type="button"
+                  class="relative cursor-pointer flex items-center justify-center w-10 h-10 rounded-sm transition-all duration-200 bg-primary-20"
+                  :class="
+                    currentView === view.id
+                      ? [view.activeClass, 'scale-[1.02]']
+                      : 'text-primary hover:text-foreground hover:bg-background/60'
+                  "
+                  @click="emit('update:currentView', view.id)"
+                >
+                  <component :is="view.icon" class="h-4.5 w-4.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent
+                side="bottom"
+                :side-offset="8"
+                class="text-xs font-medium"
+              >
+                {{ view.label }}
+              </TooltipContent>
+            </Tooltip>
+          </div>
         </TooltipProvider>
 
         <!-- Refresh -->
@@ -166,6 +188,14 @@
         <slot name="filter-extra" v-bind="slotProps" />
       </template>
     </UiFilter>
+
+    <!-- Add Task dialog — only mounted when showAddTask + pipelineId present -->
+    <UiTaskDialog
+      v-if="showAddTask && pipelineId"
+      v-model:open="taskDialogOpen"
+      :pipeline-id="pipelineId"
+      @created="emit('task-created')"
+    />
   </div>
 </template>
 
@@ -182,6 +212,7 @@
   import { useDotColor } from "@/composables/useDotColor";
   import type { ViewMode } from "@/ui-table/types/table.types";
   import {
+    ClipboardPlus,
     Plus,
     RefreshCcw,
     SlidersHorizontal,
@@ -193,12 +224,14 @@
   import type { ActiveFilters } from "../../types/filter.types";
   import type { FilterOption } from "./UiFilter.vue";
   import UiFilter from "./UiFilter.vue";
+import UiTaskDialog from "@/views/task/common/UiTaskDialog.vue";
 
   export type { FilterOption };
 
   const { getDotColor } = useDotColor();
 
   const filterOpen = ref(false);
+  const taskDialogOpen = ref(false);
 
   export type UiHeaderStat = {
     label: string;
@@ -253,6 +286,9 @@
       filterCreatorOptions?: FilterOption[];
       filterTagOptions?: FilterOption[];
       filterValues?: ActiveFilters;
+      // ── Add Task ──────────────────────────────────────────────────────────
+      showAddTask?: boolean;
+      pipelineId?: number | null;
     }>(),
     {
       showSearch: false,
@@ -266,6 +302,8 @@
       filterCreatorOptions: () => [],
       filterTagOptions: () => [],
       filterValues: () => ({}),
+      showAddTask: false,
+      pipelineId: null,
     },
   );
 
@@ -283,6 +321,7 @@
     (e: "sort"): void;
     (e: "export", format: "csv" | "json" | "pdf"): void;
     (e: "apply-filters", filters: ActiveFilters): void;
+    (e: "task-created"): void;
   }>();
 
   function resolveStatColor(stat: UiHeaderStat): string {
