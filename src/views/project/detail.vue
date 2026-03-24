@@ -30,6 +30,7 @@
           >
             Click to upload a cover image
           </p>
+          <div></div>
         </div>
       </div>
 
