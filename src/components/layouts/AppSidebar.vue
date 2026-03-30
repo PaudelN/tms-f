@@ -978,6 +978,7 @@
     Folder,
     FolderOpen,
     FolderSearch,
+    Image,
     LayoutPanelLeft,
     Loader2,
     LogOut,
@@ -1183,6 +1184,13 @@
       badge: 3,
       badgeMuted: false,
     },
+    {
+      entity: "media",
+      label: "Media",
+      icon: Image,
+      badge: null,
+      badgeMuted: false,
+    },
   ];
 
   function handleNav(entity: string): void {
@@ -1203,6 +1211,11 @@
     if (entity === "analytics") {
       taskSidebarOpen.value = false;
       router.push({ name: "analytics" });
+      return;
+    }
+    if(entity === "media") {
+      taskSidebarOpen.value = false;
+      router.push({ name: "media-index" });
       return;
     }
   }

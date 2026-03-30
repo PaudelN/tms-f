@@ -17,23 +17,16 @@
     @tab-change="onTabChange"
   >
     <template #content>
-      <div class="space-y-2.5">
-        <SectionHeader :icon="ImageIcon" label="Cover" />
-        <div
-          class="rounded-lg border border-dashed border-border/60 bg-muted/10 h-32 flex flex-col items-center justify-center gap-2 text-muted-foreground cursor-pointer hover:bg-muted/20 hover:border-primary/30 transition-all duration-200 group"
-        >
-          <ImageIcon
-            class="h-7 w-7 opacity-20 group-hover:opacity-35 transition-opacity"
-          />
-          <p
-            class="text-[11px] font-medium opacity-40 group-hover:opacity-55 transition-opacity"
-          >
-            Click to upload a cover image
-          </p>
-          <div></div>
-        </div>
-      </div>
+      <!-- ── Cover ──────────────────────────────────────────────────────── -->
+      <EntityMediaCover
+        morph-type="projects"
+        :morph-id="projectId"
+        tag="cover"
+        label="Cover"
+        filter-type="image"
+      />
 
+      <!-- ── Description ────────────────────────────────────────────────── -->
       <div class="space-y-2.5">
         <SectionHeader :icon="AlignLeft" label="Description" />
         <div
@@ -52,11 +45,7 @@
       </div>
     </template>
 
-    <!-- ────────────────────────────────────────────────────────────────────
-         Pipelines tab — UiList fills the flush panel.
-         fetchFn reads from the store; if pipelines aren't loaded yet it
-         calls fetchProject once, then works client-side from then on.
-    ──────────────────────────────────────────────────────────────────────── -->
+    <!-- ── Pipelines tab ─────────────────────────────────────────────────── -->
     <template #tab-pipelines>
       <div class="h-full flex flex-col">
         <UiList
@@ -70,7 +59,6 @@
           class="h-full"
           @row-click="(pl) => goToPipeline(pl.id)"
         >
-          <!-- ── Row summary ────────────────────────────────────────────── -->
           <template #item-summary="{ item: pl }">
             <div class="flex items-center gap-3 min-w-0">
               <div class="min-w-0 flex-1">
@@ -86,7 +74,6 @@
                   {{ pl.description }}
                 </p>
               </div>
-
               <div
                 v-if="pl.stages_count != null"
                 class="hidden sm:flex items-center gap-1 shrink-0"
@@ -117,21 +104,16 @@
       </div>
     </template>
 
-    <!-- Delete body (unchanged) -->
     <template #delete-body>
       <span>
-        <strong class="font-semibold">{{ project?.name }}</strong>
-        and all its pipelines and tasks will be permanently removed.
+        <strong class="font-semibold">{{ project?.name }}</strong> and all its
+        pipelines and tasks will be permanently removed.
       </span>
     </template>
   </UiDetail>
 </template>
 
 <script setup lang="ts">
-  import { useProjectStore } from "@/stores/project";
-  import { computed, defineComponent, h, onMounted, ref } from "vue";
-  import { useRoute, useRouter } from "vue-router";
-
   import type {
     ActionButton,
     BreadcrumbItem,
@@ -139,35 +121,31 @@
     TabItem,
   } from "@/components/common/UiDetail.vue";
   import UiDetail from "@/components/common/UiDetail.vue";
-
-  // ── UiList — same import paths as the project index page ──────────────────
-  import UiList from "@/ui-table/UiList.vue";
-  import type { ListFeatures } from "@/ui-table/types/list.types";
-  // UniversalFetchParams is the canonical arg type for every fetchFn in this codebase.
-  // Its sort fields are `sortBy: string` and `sortOrder: 'asc'|'desc'` — NOT sort.key / sort.order.
-  import type { UniversalFetchParams } from "@/ui-table/types/universal.types";
-
-  import { notify } from "@/helpers/toast";
-
+  import { EntityMediaCover } from "@/components/media";
   import Badge from "@/components/ui/badge/Badge.vue";
   import Button from "@/components/ui/button/Button.vue";
   import { useDotColor } from "@/composables/useDotColor";
+  import { notify } from "@/helpers/toast";
+  import { useProjectStore } from "@/stores/project";
+  import UiList from "@/ui-table/UiList.vue";
+  import type { ListFeatures } from "@/ui-table/types/list.types";
+  import type { UniversalFetchParams } from "@/ui-table/types/universal.types";
   import {
     AlignLeft,
     CalendarDays,
     Clock,
     Columns3,
     Eye,
-    ImageIcon,
     Layers,
     RefreshCcw,
     SquarePen,
     Trash2,
   } from "lucide-vue-next";
+  import { computed, defineComponent, h, onMounted, ref, watch } from "vue";
+  import { useRoute, useRouter } from "vue-router";
 
-  const { getDotColor } = useDotColor();
+  // ── Inline helper ─────────────────────────────────────────────────────────────
 
-  // ── Inline SectionHeader (unchanged) ──────────────────────────────────────
   const SectionHeader = defineComponent({
     props: { icon: Object, label: String },
     setup(props) {
@@ -188,53 +166,42 @@
     },
   });
 
+  // ── Setup ─────────────────────────────────────────────────────────────────────
+
+  const { getDotColor } = useDotColor();
   const route = useRoute();
   const router = useRouter();
   const projectStore = useProjectStore();
 
+  const projectId = computed<number | null>(() => {
+    const id = Number(route.params.id);
+    return !isNaN(id) && id > 0 ? id : null;
+  });
+
+  // ── Pipelines tab ─────────────────────────────────────────────────────────────
+
   const deleteModalOpen = ref(false);
   const deleteLoading = ref(false);
-
-  // ── Pipeline lazy-mount gate ───────────────────────────────────────────────
-  /** UiList is only mounted (v-if) after the user first opens the Pipelines tab. */
   const pipelinesTabActivated = ref(false);
-
-  /**
-   * Non-reactive module-level flag.
-   * Prevents a second API call when UiList re-invokes the fetchFn for sort /
-   * search / its own refresh — once the store has the data we never go back
-   * to the network unless the page-level Refresh action resets this flag.
-   */
   let pipelinesFetchDone = false;
 
-  // ── UiList fetchFn ─────────────────────────────────────────────────────────
-  /**
-   * Contract:
-   *   arg  → UniversalFetchParams  (sortBy / sortOrder, NOT sort.key / sort.order)
-   *   return → { data: T[], meta: { total: number } }  (UniversalApiResponse shape)
-   *
-   * All client-side; after the initial one-time network call every subsequent
-   * UiList operation (sort, search, group, refresh) reads from the Pinia store.
-   */
+  const project = computed(() => projectStore.activeProject);
+  const activePipelines = computed<any[]>(() =>
+    Array.isArray((project.value as any)?.pipelines)
+      ? (project.value as any).pipelines
+      : [],
+  );
+
   async function pipelinesFetchFn(params: UniversalFetchParams) {
-    // ① One-time lazy fetch — skipped when store already has pipeline data
     if (!pipelinesFetchDone) {
       pipelinesFetchDone = true;
-      if (activePipelines.value.length === 0) {
-        const id = Number(route.params.id);
-        if (id && !isNaN(id)) {
-          await projectStore.fetchProject(id);
-        }
-      }
+      if (activePipelines.value.length === 0 && projectId.value)
+        await projectStore.fetchProject(projectId.value);
     }
-
-    // ② Normalise status so groupBy / sortBy can operate on a plain string field
     let rows: any[] = activePipelines.value.map((pl: any) => ({
       ...pl,
       _statusLabel: resolvePipelineLabel(pl.status),
     }));
-
-    // ③ Client-side search — name, description, resolved status label
     if (params?.search) {
       const q = params.search.toLowerCase();
       rows = rows.filter(
@@ -244,39 +211,32 @@
           pl._statusLabel?.toLowerCase().includes(q),
       );
     }
-
-    // ④ Client-side sort
-    //    UniversalFetchParams exposes `sortBy` (field key) and `sortOrder` ('asc'|'desc').
-    //    There is NO `sort.key` / `sort.order` nested object on this type.
     if (params?.sortBy) {
-      const key = params.sortBy;
-      const order = params.sortOrder ?? "asc";
+      const { sortBy: key, sortOrder: order = "asc" } = params;
       rows = [...rows].sort((a, b) => {
-        const va = a[key] ?? "";
-        const vb = b[key] ?? "";
-        if (va < vb) return order === "asc" ? -1 : 1;
-        if (va > vb) return order === "asc" ? 1 : -1;
-        return 0;
+        const [va, vb] = [a[key] ?? "", b[key] ?? ""];
+        return va < vb
+          ? order === "asc"
+            ? -1
+            : 1
+          : va > vb
+            ? order === "asc"
+              ? 1
+              : -1
+            : 0;
       });
     }
-
-    // ⑤ Return the full UniversalApiResponse / UniversalMeta shape.
-    //    UniversalMeta requires: total, current_page, per_page, last_page.
-    //    This is a client-side result (no real pagination), so we treat the
-    //    entire filtered set as a single page.
-    const total = rows.length;
     return {
       data: rows,
       meta: {
-        total,
+        total: rows.length,
         current_page: 1,
-        per_page: total,
+        per_page: rows.length,
         last_page: 1,
       },
     };
   }
 
-  // ── UiList features ────────────────────────────────────────────────────────
   const pipelinesFeatures: ListFeatures = {
     sortOptions: [
       { key: "name", label: "Name" },
@@ -286,40 +246,27 @@
     groupBy: [{ key: "_statusLabel", label: "Status" }],
   };
 
-  // ── Tab definitions ────────────────────────────────────────────────────────
+  // ── Tabs ──────────────────────────────────────────────────────────────────────
+
   const detailTabs = computed<TabItem[]>(() => [
     {
       id: "pipelines",
       label: "Pipelines",
       icon: Columns3,
-      // Count comes from the initial fetchProject; no extra request needed.
       badge:
         (project.value as any)?.active_pipelines_count ??
         (activePipelines.value.length || null),
-      // flush:true → UiDetail skips its ScrollArea + padding wrapper so UiList
-      // can own the full panel height, sticky header, footer, and scroll.
       flush: true,
     },
   ]);
 
-  // ── Tab change ─────────────────────────────────────────────────────────────
   function onTabChange(tabId: string) {
-    if (tabId === "pipelines" && !pipelinesTabActivated.value) {
+    if (tabId === "pipelines" && !pipelinesTabActivated.value)
       pipelinesTabActivated.value = true;
-      // fetchFn fires automatically once UiList mounts; no manual call needed.
-    }
   }
 
-  // ── Project data ──────────────────────────────────────────────────────────
-  const project = computed(() => projectStore.activeProject);
+  // ── Helpers ───────────────────────────────────────────────────────────────────
 
-  const activePipelines = computed<any[]>(() =>
-    Array.isArray((project.value as any)?.pipelines)
-      ? (project.value as any).pipelines
-      : [],
-  );
-
-  // ── Pipeline status helpers ───────────────────────────────────────────────
   function resolvePipelineLabel(status: any): string {
     if (!status) return "—";
     return typeof status === "object" && "label" in status
@@ -327,21 +274,21 @@
       : String(status);
   }
 
-  // ── Field extractors (unchanged) ──────────────────────────────────────────
   function extractValue(field: unknown): string {
     if (!field) return "";
     if (typeof field === "string") return field;
     if (typeof field === "object" && field !== null && "value" in field)
-      return String((field as { value: unknown }).value);
+      return String((field as any).value);
     return "";
   }
+
   function extractLabel(
     field: unknown,
     list: Array<{ value: string; label: string }>,
   ): string {
     if (!field) return "—";
     if (typeof field === "object" && field !== null && "label" in field)
-      return String((field as { label: unknown }).label);
+      return String((field as any).label);
     const raw = typeof field === "string" ? field : extractValue(field);
     if (!raw) return "—";
     const found = list.find((s) => s.value === raw);
@@ -350,45 +297,50 @@
       : raw.charAt(0).toUpperCase() + raw.slice(1).replace(/_/g, " ");
   }
 
+  function formatDate(d: string | null | undefined): string {
+    if (!d) return "—";
+    return new Date(d).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  }
+
+  // ── Computed display ──────────────────────────────────────────────────────────
+
   const rawStatusValue = computed(() => extractValue(project.value?.status));
   const currentStatusObj = computed(() =>
     projectStore.statuses.find((s) => s.value === rawStatusValue.value),
-  );
-  const statusLabel = computed(() =>
-    extractLabel(project.value?.status, projectStore.statuses),
   );
   const visibilityLabel = computed(() =>
     extractLabel(project.value?.visibility, projectStore.visibilities),
   );
 
-  // ── Status badge ──────────────────────────────────────────────────────────
-  const statusBadge = computed(() => {
-    if (!currentStatusObj.value) return undefined;
-    return {
-      label: currentStatusObj.value.label,
-      dot: currentStatusObj.value.dot,
-      class: currentStatusObj.value.badge,
-    };
-  });
+  const statusBadge = computed(() =>
+    currentStatusObj.value
+      ? {
+          label: currentStatusObj.value.label,
+          dot: currentStatusObj.value.dot,
+          class: currentStatusObj.value.badge,
+        }
+      : undefined,
+  );
 
-  // ── Breadcrumbs ───────────────────────────────────────────────────────────
   const breadcrumbs = computed<BreadcrumbItem[]>(() => [
     { label: "Workspaces", onClick: () => router.push({ name: "workspace" }) },
     {
       label: project.value?.workspace?.name ?? "Workspace",
       onClick: () => {
-        if (project.value?.workspace_id) {
+        if (project.value?.workspace_id)
           router.push({
             name: "project-index",
             params: { workspaceId: project.value.workspace_id },
           });
-        }
       },
     },
     { label: project.value?.name ?? "Project" },
   ]);
 
-  // ── Actions ───────────────────────────────────────────────────────────────
   const actions = computed<ActionButton[]>(() => [
     {
       id: "refresh",
@@ -407,16 +359,6 @@
       },
     },
   ]);
-
-  // ── Meta sidebar fields ───────────────────────────────────────────────────
-  function formatDate(d: string | null | undefined): string {
-    if (!d) return "—";
-    return new Date(d).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  }
 
   const metaFields = computed<MetaField[]>(() => [
     {
@@ -456,65 +398,68 @@
     {
       label: "Created At",
       icon: CalendarDays,
-      value: project.value?.created_at ? project.value.created_at : "—",
+      value: project.value?.created_at ?? "—",
     },
     {
       label: "Last Updated",
       icon: Clock,
-      value: project.value?.updated_at ? project.value.updated_at : "—",
+      value: project.value?.updated_at ?? "—",
     },
   ]);
 
-  // ── Delete dialog config ──────────────────────────────────────────────────
   const deleteDialog = {
     title: "Delete Project",
     description: "This action cannot be undone.",
     confirmLabel: "Delete Project",
   };
 
-  // ── Lifecycle ─────────────────────────────────────────────────────────────
+  // ── Lifecycle ─────────────────────────────────────────────────────────────────
+
   onMounted(async () => {
-    const id = Number(route.params.id);
-    if (!id || isNaN(id)) {
+    if (!projectId.value) {
       router.push({ name: "workspace" });
       return;
     }
     await Promise.all([
       projectStore.fetchStatuses(),
       projectStore.fetchVisibilities(),
-      projectStore.fetchProject(id),
+      projectStore.fetchProject(projectId.value),
     ]);
   });
 
-  // ── Navigation ────────────────────────────────────────────────────────────
-  function goToPipeline(pipelineId: number) {
-    router.push({ name: "pipeline-detail", params: { id: pipelineId } });
-  }
+  watch(projectId, (id) => {
+    if (id) {
+      pipelinesFetchDone = false;
+      projectStore.fetchProject(id);
+    }
+  });
 
+  // ── Navigation / CRUD ─────────────────────────────────────────────────────────
+
+  function goToPipeline(id: number) {
+    router.push({ name: "pipeline-detail", params: { id } });
+  }
   function goToAllPipelines() {
     router.push({
       name: "pipeline-index",
       params: { projectId: project.value?.id },
     });
   }
-  // ── Handlers ─────────────────────────────────────────────────────────────
   function handleEdit() {
     router.push({ name: "project-edit", params: { id: project.value?.id } });
   }
+
   async function handleRefresh() {
-    const id = Number(route.params.id);
-    if (id) {
-      // Reset so the fetchFn re-hits the API on the next UiList call
-      pipelinesFetchDone = false;
-      await projectStore.fetchProject(id);
-    }
+    if (!projectId.value) return;
+    pipelinesFetchDone = false;
+    await projectStore.fetchProject(projectId.value);
   }
+
   async function confirmDelete() {
     if (!project.value) return;
     deleteLoading.value = true;
     try {
-      const name = project.value.name;
-      const wsId = project.value.workspace_id;
+      const { name, workspace_id: wsId } = project.value;
       await projectStore.deleteProject(project.value.id, wsId);
       notify.success("Project deleted", `"${name}" was removed successfully.`, {
         position: "bottom-right",

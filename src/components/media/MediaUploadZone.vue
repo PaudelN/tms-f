@@ -1,294 +1,293 @@
-<script setup lang="ts">
-  import { Button } from "@/components/ui/button";
-  import { Progress } from "@/components/ui/progress";
-  import {
-    CheckCircle2Icon,
-    FileIcon,
-    UploadCloudIcon,
-    XIcon,
-  } from "lucide-vue-next";
-  import { computed, ref } from "vue";
-
-  // ── Types ──────────────────────────────────────────────────────────────────────
-
-  export interface UploadQueueItem {
-    id: string;
-    file: File;
-    name: string;
-    progress: number;
-    status: "pending" | "uploading" | "done" | "error";
-    error?: string;
-  }
-
-  // ── Props / Emits ──────────────────────────────────────────────────────────────
-
-  const props = withDefaults(
-    defineProps<{
-      accept?: string;
-      maxSizeMb?: number;
-      multiple?: boolean;
-      disabled?: boolean;
-    }>(),
-    {
-      accept: "image/*,video/*,application/pdf,.doc,.docx,.xls,.xlsx,.csv,.txt",
-      maxSizeMb: 20,
-      multiple: true,
-      disabled: false,
-    },
-  );
-
-  const emit = defineEmits<{
-    upload: [files: File[]];
-  }>();
-
-  // ── State ──────────────────────────────────────────────────────────────────────
-
-  const isDragging = ref(false);
-  const fileInputRef = ref<HTMLInputElement | null>(null);
-  const queue = ref<UploadQueueItem[]>([]);
-
-  // ── Computed ───────────────────────────────────────────────────────────────────
-
-  const hasQueue = computed(() => queue.value.length > 0);
-  const overallProgress = computed(() => {
-    if (!queue.value.length) return 0;
-    const sum = queue.value.reduce((acc, i) => acc + i.progress, 0);
-    return Math.round(sum / queue.value.length);
-  });
-  const isAnyUploading = computed(() =>
-    queue.value.some((i) => i.status === "uploading"),
-  );
-  const maxBytes = computed(() => props.maxSizeMb * 1024 * 1024);
-
-  // ── Drag Events ────────────────────────────────────────────────────────────────
-
-  function onDragOver(e: DragEvent): void {
-    e.preventDefault();
-    isDragging.value = true;
-  }
-
-  function onDragLeave(): void {
-    isDragging.value = false;
-  }
-
-  function onDrop(e: DragEvent): void {
-    e.preventDefault();
-    isDragging.value = false;
-    const files = Array.from(e.dataTransfer?.files ?? []);
-    handleFiles(files);
-  }
-
-  function onInputChange(e: Event): void {
-    const input = e.target as HTMLInputElement;
-    const files = Array.from(input.files ?? []);
-    handleFiles(files);
-    input.value = "";
-  }
-
-  // ── File Handling ──────────────────────────────────────────────────────────────
-
-  function handleFiles(files: File[]): void {
-    if (props.disabled) return;
-    const valid = files.filter((f) => f.size <= maxBytes.value);
-    if (valid.length) emit("upload", valid);
-  }
-
-  // ── Queue Management (exposed for parent) ─────────────────────────────────────
-
-  function addToQueue(file: File): UploadQueueItem {
-    const item: UploadQueueItem = {
-      id: crypto.randomUUID(),
-      file,
-      name: file.name,
-      progress: 0,
-      status: "pending",
-    };
-    queue.value.push(item);
-    return item;
-  }
-
-  function updateProgress(id: string, progress: number): void {
-    const item = queue.value.find((i) => i.id === id);
-    if (item) {
-      item.progress = progress;
-      item.status = "uploading";
-    }
-  }
-
-  function markDone(id: string): void {
-    const item = queue.value.find((i) => i.id === id);
-    if (item) {
-      item.progress = 100;
-      item.status = "done";
-    }
-  }
-
-  function markError(id: string, message: string): void {
-    const item = queue.value.find((i) => i.id === id);
-    if (item) {
-      item.status = "error";
-      item.error = message;
-    }
-  }
-
-  function removeFromQueue(id: string): void {
-    queue.value = queue.value.filter((i) => i.id !== id);
-  }
-
-  function clearQueue(): void {
-    queue.value = [];
-  }
-
-  // ── Expose ─────────────────────────────────────────────────────────────────────
-
-  defineExpose({
-    queue,
-    addToQueue,
-    updateProgress,
-    markDone,
-    markError,
-    removeFromQueue,
-    clearQueue,
-  });
-</script>
-
 <template>
   <div class="space-y-3">
-    <!-- Drop Zone -->
+    <!-- Drop zone -->
     <div
-      class="relative flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed px-6 py-10 text-center transition-colors duration-200"
+      class="relative border-2 border-dashed rounded-xl transition-all duration-150 cursor-pointer overflow-hidden"
       :class="[
         isDragging
-          ? 'border-primary bg-primary/5 text-primary'
-          : 'border-border/60 bg-muted/20 hover:border-primary/50 hover:bg-muted/30',
-        disabled && 'pointer-events-none opacity-50',
+          ? 'border-primary bg-primary/5 scale-[1.01]'
+          : 'border-border hover:border-primary/50 hover:bg-muted/30',
+        disabled ? 'opacity-50 pointer-events-none' : '',
       ]"
-      @dragover="onDragOver"
-      @dragleave="onDragLeave"
-      @drop="onDrop"
+      @dragover.prevent="isDragging = true"
+      @dragleave.prevent="isDragging = false"
+      @drop.prevent="onDrop"
+      @click="triggerInput"
     >
-      <div
-        class="flex h-12 w-12 items-center justify-center rounded-full bg-background shadow-sm ring-1 ring-border"
-      >
-        <UploadCloudIcon
-          class="h-6 w-6 transition-colors"
-          :class="isDragging ? 'text-primary' : 'text-muted-foreground'"
-        />
-      </div>
-
-      <div class="space-y-1">
-        <p class="text-sm font-medium text-foreground">
-          <button
-            type="button"
-            class="cursor-pointer text-primary underline-offset-2 hover:underline focus:outline-none"
-            :disabled="disabled"
-            @click="fileInputRef?.click()"
-          >
-            Click to upload
-          </button>
-          {{ " " }}or drag &amp; drop
-        </p>
-        <p class="text-xs text-muted-foreground">
-          Images, videos, PDFs, documents — up to {{ maxSizeMb }}MB each
-        </p>
-      </div>
-
       <input
-        ref="fileInputRef"
+        ref="inputRef"
         type="file"
         class="hidden"
-        :accept="accept"
+        :accept="acceptStr"
         :multiple="multiple"
-        :disabled="disabled"
         @change="onInputChange"
       />
-    </div>
 
-    <!-- Upload Queue -->
-    <Transition name="slide-down">
-      <div v-if="hasQueue" class="space-y-2">
-        <Progress
-          v-if="isAnyUploading"
-          :model-value="overallProgress"
-          class="h-1"
-        />
+      <div
+        class="py-10 flex flex-col items-center justify-center gap-3 text-center px-6"
+      >
+        <div
+          class="h-12 w-12 rounded-xl flex items-center justify-center transition-colors"
+          :class="
+            isDragging
+              ? 'bg-primary/15 text-primary'
+              : 'bg-muted text-muted-foreground'
+          "
+        >
+          <UploadCloud class="h-6 w-6" />
+        </div>
 
-        <div class="space-y-1.5 rounded-lg border bg-card p-3">
-          <TransitionGroup name="list" tag="div" class="space-y-1.5">
-            <div
-              v-for="item in queue"
-              :key="item.id"
-              class="flex items-center gap-3 rounded-md px-2 py-1.5 text-sm"
-              :class="
-                item.status === 'error' ? 'bg-destructive/10' : 'bg-muted/30'
-              "
-            >
-              <!-- Status icon -->
-              <div class="shrink-0">
-                <CheckCircle2Icon
-                  v-if="item.status === 'done'"
-                  class="h-4 w-4 text-emerald-500"
-                />
-                <div
-                  v-else-if="item.status === 'uploading'"
-                  class="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"
-                />
-                <FileIcon v-else class="h-4 w-4 text-muted-foreground" />
-              </div>
-
-              <!-- Name + progress -->
-              <div class="min-w-0 flex-1">
-                <p class="truncate text-xs font-medium">{{ item.name }}</p>
-                <Progress
-                  v-if="item.status === 'uploading'"
-                  :model-value="item.progress"
-                  class="mt-1 h-1"
-                />
-                <p
-                  v-if="item.status === 'error'"
-                  class="mt-0.5 text-[11px] text-destructive"
-                >
-                  {{ item.error ?? "Upload failed" }}
-                </p>
-              </div>
-
-              <!-- Remove (not while uploading) -->
-              <Button
-                v-if="item.status !== 'uploading'"
-                type="button"
-                size="icon"
-                variant="ghost"
-                class="h-6 w-6 shrink-0 text-muted-foreground hover:text-foreground"
-                @click="removeFromQueue(item.id)"
+        <div>
+          <p class="text-sm font-semibold text-foreground">
+            <template v-if="isDragging">Drop files here</template>
+            <template v-else>
+              <span class="text-primary underline underline-offset-2"
+                >Click to upload</span
               >
-                <XIcon class="h-3 w-3" />
-              </Button>
-            </div>
-          </TransitionGroup>
+              or drag &amp; drop
+            </template>
+          </p>
+          <p class="text-xs text-muted-foreground mt-0.5">
+            {{ hint }}
+          </p>
         </div>
       </div>
-    </Transition>
+    </div>
+
+    <!-- Queue -->
+    <TransitionGroup
+      v-if="queue.length > 0"
+      tag="div"
+      class="space-y-1.5"
+      name="queue"
+    >
+      <div
+        v-for="item in queue"
+        :key="item.id"
+        class="flex items-center gap-3 px-3 py-2 rounded-lg border border-border bg-card"
+      >
+        <!-- File type icon -->
+        <div
+          class="h-8 w-8 rounded-lg flex items-center justify-center shrink-0 text-xs font-bold uppercase"
+          :class="fileTypeStyle(item.file.type).bg"
+        >
+          <component
+            :is="fileTypeStyle(item.file.type).icon"
+            class="h-4 w-4"
+            :class="fileTypeStyle(item.file.type).color"
+          />
+        </div>
+
+        <!-- Name + progress -->
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center justify-between gap-2">
+            <p class="text-xs font-medium text-foreground truncate">
+              {{ item.file.name }}
+            </p>
+            <div class="flex items-center gap-1.5 shrink-0">
+              <!-- Status badge -->
+              <span
+                v-if="item.status === 'done'"
+                class="flex items-center gap-1 text-[10px] font-semibold text-emerald-600"
+              >
+                <CheckCircle2 class="h-3 w-3" /> Done
+              </span>
+              <span
+                v-else-if="item.status === 'error'"
+                class="flex items-center gap-1 text-[10px] font-semibold text-destructive"
+              >
+                <AlertCircle class="h-3 w-3" /> Failed
+              </span>
+              <span
+                v-else-if="item.status === 'uploading'"
+                class="text-[10px] font-semibold text-primary tabular-nums"
+              >
+                {{ item.progress }}%
+              </span>
+              <span v-else class="text-[10px] text-muted-foreground">
+                {{ humanSize(item.file.size) }}
+              </span>
+
+              <!-- Remove btn -->
+              <button
+                type="button"
+                class="h-5 w-5 rounded flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                @click="emit('remove', item.id)"
+              >
+                <X class="h-3 w-3" />
+              </button>
+            </div>
+          </div>
+
+          <!-- Progress bar -->
+          <div
+            v-if="item.status === 'uploading' || item.status === 'done'"
+            class="mt-1.5 h-1 rounded-full bg-muted overflow-hidden"
+          >
+            <div
+              class="h-full rounded-full transition-all duration-300"
+              :class="item.status === 'done' ? 'bg-emerald-500' : 'bg-primary'"
+              :style="{ width: `${item.progress}%` }"
+            />
+          </div>
+
+          <!-- Error message -->
+          <p
+            v-if="item.status === 'error' && item.error"
+            class="text-[10px] text-destructive mt-0.5"
+          >
+            {{ item.error }}
+          </p>
+        </div>
+      </div>
+    </TransitionGroup>
+
+    <!-- Upload action -->
+    <div
+      v-if="
+        showActions && queue.filter((u) => u.status === 'pending').length > 0
+      "
+      class="flex items-center justify-between pt-1"
+    >
+      <span class="text-xs text-muted-foreground">
+        {{ queue.filter((u) => u.status === "pending").length }} file(s) ready
+      </span>
+      <div class="flex gap-2">
+        <button
+          type="button"
+          class="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-accent transition-colors"
+          @click="emit('clear')"
+        >
+          <X class="h-3 w-3" /> Clear
+        </button>
+        <button
+          type="button"
+          class="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+          :disabled="uploading"
+          @click="emit('upload')"
+        >
+          <Loader2 v-if="uploading" class="h-3 w-3 animate-spin" />
+          <UploadCloud v-else class="h-3 w-3" />
+          {{ uploading ? "Uploading…" : "Upload All" }}
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 
-<style scoped>
-  .slide-down-enter-active,
-  .slide-down-leave-active {
-    transition: all 0.2s ease;
-  }
-  .slide-down-enter-from,
-  .slide-down-leave-to {
-    opacity: 0;
-    transform: translateY(-6px);
+<script setup lang="ts">
+  import type { UploadQueueItem } from "@/stores/media";
+  import {
+    AlertCircle,
+    CheckCircle2,
+    File,
+    FileAudio,
+    FileText,
+    FileVideo,
+    ImageIcon,
+    Loader2,
+    UploadCloud,
+    X,
+  } from "lucide-vue-next";
+  import { computed, ref } from "vue";
+
+  const props = defineProps<{
+    queue: UploadQueueItem[];
+    uploading?: boolean;
+    disabled?: boolean;
+    multiple?: boolean;
+    accept?: string[];
+    showActions?: boolean;
+    hint?: string;
+  }>();
+
+  const emit = defineEmits<{
+    (e: "add", files: File[]): void;
+    (e: "remove", id: string): void;
+    (e: "upload"): void;
+    (e: "clear"): void;
+  }>();
+
+  const inputRef = ref<HTMLInputElement | null>(null);
+  const isDragging = ref(false);
+
+  const acceptStr = computed(
+    () =>
+      props.accept?.join(",") ??
+      "image/*,video/*,audio/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv",
+  );
+
+  const hint = computed(
+    () => props.hint ?? "Images, videos, documents up to 20 MB",
+  );
+
+  function triggerInput() {
+    inputRef.value?.click();
   }
 
-  .list-enter-active,
-  .list-leave-active {
+  function onInputChange(e: Event) {
+    const input = e.target as HTMLInputElement;
+    if (input.files?.length) {
+      emit("add", Array.from(input.files));
+      input.value = "";
+    }
+  }
+
+  function onDrop(e: DragEvent) {
+    isDragging.value = false;
+    const files = Array.from(e.dataTransfer?.files ?? []);
+    if (files.length) emit("add", files);
+  }
+
+  // ── Helpers ──────────────────────────────────────────────────────────────────
+
+  function humanSize(bytes: number): string {
+    if (bytes >= 1_048_576) return `${(bytes / 1_048_576).toFixed(1)} MB`;
+    if (bytes >= 1_024) return `${(bytes / 1_024).toFixed(1)} KB`;
+    return `${bytes} B`;
+  }
+
+  function fileTypeStyle(mime: string): {
+    bg: string;
+    icon: any;
+    color: string;
+  } {
+    if (mime.startsWith("image/"))
+      return {
+        bg: "bg-violet-500/10",
+        icon: ImageIcon,
+        color: "text-violet-500",
+      };
+    if (mime.startsWith("video/"))
+      return { bg: "bg-rose-500/10", icon: FileVideo, color: "text-rose-500" };
+    if (mime.startsWith("audio/"))
+      return {
+        bg: "bg-amber-500/10",
+        icon: FileAudio,
+        color: "text-amber-500",
+      };
+    if (
+      mime.includes("pdf") ||
+      mime.includes("word") ||
+      mime.includes("excel") ||
+      mime.includes("sheet") ||
+      mime.includes("presentation") ||
+      mime === "text/plain" ||
+      mime === "text/csv"
+    )
+      return { bg: "bg-sky-500/10", icon: FileText, color: "text-sky-500" };
+    return { bg: "bg-slate-500/10", icon: File, color: "text-slate-500" };
+  }
+</script>
+
+<style scoped>
+  .queue-enter-active,
+  .queue-leave-active {
     transition: all 0.2s ease;
   }
-  .list-enter-from,
-  .list-leave-to {
+  .queue-enter-from,
+  .queue-leave-to {
     opacity: 0;
-    transform: translateX(-8px);
+    transform: translateY(-6px);
   }
 </style>

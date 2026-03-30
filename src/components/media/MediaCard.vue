@@ -1,270 +1,251 @@
-<script setup lang="ts">
-  import { Badge } from "@/components/ui/badge";
-  import { Button } from "@/components/ui/button";
-  import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-  } from "@/components/ui/dropdown-menu";
-  import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-  } from "@/components/ui/tooltip";
-  import type { Media } from "@/stores/media";
-  import {
-    CopyIcon,
-    DownloadIcon,
-    ExternalLinkIcon,
-    FileIcon,
-    FileSpreadsheetIcon,
-    FileTextIcon,
-    FilmIcon,
-    ImageIcon,
-    MoreVerticalIcon,
-    PencilIcon,
-    TrashIcon,
-  } from "lucide-vue-next";
-  import { computed } from "vue";
-
-  // ── Props ──────────────────────────────────────────────────────────────────────
-
-  const props = withDefaults(
-    defineProps<{
-      media: Media;
-      selectable?: boolean;
-      selected?: boolean;
-      compact?: boolean;
-    }>(),
-    {
-      selectable: false,
-      selected: false,
-      compact: false,
-    },
-  );
-
-  // ── Emits ──────────────────────────────────────────────────────────────────────
-
-  const emit = defineEmits<{
-    edit: [media: Media];
-    delete: [media: Media];
-    select: [media: Media];
-    preview: [media: Media];
-  }>();
-
-  // ── Computed ───────────────────────────────────────────────────────────────────
-
-  const isImage = computed(() => props.media.type === "image");
-  const isVideo = computed(() => props.media.type === "video");
-
-  const isPdf = computed(() => props.media.mime_type === "application/pdf");
-  const isSpreadsheet = computed(
-    () =>
-      props.media.mime_type.includes("spreadsheet") ||
-      props.media.mime_type.includes("excel") ||
-      props.media.mime_type === "text/csv",
-  );
-
-  const typeIcon = computed(() => {
-    if (props.media.type === "image") return ImageIcon;
-    if (props.media.type === "video") return FilmIcon;
-    if (props.media.type === "document") {
-      return isSpreadsheet.value ? FileSpreadsheetIcon : FileTextIcon;
-    }
-    return FileIcon;
-  });
-
-  const fileExtension = computed(() => {
-    const parts = props.media.mime_type.split("/");
-    return parts[1]?.toUpperCase() ?? props.media.type.toUpperCase();
-  });
-
-  const iconColorClass = computed(() => {
-    if (isPdf.value) return "text-rose-500";
-    if (isSpreadsheet.value) return "text-emerald-500";
-    return "text-blue-500";
-  });
-
-  const cardClasses = computed(() => [
-    "group relative flex flex-col rounded-lg border bg-card transition-all duration-200",
-    "hover:shadow-md hover:border-primary/30",
-    props.selected ? "ring-2 ring-primary border-primary/50 bg-primary/5" : "",
-    props.selectable ? "cursor-pointer select-none" : "",
-    "overflow-hidden",
-  ]);
-
-  // ── Helpers ────────────────────────────────────────────────────────────────────
-
-  function copyUrl(): void {
-    void navigator.clipboard.writeText(props.media.url);
-  }
-
-  function openInNew(): void {
-    window.open(props.media.url, "_blank", "noopener,noreferrer");
-  }
-
-  function download(): void {
-    const a = document.createElement("a");
-    a.href = props.media.url;
-    a.download = props.media.original_name;
-    a.click();
-  }
-
-  function truncateName(name: string, max = 28): string {
-    return name.length > max ? `${name.slice(0, max - 1)}…` : name;
-  }
-</script>
-
 <template>
   <div
-    :class="cardClasses"
-    @click="selectable ? emit('select', media) : undefined"
+    class="group relative rounded-xl border transition-all duration-150 cursor-pointer select-none overflow-hidden"
+    :class="[
+      selected
+        ? 'border-primary/60 bg-primary/5 ring-1 ring-primary/30 shadow-md'
+        : 'border-border bg-card hover:border-primary/30 hover:shadow-sm',
+    ]"
+    @click="emit('click', item)"
   >
-    <!-- Thumbnail / Preview Area -->
+    <!-- Selection checkbox -->
     <div
-      class="relative w-full overflow-hidden bg-muted/50"
-      :class="compact ? 'aspect-square' : 'aspect-[16/10]'"
+      class="absolute top-2 left-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity"
+      :class="{ '!opacity-100': selected }"
+      @click.stop="emit('select', item)"
     >
-      <!-- Image -->
-      <img
-        v-if="isImage"
-        :src="media.url"
-        :alt="media.name"
-        class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-        loading="lazy"
-      />
-
-      <!-- Video placeholder -->
       <div
-        v-else-if="isVideo"
-        class="flex h-full w-full items-center justify-center bg-muted/80"
+        class="h-5 w-5 rounded-md border-2 flex items-center justify-center transition-all"
+        :class="
+          selected
+            ? 'bg-primary border-primary'
+            : 'bg-background/90 border-border backdrop-blur-sm'
+        "
       >
-        <FilmIcon class="h-10 w-10 text-muted-foreground/60" />
-      </div>
-
-      <!-- File icon -->
-      <div
-        v-else
-        class="flex h-full w-full flex-col items-center justify-center gap-2 bg-muted/30"
-      >
-        <component :is="typeIcon" class="h-10 w-10" :class="iconColorClass" />
-        <span
-          class="text-[10px] font-medium uppercase tracking-widest text-muted-foreground"
-        >
-          {{ fileExtension }}
-        </span>
-      </div>
-
-      <!-- Selected overlay -->
-      <Transition name="fade">
-        <div
-          v-if="selected && selectable"
-          class="absolute inset-0 flex items-center justify-center bg-primary/20 backdrop-blur-[1px]"
-        >
-          <div
-            class="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground shadow"
-          >
-            <svg
-              class="h-4 w-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2.5"
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
-          </div>
-        </div>
-      </Transition>
-
-      <!-- Actions — top right (non-selectable mode only) -->
-      <div
-        v-if="!selectable"
-        class="absolute right-2 top-2 opacity-0 transition-opacity group-hover:opacity-100"
-        @click.stop
-      >
-        <DropdownMenu>
-          <DropdownMenuTrigger as-child>
-            <Button
-              size="icon"
-              variant="secondary"
-              class="h-7 w-7 rounded-md shadow-sm"
-            >
-              <MoreVerticalIcon class="h-3.5 w-3.5" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" class="w-44">
-            <DropdownMenuItem @click="emit('preview', media)">
-              <ExternalLinkIcon class="mr-2 h-3.5 w-3.5" />
-              Preview
-            </DropdownMenuItem>
-            <DropdownMenuItem @click="copyUrl">
-              <CopyIcon class="mr-2 h-3.5 w-3.5" />
-              Copy URL
-            </DropdownMenuItem>
-            <DropdownMenuItem @click="download">
-              <DownloadIcon class="mr-2 h-3.5 w-3.5" />
-              Download
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem @click="emit('edit', media)">
-              <PencilIcon class="mr-2 h-3.5 w-3.5" />
-              Rename
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              class="text-destructive focus:text-destructive"
-              @click="emit('delete', media)"
-            >
-              <TrashIcon class="mr-2 h-3.5 w-3.5" />
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <Check v-if="selected" class="h-3 w-3 text-primary-foreground" />
       </div>
     </div>
 
-    <!-- Footer info (non-compact only) -->
-    <div v-if="!compact" class="flex flex-col gap-1 p-3">
-      <TooltipProvider :delay-duration="300">
-        <Tooltip>
-          <TooltipTrigger as-child>
-            <p
-              class="truncate text-[13px] font-medium leading-tight text-foreground"
-            >
-              {{ truncateName(media.name) }}
-            </p>
-          </TooltipTrigger>
-          <TooltipContent>{{ media.name }}</TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+    <!-- Actions -->
+    <div
+      class="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1"
+      @click.stop
+    >
+      <button
+        type="button"
+        class="h-6 w-6 rounded-md flex items-center justify-center bg-background/90 border border-border/60 backdrop-blur-sm hover:border-primary/40 hover:bg-primary/10 text-muted-foreground hover:text-foreground transition-colors"
+        title="Edit alt text"
+        @click="emit('edit', item)"
+      >
+        <Pencil class="h-3 w-3" />
+      </button>
+      <button
+        type="button"
+        class="h-6 w-6 rounded-md flex items-center justify-center bg-background/90 border border-border/60 backdrop-blur-sm hover:border-destructive/40 hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+        title="Delete"
+        @click="emit('delete', item)"
+      >
+        <Trash2 class="h-3 w-3" />
+      </button>
+    </div>
 
-      <div class="flex items-center justify-between gap-2">
-        <span class="text-[11px] text-muted-foreground">{{
-          media.human_size
-        }}</span>
-        <Badge variant="secondary" class="h-4 px-1.5 text-[10px]">
-          {{ media.type }}
-        </Badge>
+    <!-- Preview area -->
+    <div
+      ref="previewRef"
+      class="relative bg-muted/30 aspect-video flex items-center justify-center overflow-hidden"
+    >
+      <!-- Skeleton shown only before IntersectionObserver fires -->
+      <div v-if="!inView" class="absolute inset-0 animate-pulse bg-muted/60" />
+
+      <template v-else>
+        <!-- Image -->
+        <img
+          v-if="item.aggregate_type === 'image' && !imageError"
+          :src="item.url"
+          :alt="item.alt ?? item.original_filename ?? ''"
+          class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+          @error="imageError = true"
+        />
+
+        <!-- Video — browser renders first frame as poster -->
+        <video
+          v-else-if="item.aggregate_type === 'video'"
+          :src="item.url"
+          class="w-full h-full object-cover"
+          preload="metadata"
+          muted
+          playsinline
+        />
+
+        <!-- Icon fallback: audio / document / other / broken image -->
+        <div
+          v-else
+          class="flex flex-col items-center justify-center gap-2 w-full h-full"
+          :class="typeColors[item.aggregate_type]?.bg ?? typeColors.other.bg"
+        >
+          <component
+            :is="typeIcon"
+            class="h-10 w-10"
+            :class="
+              typeColors[item.aggregate_type]?.icon ?? typeColors.other.icon
+            "
+          />
+          <span
+            class="text-[10px] font-bold uppercase tracking-widest"
+            :class="
+              typeColors[item.aggregate_type]?.text ?? typeColors.other.text
+            "
+          >
+            {{ item.extension }}
+          </span>
+        </div>
+      </template>
+
+      <!-- Aggregate badge — always visible -->
+      <div
+        class="absolute bottom-1.5 left-1.5 flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest backdrop-blur-sm border"
+        :class="
+          typeColors[item.aggregate_type]?.badge ?? typeColors.other.badge
+        "
+      >
+        <component :is="typeIcon" class="h-2.5 w-2.5" />
+        {{ item.aggregate_type }}
       </div>
+    </div>
+
+    <!-- Info footer -->
+    <div class="px-3 py-2.5">
+      <p class="text-xs font-medium text-foreground truncate leading-tight">
+        {{ item.original_filename ?? item.filename }}
+      </p>
+      <div class="flex items-center justify-between mt-1 gap-2">
+        <span class="text-[10px] text-muted-foreground">{{
+          item.human_size
+        }}</span>
+        <span class="text-[10px] text-muted-foreground">{{
+          formattedDate
+        }}</span>
+      </div>
+      <p
+        v-if="item.alt"
+        class="text-[10px] text-muted-foreground truncate mt-0.5 italic"
+      >
+        {{ item.alt }}
+      </p>
     </div>
   </div>
 </template>
 
-<style scoped>
-  .fade-enter-active,
-  .fade-leave-active {
-    transition: opacity 0.15s ease;
-  }
-  .fade-enter-from,
-  .fade-leave-to {
-    opacity: 0;
-  }
-</style>
+<script setup lang="ts">
+  import type { Media } from "@/stores/media";
+  import {
+    Check,
+    File,
+    FileAudio,
+    FileText,
+    FileVideo,
+    ImageIcon,
+    Pencil,
+    Trash2,
+  } from "lucide-vue-next";
+  import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+
+  // ── Props / emits ─────────────────────────────────────────────────────────────
+
+  const props = defineProps<{
+    item: Media;
+    selected?: boolean;
+  }>();
+
+  const emit = defineEmits<{
+    (e: "click", item: Media): void;
+    (e: "select", item: Media): void;
+    (e: "edit", item: Media): void;
+    (e: "delete", item: Media): void;
+  }>();
+
+  // ── State ─────────────────────────────────────────────────────────────────────
+
+  const imageError = ref(false);
+  const inView = ref(true);
+  const previewRef = ref<HTMLElement | null>(null);
+
+  // ── Lazy loading via IntersectionObserver ─────────────────────────────────────
+
+  let observer: IntersectionObserver | null = null;
+
+  onMounted(() => {
+    if (!("IntersectionObserver" in window)) return;
+    inView.value = false;
+    observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          inView.value = true;
+          observer?.disconnect();
+        }
+      },
+      { rootMargin: "150px" },
+    );
+    if (previewRef.value) observer.observe(previewRef.value);
+  });
+
+  onBeforeUnmount(() => observer?.disconnect());
+
+  // ── Type styling ──────────────────────────────────────────────────────────────
+
+  const typeColors: Record<
+    string,
+    { bg: string; icon: string; text: string; badge: string }
+  > = {
+    image: {
+      bg: "bg-violet-500/8",
+      icon: "text-violet-500",
+      text: "text-violet-600",
+      badge: "bg-violet-500/10 border-violet-500/20 text-violet-600",
+    },
+    video: {
+      bg: "bg-rose-500/8",
+      icon: "text-rose-500",
+      text: "text-rose-600",
+      badge: "bg-rose-500/10 border-rose-500/20 text-rose-600",
+    },
+    audio: {
+      bg: "bg-amber-500/8",
+      icon: "text-amber-500",
+      text: "text-amber-600",
+      badge: "bg-amber-500/10 border-amber-500/20 text-amber-600",
+    },
+    document: {
+      bg: "bg-sky-500/8",
+      icon: "text-sky-500",
+      text: "text-sky-600",
+      badge: "bg-sky-500/10 border-sky-500/20 text-sky-600",
+    },
+    other: {
+      bg: "bg-slate-500/8",
+      icon: "text-slate-500",
+      text: "text-slate-600",
+      badge: "bg-slate-500/10 border-slate-500/20 text-slate-600",
+    },
+  };
+
+  const typeIconMap: Record<string, unknown> = {
+    image: ImageIcon,
+    video: FileVideo,
+    audio: FileAudio,
+    document: FileText,
+    other: File,
+  };
+
+  const typeIcon = computed(
+    () => typeIconMap[props.item.aggregate_type] ?? File,
+  );
+
+  const formattedDate = computed(() => {
+    if (!props.item.created_at) return "";
+    return new Date(props.item.created_at).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    });
+  });
+</script>

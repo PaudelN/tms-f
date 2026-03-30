@@ -206,6 +206,17 @@ const routes: RouteRecordRaw[] = [
         name: "task-all",
         component: () => import("@/views/task/index.vue"),
       },
+
+      {
+        path: "media",
+        name: "media-index",
+        component: () => import("@/views/media/index.vue"),
+      },
+      {
+        path: "media/:id",
+        name: "media-detail",
+        component: () => import("@/views/media/detail.vue"),
+      },
     ],
   },
 
