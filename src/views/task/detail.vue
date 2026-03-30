@@ -15,6 +15,13 @@
     @confirm-delete="confirmDelete"
   >
     <template #content>
+      <EntityMediaCover
+        morph-type="tasks"
+        :morph-id="task?.id"
+        tag="cover"
+        label="Cover"
+        filter-type="image"
+      />
       <!-- Description -->
       <div class="space-y-2.5">
         <div class="flex items-center gap-2">
@@ -140,6 +147,7 @@
     Trash2,
     User,
   } from "lucide-vue-next";
+import EntityMediaCover from "@/components/media/EntityMediaCover.vue";
 
   const route = useRoute();
   const router = useRouter();

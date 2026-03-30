@@ -98,7 +98,6 @@
         </div>
         <!-- Action buttons on hover (only when not playing) -->
         <div
-          v-if="!videoPlaying"
           class="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
         >
           <button
@@ -397,7 +396,7 @@
        */
       morphType: string;
       /** Model ID — null while parent is still loading */
-      morphId: number | null;
+      morphId: number | null | undefined;
       /** Spatie media tag (default: "cover") */
       tag?: string;
       /** Section header label */

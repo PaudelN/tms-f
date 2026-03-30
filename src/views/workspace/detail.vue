@@ -16,28 +16,13 @@
   >
     <template #content>
       <!-- Cover -->
-      <div class="space-y-2.5">
-        <div class="flex items-center gap-2">
-          <ImageIcon class="h-3.5 w-3.5 text-muted-foreground" />
-          <h2
-            class="text-[11px] font-semibold tracking-[0.06em] uppercase text-muted-foreground"
-          >
-            Cover
-          </h2>
-        </div>
-        <div
-          class="rounded-lg border border-dashed border-border/60 bg-muted/15 h-32 flex flex-col items-center justify-center gap-2 text-muted-foreground cursor-pointer hover:bg-muted/25 hover:border-primary/30 transition-all duration-200 group"
-        >
-          <ImageIcon
-            class="h-7 w-7 opacity-20 group-hover:opacity-40 transition-opacity"
-          />
-          <p
-            class="text-[11px] font-medium opacity-40 group-hover:opacity-60 transition-opacity"
-          >
-            Click to upload a cover image
-          </p>
-        </div>
-      </div>
+      <EntityMediaCover
+        morph-type="workspaces"
+        :morph-id="workspaceId"
+        tag="cover"
+        label="Cover"
+        filter-type="image"
+      />
 
       <!-- Description -->
       <div class="space-y-2.5">
@@ -163,13 +148,13 @@
   import UiDetail from "@/components/common/UiDetail.vue";
   import { notify } from "@/helpers/toast";
 
+  import EntityMediaCover from "@/components/media/EntityMediaCover.vue";
   import {
     AlignLeft,
     ArchiveRestore,
     CalendarDays,
     Clock,
     FolderKanban,
-    ImageIcon,
     Radio,
     RefreshCcw,
     SquarePen,
@@ -184,8 +169,14 @@
   const deleteModalOpen = ref(false);
   const deleteLoading = ref(false);
 
-  // activeWorkspace is a computed alias for currentWorkspace in the store
   const workspace = computed(() => workspaceStore.activeWorkspace);
+
+  const workspaceId = computed<number | null>(() => {
+    const paramId = Number(route.params.id);
+    const id =
+      !isNaN(paramId) && paramId > 0 ? paramId : (workspace.value?.id ?? null);
+    return id && id > 0 ? id : null;
+  });
 
   const currentStatusObj = computed(() =>
     workspaceStore.statuses.find((s) => s.value === workspace.value?.status),

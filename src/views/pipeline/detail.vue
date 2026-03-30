@@ -15,11 +15,22 @@
     @confirm-delete="confirmDelete"
   >
     <template #content>
+      <!-- Media  -->
+      <EntityMediaCover
+        v-if="pipeline"
+        :morph-type="'pipelines'"
+        :morph-id="pipeline.id"
+        tag="cover"
+        label="Cover"
+        filter-type="image"
+      />
       <!-- Description -->
       <div class="space-y-2.5">
         <div class="flex items-center gap-2">
           <AlignLeft class="h-3.5 w-3.5 text-muted-foreground" />
-          <h2 class="text-[11px] font-semibold tracking-[0.06em] uppercase text-muted-foreground">
+          <h2
+            class="text-[11px] font-semibold tracking-[0.06em] uppercase text-muted-foreground"
+          >
             Description
           </h2>
         </div>
@@ -43,7 +54,9 @@
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
             <Layers class="h-3.5 w-3.5 text-muted-foreground" />
-            <h2 class="text-[11px] font-semibold tracking-[0.06em] uppercase text-muted-foreground">
+            <h2
+              class="text-[11px] font-semibold tracking-[0.06em] uppercase text-muted-foreground"
+            >
               Stages
             </h2>
             <span
@@ -94,7 +107,9 @@
                 </p>
                 <p class="text-[10px] text-muted-foreground font-mono truncate">
                   order: {{ stage.display_order }}
-                  <span v-if="stage.wip_limit"> · WIP: {{ stage.wip_limit }}</span>
+                  <span v-if="stage.wip_limit">
+                    · WIP: {{ stage.wip_limit }}</span
+                  >
                 </p>
               </div>
 
@@ -103,7 +118,10 @@
                 class="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full border shrink-0"
                 :class="stage.status.badge"
               >
-                <span class="h-1.5 w-1.5 rounded-full" :class="stage.status.dot" />
+                <span
+                  class="h-1.5 w-1.5 rounded-full"
+                  :class="stage.status.dot"
+                />
                 {{ stage.status.label }}
               </span>
 
@@ -132,7 +150,9 @@
             @click="goToAddStage"
           >
             <Layers class="h-7 w-7 text-muted-foreground/25" />
-            <p class="text-[12px] font-medium text-muted-foreground/50">No stages yet</p>
+            <p class="text-[12px] font-medium text-muted-foreground/50">
+              No stages yet
+            </p>
             <p class="text-[11px] text-muted-foreground/40">
               Click to add the first stage to this pipeline.
             </p>
@@ -151,257 +171,289 @@
 </template>
 
 <script setup lang="ts">
-import {
-  AlignLeft,
-  CalendarDays,
-  ChevronRight,
-  Clock,
-  FolderKanban,
-  Layers,
-  Radio,
-  RefreshCcw,
-  SquarePen,
-  Trash2,
-  User,
-} from "lucide-vue-next";
-import { computed, onMounted, ref } from "vue";
-import { useRoute, useRouter } from "vue-router";
+  import {
+    AlignLeft,
+    CalendarDays,
+    ChevronRight,
+    Clock,
+    FolderKanban,
+    Layers,
+    Radio,
+    RefreshCcw,
+    SquarePen,
+    Trash2,
+    User,
+  } from "lucide-vue-next";
+  import { computed, onMounted, ref } from "vue";
+  import { useRoute, useRouter } from "vue-router";
 
-import type {
-  ActionButton,
-  BreadcrumbItem,
-  MetaField,
-} from "@/components/common/UiDetail.vue";
-import UiDetail         from "@/components/common/UiDetail.vue";
-import { notify }       from "@/helpers/toast";
-import { usePipelineStore } from "@/stores/pipeline";
+  import type {
+    ActionButton,
+    BreadcrumbItem,
+    MetaField,
+  } from "@/components/common/UiDetail.vue";
+  import UiDetail from "@/components/common/UiDetail.vue";
+  import { notify } from "@/helpers/toast";
+  import { usePipelineStore } from "@/stores/pipeline";
+import EntityMediaCover from "@/components/media/EntityMediaCover.vue";
 
-const route         = useRoute();
-const router        = useRouter();
-const pipelineStore = usePipelineStore();
+  const route = useRoute();
+  const router = useRouter();
+  const pipelineStore = usePipelineStore();
 
-const deleteModalOpen = ref(false);
-const deleteLoading   = ref(false);
+  const deleteModalOpen = ref(false);
+  const deleteLoading = ref(false);
 
-// Shallow route: /pipelines/:id
-const pipeline = computed(() => pipelineStore.activePipeline);
+  // Shallow route: /pipelines/:id
+  const pipeline = computed(() => pipelineStore.activePipeline);
 
-// ── Status helpers ─────────────────────────────────────────────────────────────
+  // ── Status helpers ─────────────────────────────────────────────────────────────
 
-function extractStatusValue(status: any): number | null {
-  if (status == null)             return null;
-  if (typeof status === "number") return status;
-  return status?.value ?? null;
-}
+  function extractStatusValue(status: any): number | null {
+    if (status == null) return null;
+    if (typeof status === "number") return status;
+    return status?.value ?? null;
+  }
 
-function extractStatusLabel(status: any): string {
-  if (status == null) return "—";
-  if (typeof status === "object" && "label" in status) return status.label;
-  const val   = extractStatusValue(status);
-  const found = pipelineStore.statuses.find((s) => s.value === val);
-  return found?.label ?? String(val);
-}
+  function extractStatusLabel(status: any): string {
+    if (status == null) return "—";
+    if (typeof status === "object" && "label" in status) return status.label;
+    const val = extractStatusValue(status);
+    const found = pipelineStore.statuses.find((s) => s.value === val);
+    return found?.label ?? String(val);
+  }
 
-const currentStatusObj = computed(() => {
-  const val = extractStatusValue(pipeline.value?.status);
-  return pipelineStore.statuses.find((s) => s.value === val);
-});
-
-// ── Status badge (header chip) ─────────────────────────────────────────────────
-
-const statusBadge = computed(() => {
-  if (!currentStatusObj.value) return undefined;
-  return {
-    label: currentStatusObj.value.label,
-    dot:   currentStatusObj.value.dot,
-    class: currentStatusObj.value.badge,
-  };
-});
-
-// ── Breadcrumbs ────────────────────────────────────────────────────────────────
-
-const breadcrumbs = computed<BreadcrumbItem[]>(() => {
-  const p = pipeline.value;
-  return [
-    {
-      label:   "Workspaces",
-      onClick: () => router.push({ name: "workspace" }),
-    },
-    {
-      label:   p?.project?.workspace?.name ?? "Workspace",
-      onClick: () => {
-        if (p?.project?.workspace?.id) {
-          router.push({
-            name:   "project-index",
-            params: { workspaceId: p.project.workspace.id },
-          });
-        }
-      },
-    },
-    {
-      label:   p?.project?.name ?? "Project",
-      onClick: () => {
-        if (p?.project?.id)
-          router.push({ name: "project-detail", params: { id: p.project.id } });
-      },
-    },
-    {
-      label:   "Pipelines",
-      onClick: () => {
-        if (p?.project?.id)
-          router.push({ name: "pipeline-index", params: { projectId: p.project.id } });
-      },
-    },
-    { label: p?.name ?? "Pipeline" },
-  ];
-});
-
-// ── Actions ────────────────────────────────────────────────────────────────────
-
-const actions = computed<ActionButton[]>(() => [
-  { id: "refresh", label: "Refresh", icon: RefreshCcw, onClick: handleRefresh },
-  { id: "edit",    label: "Edit",    icon: SquarePen,  onClick: handleEdit },
-  {
-    id:      "delete",
-    label:   "Delete",
-    icon:    Trash2,
-    variant: "destructive",
-    onClick: () => { deleteModalOpen.value = true; },
-  },
-]);
-
-// ── Meta fields ────────────────────────────────────────────────────────────────
-
-function formatDate(d: string | null | undefined): string {
-  if (!d) return "—";
-  return new Date(d).toLocaleDateString("en-US", {
-    month: "short", day: "numeric", year: "numeric",
+  const currentStatusObj = computed(() => {
+    const val = extractStatusValue(pipeline.value?.status);
+    return pipelineStore.statuses.find((s) => s.value === val);
   });
-}
 
-const metaFields = computed<MetaField[]>(() => [
-  {
-    label:      "Creator",
-    type:       "avatar",
-    avatarData: pipeline.value?.creator
-      ? {
-          initials: pipeline.value.creator.name.charAt(0).toUpperCase(),
-          name:     pipeline.value.creator.name,
-          sub:      pipeline.value.creator.email ?? "",
-        }
-      : undefined,
-  },
-  {
-    label:      "Status",
-    type:       "badge",
-    icon:       Radio,
-    value:      extractStatusLabel(pipeline.value?.status),
-    badgeClass: currentStatusObj.value?.badge,
-    dot:        currentStatusObj.value?.dot,
-  },
-  {
-    label: "Project",
-    value: pipeline.value?.project?.name ?? "—",
-    icon:  FolderKanban,
-  },
-  {
-    label: "Workspace",
-    value: pipeline.value?.project?.workspace?.name ?? "—",
-    icon:  Layers,
-  },
-  {
-    label: "Stages",
-    value: pipeline.value?.stages_count != null
-      ? String(pipeline.value.stages_count)
-      : "0",
-    icon: Layers,
-  },
-  {
-    label: "Created At",
-    value: formatDate(pipeline.value?.created_at),
-    icon:  CalendarDays,
-  },
-  {
-    label: "Last Updated",
-    value: formatDate(pipeline.value?.updated_at),
-    icon:  Clock,
-  },
-  {
-    label: "Creator ID",
-    value: pipeline.value?.creator?.id ? `#${pipeline.value.creator.id}` : "—",
-    icon:  User,
-  },
-]);
+  // ── Status badge (header chip) ─────────────────────────────────────────────────
 
-// ── Delete dialog ──────────────────────────────────────────────────────────────
+  const statusBadge = computed(() => {
+    if (!currentStatusObj.value) return undefined;
+    return {
+      label: currentStatusObj.value.label,
+      dot: currentStatusObj.value.dot,
+      class: currentStatusObj.value.badge,
+    };
+  });
 
-const deleteDialog = {
-  title:        "Delete Pipeline",
-  description:  "This action cannot be undone.",
-  confirmLabel: "Delete Pipeline",
-};
+  // ── Breadcrumbs ────────────────────────────────────────────────────────────────
 
-// ── Lifecycle ──────────────────────────────────────────────────────────────────
+  const breadcrumbs = computed<BreadcrumbItem[]>(() => {
+    const p = pipeline.value;
+    return [
+      {
+        label: "Workspaces",
+        onClick: () => router.push({ name: "workspace" }),
+      },
+      {
+        label: p?.project?.workspace?.name ?? "Workspace",
+        onClick: () => {
+          if (p?.project?.workspace?.id) {
+            router.push({
+              name: "project-index",
+              params: { workspaceId: p.project.workspace.id },
+            });
+          }
+        },
+      },
+      {
+        label: p?.project?.name ?? "Project",
+        onClick: () => {
+          if (p?.project?.id)
+            router.push({
+              name: "project-detail",
+              params: { id: p.project.id },
+            });
+        },
+      },
+      {
+        label: "Pipelines",
+        onClick: () => {
+          if (p?.project?.id)
+            router.push({
+              name: "pipeline-index",
+              params: { projectId: p.project.id },
+            });
+        },
+      },
+      { label: p?.name ?? "Pipeline" },
+    ];
+  });
 
-onMounted(async () => {
-  const id = Number(route.params.id);
-  if (!id || isNaN(id)) { router.push({ name: "workspace" }); return; }
-  await Promise.all([
-    pipelineStore.fetchStatuses(),
-    pipelineStore.fetchPipeline(id),
+  // ── Actions ────────────────────────────────────────────────────────────────────
+
+  const actions = computed<ActionButton[]>(() => [
+    {
+      id: "refresh",
+      label: "Refresh",
+      icon: RefreshCcw,
+      onClick: handleRefresh,
+    },
+    { id: "edit", label: "Edit", icon: SquarePen, onClick: handleEdit },
+    {
+      id: "delete",
+      label: "Delete",
+      icon: Trash2,
+      variant: "destructive",
+      onClick: () => {
+        deleteModalOpen.value = true;
+      },
+    },
   ]);
-});
 
-// ── Handlers ──────────────────────────────────────────────────────────────────
+  // ── Meta fields ────────────────────────────────────────────────────────────────
 
-function handleEdit() {
-  router.push({ name: "pipeline-edit", params: { id: pipeline.value?.id } });
-}
-
-async function handleRefresh() {
-  const id = Number(route.params.id);
-  if (id) await pipelineStore.fetchPipeline(id);
-}
-
-function goToStages() {
-  if (pipeline.value?.id) {
-    router.push({
-      name:   "pipeline-stage-index",
-      params: { pipelineId: pipeline.value.id },
+  function formatDate(d: string | null | undefined): string {
+    if (!d) return "—";
+    return new Date(d).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
     });
   }
-}
 
-function goToStage(stageId: number) {
-  router.push({ name: "pipeline-stage-detail", params: { id: stageId } });
-}
+  const metaFields = computed<MetaField[]>(() => [
+    {
+      label: "Creator",
+      type: "avatar",
+      avatarData: pipeline.value?.creator
+        ? {
+            initials: pipeline.value.creator.name.charAt(0).toUpperCase(),
+            name: pipeline.value.creator.name,
+            sub: pipeline.value.creator.email ?? "",
+          }
+        : undefined,
+    },
+    {
+      label: "Status",
+      type: "badge",
+      icon: Radio,
+      value: extractStatusLabel(pipeline.value?.status),
+      badgeClass: currentStatusObj.value?.badge,
+      dot: currentStatusObj.value?.dot,
+    },
+    {
+      label: "Project",
+      value: pipeline.value?.project?.name ?? "—",
+      icon: FolderKanban,
+    },
+    {
+      label: "Workspace",
+      value: pipeline.value?.project?.workspace?.name ?? "—",
+      icon: Layers,
+    },
+    {
+      label: "Stages",
+      value:
+        pipeline.value?.stages_count != null
+          ? String(pipeline.value.stages_count)
+          : "0",
+      icon: Layers,
+    },
+    {
+      label: "Created At",
+      value: formatDate(pipeline.value?.created_at),
+      icon: CalendarDays,
+    },
+    {
+      label: "Last Updated",
+      value: formatDate(pipeline.value?.updated_at),
+      icon: Clock,
+    },
+    {
+      label: "Creator ID",
+      value: pipeline.value?.creator?.id
+        ? `#${pipeline.value.creator.id}`
+        : "—",
+      icon: User,
+    },
+  ]);
 
-function goToAddStage() {
-  if (pipeline.value?.id) {
-    router.push({
-      name:   "pipeline-stage-add",
-      params: { pipelineId: pipeline.value.id },
-    });
+  // ── Delete dialog ──────────────────────────────────────────────────────────────
+
+  const deleteDialog = {
+    title: "Delete Pipeline",
+    description: "This action cannot be undone.",
+    confirmLabel: "Delete Pipeline",
+  };
+
+  // ── Lifecycle ──────────────────────────────────────────────────────────────────
+
+  onMounted(async () => {
+    const id = Number(route.params.id);
+    if (!id || isNaN(id)) {
+      router.push({ name: "workspace" });
+      return;
+    }
+    await Promise.all([
+      pipelineStore.fetchStatuses(),
+      pipelineStore.fetchPipeline(id),
+    ]);
+  });
+
+  // ── Handlers ──────────────────────────────────────────────────────────────────
+
+  function handleEdit() {
+    router.push({ name: "pipeline-edit", params: { id: pipeline.value?.id } });
   }
-}
 
-async function confirmDelete() {
-  if (!pipeline.value) return;
-  deleteLoading.value = true;
-  try {
-    const deletedName   = pipeline.value.name;
-    const backProjectId = pipeline.value.project_id;
-    await pipelineStore.deletePipeline(pipeline.value.id, pipeline.value.project_id);
-    notify.success("Pipeline deleted", `"${deletedName}" was removed successfully.`, {
-      position: "bottom-right",
-    });
-    router.push({ name: "pipeline-index", params: { projectId: backProjectId } });
-  } catch {
-    notify.error("Delete failed", "We couldn't delete this pipeline.", {
-      position: "bottom-right",
-    });
-  } finally {
-    deleteLoading.value = false;
+  async function handleRefresh() {
+    const id = Number(route.params.id);
+    if (id) await pipelineStore.fetchPipeline(id);
   }
-}
+
+  function goToStages() {
+    if (pipeline.value?.id) {
+      router.push({
+        name: "pipeline-stage-index",
+        params: { pipelineId: pipeline.value.id },
+      });
+    }
+  }
+
+  function goToStage(stageId: number) {
+    router.push({ name: "pipeline-stage-detail", params: { id: stageId } });
+  }
+
+  function goToAddStage() {
+    if (pipeline.value?.id) {
+      router.push({
+        name: "pipeline-stage-add",
+        params: { pipelineId: pipeline.value.id },
+      });
+    }
+  }
+
+  async function confirmDelete() {
+    if (!pipeline.value) return;
+    deleteLoading.value = true;
+    try {
+      const deletedName = pipeline.value.name;
+      const backProjectId = pipeline.value.project_id;
+      await pipelineStore.deletePipeline(
+        pipeline.value.id,
+        pipeline.value.project_id,
+      );
+      notify.success(
+        "Pipeline deleted",
+        `"${deletedName}" was removed successfully.`,
+        {
+          position: "bottom-right",
+        },
+      );
+      router.push({
+        name: "pipeline-index",
+        params: { projectId: backProjectId },
+      });
+    } catch {
+      notify.error("Delete failed", "We couldn't delete this pipeline.", {
+        position: "bottom-right",
+      });
+    } finally {
+      deleteLoading.value = false;
+    }
+  }
 </script>

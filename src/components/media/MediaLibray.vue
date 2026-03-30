@@ -8,22 +8,31 @@
           v-for="stat in typeStats"
           :key="stat.type"
           type="button"
-          class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold cursor-pointer transition-all"
+          class="media-chip group flex items-center gap-2 px-3.5 py-2 rounded-2xl border text-xs font-semibold cursor-pointer transition-all duration-200"
           :class="
             activeType === stat.type
-              ? 'border-primary/40 bg-primary/8 text-primary shadow-sm'
-              : 'border-border bg-card text-muted-foreground hover:border-primary/20 hover:text-foreground'
+              ? 'media-chip--active border-primary/40 bg-primary/8 text-primary shadow-sm shadow-primary/10'
+              : 'border-border/60 bg-card/80 text-muted-foreground hover:border-primary/25 hover:text-foreground hover:bg-card hover:shadow-sm'
           "
           @click="toggleTypeFilter(stat.type)"
         >
-          <component :is="stat.icon" class="h-3 w-3" />
+          <span
+            class="flex items-center justify-center h-5 w-5 rounded-lg transition-all duration-200"
+            :class="
+              activeType === stat.type
+                ? 'bg-primary/15'
+                : 'bg-muted/60 group-hover:bg-muted'
+            "
+          >
+            <component :is="stat.icon" class="h-3 w-3" />
+          </span>
           {{ stat.label }}
           <span
-            class="inline-flex items-center justify-center h-4 min-w-[16px] rounded-full text-[9px] font-bold px-1"
+            class="inline-flex items-center justify-center h-4.5 min-w-[20px] rounded-full text-[9px] font-bold px-1.5 tabular-nums transition-all duration-200"
             :class="
               activeType === stat.type
                 ? 'bg-primary text-primary-foreground'
-                : 'bg-muted'
+                : 'bg-muted/80 text-muted-foreground group-hover:bg-muted'
             "
             >{{ stat.count }}</span
           >
@@ -34,29 +43,32 @@
         <!-- Search -->
         <div class="relative">
           <Search
-            class="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground"
+            class="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/60 pointer-events-none"
           />
           <input
             v-model="searchQuery"
             type="text"
             placeholder="Search files…"
-            class="text-xs bg-background border border-border rounded-xl pl-8 pr-8 py-1.5 w-52 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-colors"
+            class="media-search text-xs bg-background/80 border border-border/60 rounded-xl pl-9 pr-8 py-2 w-56 focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 focus:bg-background transition-all duration-200 placeholder:text-muted-foreground/50"
             @input="debouncedFetch"
           />
           <button
             v-if="searchQuery"
             type="button"
-            class="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            class="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 rounded-full bg-muted/60 flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
             @click="clearSearch"
           >
-            <X class="h-3 w-3" />
+            <X class="h-2.5 w-2.5" />
           </button>
         </div>
+
+        <!-- Divider -->
+        <div class="h-6 w-px bg-border/50 mx-0.5" />
 
         <!-- Sort -->
         <select
           v-model="sortBy"
-          class="text-xs bg-background border border-border rounded-xl px-3 py-1.5 focus:outline-none focus:border-primary/50 transition-colors"
+          class="media-select text-xs bg-background/80 border border-border/60 rounded-xl px-3 py-2 focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all duration-200 cursor-pointer"
           @change="fetchPage(1)"
         >
           <option value="created_at">Date uploaded</option>
@@ -66,24 +78,32 @@
 
         <button
           type="button"
-          class="h-8 w-8 rounded-xl border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+          class="h-8 w-8 rounded-xl border border-border/60 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent hover:border-border transition-all duration-200"
+          :class="
+            sortOrder === 'asc'
+              ? 'text-primary border-primary/30 bg-primary/5'
+              : ''
+          "
           :title="sortOrder === 'desc' ? 'Newest first' : 'Oldest first'"
           @click="toggleSort"
         >
           <ArrowDownUp class="h-3.5 w-3.5" />
         </button>
 
+        <!-- Divider -->
+        <div class="h-6 w-px bg-border/50 mx-0.5" />
+
         <!-- View toggle -->
         <div
-          class="flex items-center border border-border rounded-xl overflow-hidden"
+          class="flex items-center bg-muted/40 border border-border/60 rounded-xl p-0.5 gap-0.5"
         >
           <button
             type="button"
-            class="h-8 w-8 flex items-center justify-center transition-colors"
+            class="h-7 w-7 flex items-center justify-center rounded-lg transition-all duration-150"
             :class="
               view === 'grid'
-                ? 'bg-primary/10 text-primary'
-                : 'text-muted-foreground hover:bg-accent'
+                ? 'bg-background text-primary shadow-sm border border-border/40'
+                : 'text-muted-foreground hover:text-foreground'
             "
             @click="view = 'grid'"
           >
@@ -91,11 +111,11 @@
           </button>
           <button
             type="button"
-            class="h-8 w-8 flex items-center justify-center transition-colors"
+            class="h-7 w-7 flex items-center justify-center rounded-lg transition-all duration-150"
             :class="
               view === 'list'
-                ? 'bg-primary/10 text-primary'
-                : 'text-muted-foreground hover:bg-accent'
+                ? 'bg-background text-primary shadow-sm border border-border/40'
+                : 'text-muted-foreground hover:text-foreground'
             "
             @click="view = 'list'"
           >
@@ -106,19 +126,24 @@
         <!-- Bulk delete -->
         <Transition name="slide-right">
           <div v-if="selected.length > 0" class="flex items-center gap-2">
-            <span class="text-xs text-muted-foreground"
-              >{{ selected.length }} selected</span
+            <div
+              class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-primary/8 border border-primary/20"
             >
+              <span class="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+              <span class="text-xs font-semibold text-primary"
+                >{{ selected.length }} selected</span
+              >
+            </div>
             <button
               type="button"
-              class="inline-flex items-center gap-1.5 rounded-xl border border-border px-2.5 py-1.5 text-xs font-medium hover:bg-accent transition-colors"
+              class="inline-flex items-center gap-1.5 rounded-xl border border-border/60 px-2.5 py-1.5 text-xs font-medium hover:bg-accent transition-all duration-150"
               @click="selected = []"
             >
-              <X class="h-3 w-3" />Clear
+              <X class="h-3 w-3" /> Clear
             </button>
             <button
               type="button"
-              class="inline-flex items-center gap-1.5 rounded-xl border border-destructive/30 px-2.5 py-1.5 text-xs font-semibold text-destructive hover:bg-destructive/10 transition-colors"
+              class="inline-flex items-center gap-1.5 rounded-xl border border-destructive/30 bg-destructive/5 px-2.5 py-1.5 text-xs font-semibold text-destructive hover:bg-destructive/10 hover:border-destructive/40 transition-all duration-150"
               @click="bulkDeleteConfirmOpen = true"
             >
               <Trash2 class="h-3 w-3" />
@@ -130,7 +155,7 @@
         <!-- Upload -->
         <button
           type="button"
-          class="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3.5 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+          class="media-upload-btn inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-all duration-200 shadow-sm shadow-primary/20 hover:shadow-md hover:shadow-primary/25 active:scale-[0.98]"
           @click="uploadPanelOpen = !uploadPanelOpen"
         >
           <UploadCloud class="h-3.5 w-3.5" />
@@ -143,13 +168,26 @@
     <Transition name="slide-down">
       <div
         v-if="uploadPanelOpen"
-        class="mb-4 rounded-xl border border-dashed border-primary/30 p-4 bg-primary/[0.02]"
+        class="mb-5 rounded-2xl border border-dashed border-primary/25 p-5 bg-gradient-to-b from-primary/[0.03] to-transparent relative overflow-hidden"
       >
-        <div class="flex items-center justify-between mb-3">
-          <p class="text-xs font-semibold text-foreground">Upload to Library</p>
+        <!-- subtle grid pattern -->
+        <div
+          class="absolute inset-0 upload-grid-pattern opacity-[0.03] pointer-events-none"
+        />
+        <div class="flex items-center justify-between mb-4 relative">
+          <div class="flex items-center gap-2.5">
+            <div
+              class="h-6 w-6 rounded-lg bg-primary/15 flex items-center justify-center"
+            >
+              <UploadCloud class="h-3.5 w-3.5 text-primary" />
+            </div>
+            <p class="text-xs font-semibold text-foreground tracking-tight">
+              Upload to Library
+            </p>
+          </div>
           <button
             type="button"
-            class="text-muted-foreground hover:text-foreground transition-colors"
+            class="h-6 w-6 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-150"
             @click="uploadPanelOpen = false"
           >
             <X class="h-3.5 w-3.5" />
@@ -173,18 +211,25 @@
       <!-- Fetch error state -->
       <div
         v-if="fetchError"
-        class="flex flex-col items-center gap-3 py-16 text-center"
+        class="flex flex-col items-center gap-4 py-20 text-center"
       >
-        <p class="text-sm font-semibold text-destructive">
-          Failed to load media
-        </p>
-        <p class="text-xs text-muted-foreground">{{ fetchError }}</p>
+        <div
+          class="h-14 w-14 rounded-2xl bg-destructive/8 border border-destructive/15 flex items-center justify-center"
+        >
+          <X class="h-6 w-6 text-destructive/60" />
+        </div>
+        <div>
+          <p class="text-sm font-semibold text-destructive">
+            Failed to load media
+          </p>
+          <p class="text-xs text-muted-foreground mt-1">{{ fetchError }}</p>
+        </div>
         <button
           type="button"
           class="inline-flex items-center gap-1.5 rounded-xl border border-border px-4 py-2 text-xs font-medium hover:bg-accent transition-colors"
           @click="fetchPage(1)"
         >
-          Retry
+          Try again
         </button>
       </div>
 
@@ -196,26 +241,34 @@
         <div
           v-for="i in 10"
           :key="i"
-          class="rounded-xl bg-muted/50 animate-pulse aspect-[4/3]"
+          class="rounded-2xl bg-muted/40 animate-pulse aspect-[4/3]"
+          :style="{ animationDelay: `${i * 50}ms` }"
         />
       </div>
 
       <!-- Empty state -->
       <div
         v-else-if="items.length === 0"
-        class="flex flex-col items-center gap-3 py-20 text-center"
+        class="flex flex-col items-center gap-4 py-24 text-center"
       >
-        <div
-          class="h-14 w-14 rounded-2xl bg-muted flex items-center justify-center"
-        >
-          <ImageIcon class="h-7 w-7 text-muted-foreground/40" />
+        <div class="relative">
+          <div
+            class="h-16 w-16 rounded-2xl bg-muted/60 border border-border/40 flex items-center justify-center"
+          >
+            <ImageIcon class="h-7 w-7 text-muted-foreground/30" />
+          </div>
+          <div
+            class="absolute -bottom-1 -right-1 h-6 w-6 rounded-lg bg-background border border-border flex items-center justify-center"
+          >
+            <Search class="h-3 w-3 text-muted-foreground/50" />
+          </div>
         </div>
         <div>
           <p class="text-sm font-semibold text-foreground">No files found</p>
-          <p class="text-xs text-muted-foreground mt-0.5">
+          <p class="text-xs text-muted-foreground mt-1 max-w-[220px]">
             {{
               searchQuery || activeType
-                ? "Try adjusting your filters"
+                ? "Try adjusting your filters or search query"
                 : "Upload your first file to get started"
             }}
           </p>
@@ -223,10 +276,10 @@
         <button
           v-if="!searchQuery && !activeType"
           type="button"
-          class="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+          class="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm shadow-primary/20"
           @click="uploadPanelOpen = true"
         >
-          <UploadCloud class="h-3.5 w-3.5" />Upload files
+          <UploadCloud class="h-3.5 w-3.5" /> Upload files
         </button>
       </div>
 
@@ -252,17 +305,21 @@
         <div
           v-for="item in items"
           :key="item.id"
-          class="group flex items-center gap-3 px-4 py-2.5 rounded-xl border border-border hover:border-primary/30 hover:bg-muted/30 cursor-pointer transition-all"
-          :class="isSelected(item.id) ? 'border-primary/40 bg-primary/5' : ''"
+          class="media-list-row group flex items-center gap-3.5 px-4 py-3 rounded-2xl border transition-all duration-150 cursor-pointer"
+          :class="
+            isSelected(item.id)
+              ? 'border-primary/30 bg-primary/5 shadow-sm'
+              : 'border-border/50 bg-card/40 hover:border-border hover:bg-card hover:shadow-sm'
+          "
           @click="onCardClick(item)"
         >
           <!-- Checkbox -->
           <div
-            class="h-5 w-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all"
+            class="h-5 w-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all duration-150"
             :class="
               isSelected(item.id)
-                ? 'bg-primary border-primary'
-                : 'border-border opacity-0 group-hover:opacity-100'
+                ? 'bg-primary border-primary shadow-sm shadow-primary/30'
+                : 'border-border/60 opacity-0 group-hover:opacity-100'
             "
             @click.stop="toggleSelect(item)"
           >
@@ -274,11 +331,11 @@
 
           <!-- Thumbnail -->
           <div
-            class="h-10 w-10 rounded-lg overflow-hidden shrink-0 flex items-center justify-center"
+            class="h-10 w-10 rounded-xl overflow-hidden shrink-0 flex items-center justify-center border border-border/30"
             :class="
               item.aggregate_type !== 'image'
                 ? typeStyle(item.aggregate_type).bg
-                : 'bg-muted'
+                : 'bg-muted/60'
             "
           >
             <img
@@ -291,30 +348,51 @@
             <component
               v-else
               :is="typeIcon(item.aggregate_type)"
-              class="h-5 w-5"
+              class="h-4.5 w-4.5"
               :class="typeStyle(item.aggregate_type).icon"
             />
           </div>
 
           <!-- Name + meta -->
           <div class="flex-1 min-w-0">
-            <p class="text-sm font-medium text-foreground truncate">
+            <p
+              class="text-sm font-semibold text-foreground truncate leading-tight"
+            >
               {{ item.original_filename ?? item.filename }}
             </p>
-            <p class="text-xs text-muted-foreground">
-              {{ item.human_size }} · {{ item.mime_type }} ·
-              {{ formatDate(item.created_at) }}
-            </p>
+            <div class="flex items-center gap-2 mt-0.5">
+              <span
+                class="inline-flex items-center gap-1 text-[10px] font-medium text-muted-foreground/80 bg-muted/50 px-1.5 py-0.5 rounded-md"
+              >
+                {{ item.human_size }}
+              </span>
+              <span class="text-[10px] text-muted-foreground/60">·</span>
+              <span
+                class="text-[10px] text-muted-foreground/60 font-mono truncate"
+                >{{ item.mime_type }}</span
+              >
+              <span class="text-[10px] text-muted-foreground/60">·</span>
+              <span class="text-[10px] text-muted-foreground/60">{{
+                formatDate(item.created_at)
+              }}</span>
+            </div>
           </div>
 
-          <!-- Uploader -->
-          <span class="text-xs text-muted-foreground shrink-0 hidden md:block">
-            {{ item.uploader?.name ?? "—" }}
-          </span>
+          <!-- Uploader pill -->
+          <div class="hidden md:flex items-center gap-1.5 shrink-0">
+            <div
+              class="h-5 w-5 rounded-full bg-muted flex items-center justify-center text-[9px] font-bold text-muted-foreground uppercase"
+            >
+              {{ (item.uploader?.name ?? "?").charAt(0) }}
+            </div>
+            <span class="text-xs text-muted-foreground font-medium">
+              {{ item.uploader?.name ?? "—" }}
+            </span>
+          </div>
 
           <!-- Row actions -->
           <div
-            class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+            class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-150 shrink-0"
             @click.stop
           >
             <button
@@ -338,18 +416,24 @@
       <!-- Pagination -->
       <div
         v-if="meta.last_page > 1"
-        class="flex items-center justify-between pt-4 mt-4 border-t border-border"
+        class="flex items-center justify-between pt-5 mt-5 border-t border-border/40"
       >
-        <p class="text-xs text-muted-foreground">
-          Showing {{ (meta.current_page - 1) * meta.per_page + 1 }}–{{
-            Math.min(meta.current_page * meta.per_page, meta.total)
-          }}
-          of {{ meta.total.toLocaleString() }}
+        <p class="text-xs text-muted-foreground tabular-nums">
+          <span class="font-semibold text-foreground">
+            {{ (meta.current_page - 1) * meta.per_page + 1 }}–{{
+              Math.min(meta.current_page * meta.per_page, meta.total)
+            }}
+          </span>
+          <span class="mx-1">of</span>
+          <span class="font-semibold text-foreground">{{
+            meta.total.toLocaleString()
+          }}</span>
+          <span class="ml-1 text-muted-foreground/70">files</span>
         </p>
         <div class="flex items-center gap-1">
           <button
             type="button"
-            class="h-8 w-8 rounded-lg border border-border flex items-center justify-center text-xs hover:bg-accent transition-colors disabled:opacity-40"
+            class="h-8 w-8 rounded-xl border border-border/60 flex items-center justify-center text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-all duration-150 disabled:opacity-30 disabled:cursor-not-allowed"
             :disabled="meta.current_page <= 1"
             @click="fetchPage(meta.current_page - 1)"
           >
@@ -359,11 +443,11 @@
             v-for="page in pageNumbers"
             :key="page"
             type="button"
-            class="h-8 min-w-[32px] px-2 rounded-lg border text-xs font-medium transition-colors"
+            class="h-8 min-w-[32px] px-2.5 rounded-xl border text-xs font-semibold transition-all duration-150"
             :class="
               page === meta.current_page
-                ? 'border-primary/40 bg-primary/10 text-primary'
-                : 'border-border hover:bg-accent'
+                ? 'border-primary/30 bg-primary/10 text-primary shadow-sm'
+                : 'border-border/50 text-muted-foreground hover:bg-accent hover:text-foreground hover:border-border'
             "
             @click="fetchPage(page)"
           >
@@ -371,7 +455,7 @@
           </button>
           <button
             type="button"
-            class="h-8 w-8 rounded-lg border border-border flex items-center justify-center text-xs hover:bg-accent transition-colors disabled:opacity-40"
+            class="h-8 w-8 rounded-xl border border-border/60 flex items-center justify-center text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-all duration-150 disabled:opacity-30 disabled:cursor-not-allowed"
             :disabled="meta.current_page >= meta.last_page"
             @click="fetchPage(meta.current_page + 1)"
           >
@@ -496,8 +580,6 @@
 
   withDefaults(
     defineProps<{
-      /** true  → clicking a card opens MediaDetailModal inline (global library)
-       *  false → fires @view so the parent can navigate to a detail route     */
       hardDelete?: boolean;
     }>(),
     { hardDelete: false },
@@ -536,31 +618,16 @@
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
   // ── Type counts ───────────────────────────────────────────────────────────────
-  // One request to /media/counts instead of 5 parallel per-type requests.
 
   const typeCounts = ref<Record<string, number>>({});
 
-  /**
-   * Hits a single lightweight endpoint that returns counts keyed by
-   * aggregate_type, e.g. { image: 12, video: 3, audio: 0, document: 7, other: 2 }.
-   *
-   * If your backend doesn't have this endpoint yet, replace the axios call with
-   * the fallback below — it fires 5 requests in parallel using store.countMedia()
-   * (the previous behaviour), but at least they're all awaited together:
-   *
-   *   const types: AggregateType[] = ["image","video","audio","document","other"];
-   *   const results = await Promise.allSettled(types.map(t => store.countMedia(t)));
-   *   results.forEach((r, i) => {
-   *     if (r.status === "fulfilled") typeCounts.value[types[i]] = r.value;
-   *   });
-   */
   async function fetchTypeCounts(): Promise<void> {
     try {
       const { data } =
         await axios.get<Record<AggregateType, number>>("/media/counts");
       typeCounts.value = data;
     } catch {
-      // Non-critical — chips will just show 0 if this fails
+      // Non-critical
     }
   }
 
@@ -636,8 +703,6 @@
       items.value = result.data;
       meta.value = result.meta;
 
-      // Refresh counts only on unfiltered first-page load (one extra request
-      // instead of the previous 5)
       if (page === 1 && !searchQuery.value && !activeType.value) {
         fetchTypeCounts();
       }
@@ -672,8 +737,6 @@
   // ── Card interactions ─────────────────────────────────────────────────────────
 
   function onCardClick(item: Media): void {
-    // hardDelete=true  → open inline modal
-    // hardDelete=false → let parent navigate
     previewItem.value = item;
     emit("view", item);
   }
@@ -792,29 +855,79 @@
 </script>
 
 <style scoped>
+  /* ── Upload panel transition ─────────────────────────────────────────── */
   .slide-down-enter-active,
   .slide-down-leave-active {
-    transition: all 0.2s ease;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     overflow: hidden;
   }
   .slide-down-enter-from,
   .slide-down-leave-to {
     opacity: 0;
     max-height: 0;
+    transform: translateY(-4px);
   }
   .slide-down-enter-to,
   .slide-down-leave-from {
     max-height: 600px;
     opacity: 1;
+    transform: translateY(0);
   }
 
+  /* ── Bulk action bar transition ──────────────────────────────────────── */
   .slide-right-enter-active,
   .slide-right-leave-active {
-    transition: all 0.15s ease;
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   }
   .slide-right-enter-from,
   .slide-right-leave-to {
     opacity: 0;
-    transform: translateX(8px);
+    transform: translateX(10px);
+  }
+
+  /* ── Upload panel grid texture ───────────────────────────────────────── */
+  .upload-grid-pattern {
+    background-image:
+      linear-gradient(to right, currentColor 1px, transparent 1px),
+      linear-gradient(to bottom, currentColor 1px, transparent 1px);
+    background-size: 24px 24px;
+    color: var(--color-primary, #6366f1);
+  }
+
+  /* ── Search focus ring ───────────────────────────────────────────────── */
+  .media-search:focus {
+    box-shadow: 0 0 0 3px rgb(var(--color-primary, 99 102 241) / 0.08);
+  }
+
+  /* ── Chip active glow ────────────────────────────────────────────────── */
+  .media-chip--active {
+    box-shadow:
+      0 0 0 1px rgb(var(--color-primary, 99 102 241) / 0.15),
+      0 2px 6px rgb(var(--color-primary, 99 102 241) / 0.08);
+  }
+
+  /* ── Upload button shadow on hover ──────────────────────────────────── */
+  .media-upload-btn:hover {
+    box-shadow:
+      0 4px 12px rgb(var(--color-primary, 99 102 241) / 0.25),
+      0 1px 3px rgb(var(--color-primary, 99 102 241) / 0.15);
+  }
+
+  /* ── List row hover ──────────────────────────────────────────────────── */
+  .media-list-row {
+    background-clip: padding-box;
+  }
+
+  /* ── Skeleton shimmer ────────────────────────────────────────────────── */
+  @keyframes shimmer {
+    0% {
+      opacity: 0.4;
+    }
+    50% {
+      opacity: 0.7;
+    }
+    100% {
+      opacity: 0.4;
+    }
   }
 </style>
