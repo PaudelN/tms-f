@@ -1,29 +1,18 @@
 <template>
   <div class="flex flex-col h-full min-h-0 bg-background">
     <!-- ── Page Header ──────────────────────────────────────────────────────── -->
-    <div
-      class="flex items-center justify-between px-6 py-4 shrink-0 border-b border-border/40"
-    >
-      <div class="flex items-center gap-3">
-        <div
-          class="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center"
-        >
-          <ImageIcon class="h-4 w-4 text-primary" />
-        </div>
-        <div>
-          <h1 class="text-[14px] font-semibold text-foreground leading-tight">
-            Media Library
-          </h1>
-          <p class="text-[11px] text-muted-foreground leading-tight mt-0.5">
-            All uploaded files across your workspace
-          </p>
-        </div>
-      </div>
-    </div>
-
-    <!-- ── Body ───────────────────────────────────────────────────────────── -->
-    <div class="flex-1 min-h-0 overflow-y-auto px-6 py-5">
-      <!--
+    <div class="flex flex-col flex-1 min-h-0 w-full mx-auto p-8">
+      <UiHeader
+        title="Media Library"
+        description="Manage your media assets here. You can upload, organize, and delete media files as needed."
+      >
+        <template #icon>
+          <ImageIcon class="w-6 h-6" />
+        </template>
+      </UiHeader>
+      <!-- ── Body ───────────────────────────────────────────────────────────── -->
+      <div class="flex-1 min-h-0 overflow-y-auto px-6 py-5">
+        <!--
         hardDelete=true  → clicking a card opens the detail modal inline
                            (appropriate for the standalone global library page
                            where there's no model to detach from).
@@ -32,7 +21,8 @@
                            In a model-scoped context you'd pass hardDelete=false
                            and handle @view to navigate to a detail route.
       -->
-      <MediaLibrary :hard-delete="true" @view="navigateToDetail" />
+        <MediaLibrary :hard-delete="true" @view="navigateToDetail" />
+      </div>
     </div>
   </div>
 </template>
@@ -41,8 +31,9 @@
   import { ImageIcon } from "lucide-vue-next";
   import { useRouter } from "vue-router";
 
+  import UiHeader from "@/components/common/UiHeader.vue";
+  import { MediaLibrary } from "@/components/media";
   import type { Media } from "@/stores/media";
-import { MediaLibrary } from "@/components/media";
 
   const router = useRouter();
 

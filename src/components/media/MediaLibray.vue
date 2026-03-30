@@ -4,7 +4,7 @@
     <div class="flex flex-wrap items-center gap-2.5 mb-5">
       <!-- Type stat chips -->
       <div class="flex items-center gap-1.5 flex-wrap">
-        <button
+        <Button
           v-for="stat in typeStats"
           :key="stat.type"
           type="button"
@@ -24,11 +24,11 @@
                 : 'bg-muted/60 group-hover:bg-muted'
             "
           >
-            <component :is="stat.icon" class="h-3 w-3" />
+            <component :is="stat.icon" class="h-4 w-4" />
           </span>
           {{ stat.label }}
           <span
-            class="inline-flex items-center justify-center h-4.5 min-w-[20px] rounded-full text-[9px] font-bold px-1.5 tabular-nums transition-all duration-200"
+            class="inline-flex items-center justify-center bg-primary-20 h-4.5 min-w-5 rounded-full text-[9px] font-bold px-1.5 tabular-nums transition-all duration-200"
             :class="
               activeType === stat.type
                 ? 'bg-primary text-primary-foreground'
@@ -36,7 +36,7 @@
             "
             >{{ stat.count }}</span
           >
-        </button>
+        </Button>
       </div>
 
       <div class="flex items-center gap-2 ml-auto">
