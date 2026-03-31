@@ -1,9 +1,12 @@
 import axios from "@/lib/axios";
+import {
+  createRequestCache,
+  globalCacheRegistry,
+  withCacheInvalidation,
+} from "@/lib/useRequestCache";
 import type { AxiosError } from "axios";
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
-
-// ── Types ──────────────────────────────────────────────────────────────────────
 
 export type AggregateType = "image" | "video" | "audio" | "document" | "other";
 
@@ -80,11 +83,7 @@ export type MorphType =
   | "pipelines"
   | "workspaces";
 
-// ── Store ──────────────────────────────────────────────────────────────────────
-
 export const useMediaStore = defineStore("media", () => {
-  // ── State ───────────────────────────────────────────────────────────────────
-
   const items = ref<Media[]>([]);
   const currentItem = ref<Media | null>(null);
   const meta = ref<MediaMeta>({
@@ -94,14 +93,11 @@ export const useMediaStore = defineStore("media", () => {
     last_page: 0,
   });
 
-  /** Per-model cache keyed by `morphType:morphId[:tag]` */
   const modelMediaCache = ref<Record<string, Media[]>>({});
   const uploadQueue = ref<UploadQueueItem[]>([]);
   const loading = ref(false);
   const detailLoading = ref(false);
   const error = ref<string | null>(null);
-
-  // ── Computed ────────────────────────────────────────────────────────────────
 
   const isLoading = computed(() => loading.value);
   const isDetailLoading = computed(() => detailLoading.value);
@@ -124,8 +120,6 @@ export const useMediaStore = defineStore("media", () => {
     return Math.round(sum / uploadQueue.value.length);
   });
 
-  // ── Helpers ─────────────────────────────────────────────────────────────────
-
   function extractMessage(err: unknown, fallback: string): string {
     const e = err as AxiosError<{ message?: string }>;
     return e?.response?.data?.message ?? fallback;
@@ -143,66 +137,62 @@ export const useMediaStore = defineStore("media", () => {
     return `upload-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   }
 
-  // ══════════════════════════════════════════════════════════════════════════
-  // GLOBAL LIBRARY — /api/media
-  // ══════════════════════════════════════════════════════════════════════════
+  // ── fetchMedia ────────────────────────────────────────────────────────────
+  // CHANGED: wrapped with createRequestCache. Same name, same signature.
+  // Note: we still sync items + meta inside so existing watchers keep working.
+  const fetchMedia = createRequestCache(
+    async (
+      params: MediaFetchParams = {},
+    ): Promise<{ data: Media[]; meta: MediaMeta }> => {
+      loading.value = true;
+      error.value = null;
+      try {
+        const perPage = params.perPage ?? params.per_page ?? 20;
+        const response = await axios.get<{
+          data: Media[];
+          meta: MediaMeta;
+          links: unknown;
+        }>("/media", {
+          params: {
+            page: params.page ?? 1,
+            per_page: perPage,
+            search: params.search || undefined,
+            aggregate_type: params.aggregate_type || undefined,
+            uploaded_by: params.uploaded_by ?? undefined,
+            sort_by: params.sort_by ?? "created_at",
+            sort_order: params.sort_order ?? "desc",
+          },
+        });
 
-  /**
-   * GET /api/media
-   * Populates store.items + store.meta.
-   */
-  async function fetchMedia(
-    params: MediaFetchParams = {},
-  ): Promise<{ data: Media[]; meta: MediaMeta }> {
-    loading.value = true;
-    error.value = null;
+        const payload = response.data;
+        items.value = payload.data ?? [];
+        meta.value = payload.meta ?? {
+          current_page: 1,
+          per_page: 20,
+          total: 0,
+          last_page: 1,
+        };
 
-    try {
-      const perPage = params.perPage ?? params.per_page ?? 20;
+        return {
+          data: payload.data ?? [],
+          meta: payload.meta ?? meta.value,
+        };
+      } catch (err) {
+        error.value = extractMessage(err, "Failed to load media library.");
+        throw err;
+      } finally {
+        loading.value = false;
+      }
+    },
+    {
+      ttlMs: 30_000,
+      swrMs: 10_000,
+      maxRetries: 2,
+      tags: ["media"],
+    },
+  );
 
-      const response = await axios.get<{
-        data: Media[];
-        meta: MediaMeta;
-        links: unknown;
-      }>("/media", {
-        params: {
-          page: params.page ?? 1,
-          per_page: perPage,
-          search: params.search || undefined,
-          aggregate_type: params.aggregate_type || undefined,
-          uploaded_by: params.uploaded_by ?? undefined,
-          sort_by: params.sort_by ?? "created_at",
-          sort_order: params.sort_order ?? "desc",
-        },
-      });
-
-      const payload = response.data;
-
-      items.value = payload.data ?? [];
-      meta.value = payload.meta ?? {
-        current_page: 1,
-        per_page: 20,
-        total: 0,
-        last_page: 1,
-      };
-
-      return {
-        data: payload.data ?? [],
-        meta: payload.meta ?? meta.value,
-      };
-    } catch (err) {
-      error.value = extractMessage(err, "Failed to load media library.");
-      throw err;
-    } finally {
-      loading.value = false;
-    }
-  }
-
-  /**
-   * Lightweight count-only fetch — does NOT touch store.items or store.meta.
-   * Returns only the total for a given aggregate_type filter.
-   * Used by MediaLibrary to build the type-stat chips without clobbering the list.
-   */
+  // countMedia — lightweight, no pagination state, no cache needed
   async function countMedia(aggregate_type: AggregateType): Promise<number> {
     const response = await axios.get<{ meta: MediaMeta }>("/media", {
       params: { page: 1, per_page: 1, aggregate_type },
@@ -210,7 +200,6 @@ export const useMediaStore = defineStore("media", () => {
     return response.data?.meta?.total ?? 0;
   }
 
-  /** GET /api/media/{id} */
   async function fetchMediaItem(id: number): Promise<Media> {
     detailLoading.value = true;
     error.value = null;
@@ -226,51 +215,60 @@ export const useMediaStore = defineStore("media", () => {
     }
   }
 
-  /** POST /api/media  (multipart) */
-  async function uploadMedia(
-    file: File,
-    alt?: string,
-    onProgress?: (percent: number) => void,
-  ): Promise<Media> {
-    const form = new FormData();
-    form.append("file", file);
-    if (alt) form.append("alt", alt);
+  // uploadMedia — streaming progress, can't be cached; bust list after
+  // CHANGED: wrapped with withCacheInvalidation. Same name, same signature.
+  const uploadMedia = withCacheInvalidation(
+    async (
+      file: File,
+      alt?: string,
+      onProgress?: (percent: number) => void,
+    ): Promise<Media> => {
+      const form = new FormData();
+      form.append("file", file);
+      if (alt) form.append("alt", alt);
 
-    const { data } = await axios.post<{ data: Media }>("/media", form, {
-      headers: { "Content-Type": "multipart/form-data" },
-      onUploadProgress: (e) => {
-        if (e.total && onProgress)
-          onProgress(Math.round((e.loaded / e.total) * 100));
-      },
-    });
+      const { data } = await axios.post<{ data: Media }>("/media", form, {
+        headers: { "Content-Type": "multipart/form-data" },
+        onUploadProgress: (e) => {
+          if (e.total && onProgress)
+            onProgress(Math.round((e.loaded / e.total) * 100));
+        },
+      });
 
-    items.value.unshift(data.data);
-    meta.value.total += 1;
-    return data.data;
-  }
+      items.value.unshift(data.data);
+      meta.value.total += 1;
+      return data.data;
+    },
+    fetchMedia,
+  );
 
-  /** PATCH /api/media/{id} — alt text only */
-  async function updateMedia(id: number, alt: string | null): Promise<Media> {
-    const { data } = await axios.patch<{ data: Media }>(`/media/${id}`, {
-      alt,
-    });
-    _syncItem(data.data);
-    return data.data;
-  }
+  // updateMedia — CHANGED: withCacheInvalidation. Same name, same signature.
+  const updateMedia = withCacheInvalidation(
+    async (id: number, alt: string | null): Promise<Media> => {
+      const { data } = await axios.patch<{ data: Media }>(`/media/${id}`, {
+        alt,
+      });
+      _syncItem(data.data);
+      return data.data;
+    },
+    fetchMedia,
+  );
 
-  /** DELETE /api/media/{id} — permanently removes file + cascades mediables */
-  async function deleteMedia(id: number): Promise<void> {
-    await axios.delete(`/media/${id}`);
-    items.value = items.value.filter((m) => m.id !== id);
-    meta.value.total = Math.max(0, meta.value.total - 1);
-    if (currentItem.value?.id === id) currentItem.value = null;
-    // Purge from all model caches
-    for (const key of Object.keys(modelMediaCache.value)) {
-      modelMediaCache.value[key] = modelMediaCache.value[key].filter(
-        (m) => m.id !== id,
-      );
-    }
-  }
+  // deleteMedia — CHANGED: withCacheInvalidation. Same name, same signature.
+  const deleteMedia = withCacheInvalidation(
+    async (id: number): Promise<void> => {
+      await axios.delete(`/media/${id}`);
+      items.value = items.value.filter((m) => m.id !== id);
+      meta.value.total = Math.max(0, meta.value.total - 1);
+      if (currentItem.value?.id === id) currentItem.value = null;
+      for (const key of Object.keys(modelMediaCache.value)) {
+        modelMediaCache.value[key] = modelMediaCache.value[key].filter(
+          (m) => m.id !== id,
+        );
+      }
+    },
+    fetchMedia,
+  );
 
   function _syncItem(updated: Media) {
     const idx = items.value.findIndex((m) => m.id === updated.id);
@@ -284,9 +282,7 @@ export const useMediaStore = defineStore("media", () => {
     }
   }
 
-  // ══════════════════════════════════════════════════════════════════════════
-  // UPLOAD QUEUE — multi-file, progress-tracked
-  // ══════════════════════════════════════════════════════════════════════════
+  // ── Upload queue — unchanged, no list cache involved ──────────────────────
 
   function enqueue(files: File[], tag?: string, alt?: string): string[] {
     const ids: string[] = [];
@@ -305,7 +301,6 @@ export const useMediaStore = defineStore("media", () => {
     return ids;
   }
 
-  /** Upload all pending queue items to the global library. */
   async function flushQueue(): Promise<Media[]> {
     const results: Media[] = [];
     for (const upload of uploadQueue.value.filter(
@@ -328,7 +323,6 @@ export const useMediaStore = defineStore("media", () => {
     return results;
   }
 
-  /** Upload all pending queue items and attach them to a model. */
   async function flushQueueToModel(
     morphType: MorphType,
     morphId: number,
@@ -386,11 +380,9 @@ export const useMediaStore = defineStore("media", () => {
     uploadQueue.value = [];
   }
 
-  // ══════════════════════════════════════════════════════════════════════════
-  // POLYMORPHIC MODEL MEDIA — /{morphType}/{morphId}/media
-  // ══════════════════════════════════════════════════════════════════════════
+  // ── Polymorphic model media — unchanged ───────────────────────────────────
+  // These already use modelMediaCache (ref-based) — no createRequestCache needed.
 
-  /** GET /{morphType}/{morphId}/media — results cached by key */
   async function fetchModelMedia(
     morphType: MorphType,
     morphId: number,
@@ -412,7 +404,6 @@ export const useMediaStore = defineStore("media", () => {
     return data.data;
   }
 
-  /** Bust all cache keys that belong to a model. */
   function invalidateModelCache(morphType: string, morphId: number): void {
     for (const key of Object.keys(modelMediaCache.value)) {
       if (key.startsWith(`${morphType}:${morphId}`)) {
@@ -421,7 +412,6 @@ export const useMediaStore = defineStore("media", () => {
     }
   }
 
-  /** POST /{morphType}/{morphId}/media/upload — upload + attach in one shot */
   async function uploadAndAttach(
     morphType: MorphType,
     morphId: number,
@@ -452,7 +442,6 @@ export const useMediaStore = defineStore("media", () => {
     return data.data;
   }
 
-  /** POST /{morphType}/{morphId}/media/attach — attach existing file */
   async function attachToModel(
     morphType: MorphType,
     morphId: number,
@@ -466,9 +455,6 @@ export const useMediaStore = defineStore("media", () => {
     invalidateModelCache(morphType, morphId);
   }
 
-  /**
-   * Attach an already-existing media record to a model.
-   */
   async function attachExisting(
     mediaId: number,
     morphType: MorphType,
@@ -478,9 +464,6 @@ export const useMediaStore = defineStore("media", () => {
     await attachToModel(morphType, morphId, { media_id: mediaId, tag });
   }
 
-  /**
-   * DELETE /{morphType}/{morphId}/media/{mediaId}/detach
-   */
   async function detachFromModel(
     mediaId: number,
     morphType: MorphType,
@@ -493,7 +476,6 @@ export const useMediaStore = defineStore("media", () => {
     invalidateModelCache(morphType, morphId);
   }
 
-  /** PATCH /{morphType}/{morphId}/media/reorder */
   async function reorderModelMedia(
     morphType: MorphType,
     morphId: number,
@@ -513,8 +495,6 @@ export const useMediaStore = defineStore("media", () => {
     }
   }
 
-  // ── Utilities ───────────────────────────────────────────────────────────────
-
   function clearError(): void {
     error.value = null;
   }
@@ -528,10 +508,11 @@ export const useMediaStore = defineStore("media", () => {
     loading.value = false;
     detailLoading.value = false;
     error.value = null;
+    globalCacheRegistry.invalidateTag("media");
   }
 
+  // ── return — IDENTICAL to original ───────────────────────────────────────
   return {
-    // State
     items,
     currentItem,
     meta,
@@ -541,7 +522,6 @@ export const useMediaStore = defineStore("media", () => {
     detailLoading,
     error,
 
-    // Computed
     isLoading,
     isDetailLoading,
     hasError,
@@ -550,7 +530,6 @@ export const useMediaStore = defineStore("media", () => {
     failedUploads,
     totalQueueProgress,
 
-    // Global library
     fetchMedia,
     countMedia,
     fetchMediaItem,
@@ -558,7 +537,6 @@ export const useMediaStore = defineStore("media", () => {
     updateMedia,
     deleteMedia,
 
-    // Queue
     enqueue,
     flushQueue,
     flushQueueToModel,
@@ -567,7 +545,6 @@ export const useMediaStore = defineStore("media", () => {
     clearCompletedQueue,
     clearQueue,
 
-    // Polymorphic model media
     fetchModelMedia,
     uploadAndAttach,
     attachToModel,
@@ -576,7 +553,6 @@ export const useMediaStore = defineStore("media", () => {
     reorderModelMedia,
     invalidateModelCache,
 
-    // Utilities
     clearError,
     $reset,
   };

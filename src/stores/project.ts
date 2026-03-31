@@ -1,4 +1,9 @@
 import axios from "@/lib/axios";
+import {
+  createRequestCache,
+  globalCacheRegistry,
+  withCacheInvalidation,
+} from "@/lib/useRequestCache";
 import type {
   KanbanBoardFetchParams,
   KanbanBoardResponse,
@@ -71,7 +76,6 @@ export interface ProjectFormData {
 // ── Store ──────────────────────────────────────────────────────────────────────
 
 export const useProjectStore = defineStore("project", () => {
-  // Sidebar list — writable so AppSidebar can assign after fetch
   const projects = ref<Project[]>([]);
   const currentProject = ref<Project | null>(null);
   const loading = ref(false);
@@ -87,16 +91,12 @@ export const useProjectStore = defineStore("project", () => {
   const visibilities = ref<ProjectVisibility[]>([]);
   const statusCounts = ref<Record<string, number>>({});
 
-  // ── Computed aliases ────────────────────────────────────────────────────────
   const activeProject = computed(() => currentProject.value);
   const isLoading = computed(() => loading.value);
   const isDetailLoading = computed(() => detailLoading.value);
   const hasError = computed(() => !!error.value);
   const errorMessage = computed(() => error.value ?? "");
 
-  // ── Internal helpers ────────────────────────────────────────────────────────
-
-  /** Strip empty / null / [] values from filter objects before sending */
   function buildFilterParams(filters?: Record<string, any> | null) {
     return Object.fromEntries(
       Object.entries(filters ?? {}).filter(([, v]) => {
@@ -113,42 +113,42 @@ export const useProjectStore = defineStore("project", () => {
   }
 
   // ══════════════════════════════════════════════════════════════════════════
-  // READ — all use shallow /projects/{id} except index/store which are nested
+  // READ
   // ══════════════════════════════════════════════════════════════════════════
 
-  /**
-   * GET /workspaces/{workspaceId}/projects
-   * Nested — workspace context required for listing.
-   */
-  async function fetchProjects(
-    params: UniversalFetchParams & { workspaceId: number },
-  ): Promise<UniversalApiResponse<Project>> {
-    const { data } = await axios.get<UniversalApiResponse<Project>>(
-      `/workspaces/${params.workspaceId}/projects`,
-      {
-        params: {
-          page: params.page,
-          per_page: params.perPage,
-          search: params.search || undefined,
-          sort_by: params.sortBy || undefined,
-          sort_order: params.sortOrder || undefined,
-          kanban_stage: params.kanbanStage || undefined,
-          ...buildFilterParams(params.filters),
+  // ── CHANGE 1 of 5 ──────────────────────────────────────────────────────────
+  // Wrap fetchProjects with createRequestCache.
+  // The public name stays fetchProjects — nothing in the return{} or any
+  // component needs to change. The raw logic is identical to what was here before.
+  const fetchProjects = createRequestCache(
+    async (
+      params: UniversalFetchParams & { workspaceId: number },
+    ): Promise<UniversalApiResponse<Project>> => {
+      const { data } = await axios.get<UniversalApiResponse<Project>>(
+        `/workspaces/${params.workspaceId}/projects`,
+        {
+          params: {
+            page: params.page,
+            per_page: params.perPage,
+            search: params.search || undefined,
+            sort_by: params.sortBy || undefined,
+            sort_order: params.sortOrder || undefined,
+            kanban_stage: params.kanbanStage || undefined,
+            ...buildFilterParams(params.filters),
+          },
         },
-      },
-    );
-    return data;
-  }
+      );
+      return data;
+    },
+    {
+      ttlMs: 60_000, // projects are stable — 1 min fresh window
+      swrMs: 20_000, // serve stale + background refresh for 20 s after
+      maxRetries: 2, // retry twice on network failure with back-off
+      tags: ["projects"], // globalCacheRegistry.invalidateTag('projects')
+      // busts this + fetchKanbanBoard in one call
+    },
+  );
 
-  /**
-   * GET /projects/{id}          ← SHALLOW
-   *
-   * Laravel's ->shallow() registers:
-   *   GET /projects/{project}   → ProjectController@show
-   *
-   * Do NOT call /workspaces/{ws}/projects/{id} for a single project —
-   * that route does not exist in shallow mode and returns 404.
-   */
   async function fetchProject(id: number): Promise<Project> {
     detailLoading.value = true;
     error.value = null;
@@ -168,28 +168,32 @@ export const useProjectStore = defineStore("project", () => {
   // KANBAN
   // ══════════════════════════════════════════════════════════════════════════
 
-  /**
-   * GET /workspaces/{workspaceId}/projects/kanban/board  — nested
-   */
-  async function fetchKanbanBoard(
-    params: KanbanBoardFetchParams & { workspaceId: number },
-  ): Promise<KanbanBoardResponse<Project>> {
-    const { data } = await axios.get<KanbanBoardResponse<Project>>(
-      `/workspaces/${params.workspaceId}/projects/kanban/board`,
-      {
-        params: {
-          search: params.search || undefined,
-          per_page: params.perPage ?? 50,
-          ...buildFilterParams(params.filters),
+  // ── CHANGE 2 of 5 ──────────────────────────────────────────────────────────
+  // Same treatment for fetchKanbanBoard.
+  const fetchKanbanBoard = createRequestCache(
+    async (
+      params: KanbanBoardFetchParams & { workspaceId: number },
+    ): Promise<KanbanBoardResponse<Project>> => {
+      const { data } = await axios.get<KanbanBoardResponse<Project>>(
+        `/workspaces/${params.workspaceId}/projects/kanban/board`,
+        {
+          params: {
+            search: params.search || undefined,
+            per_page: params.perPage ?? 50,
+            ...buildFilterParams(params.filters),
+          },
         },
-      },
-    );
-    return data;
-  }
+      );
+      return data;
+    },
+    {
+      ttlMs: 30_000,
+      swrMs: 10_000,
+      maxRetries: 2,
+      tags: ["projects"], // same tag — one invalidateTag call busts both
+    },
+  );
 
-  /**
-   * GET /workspaces/{workspaceId}/projects/counts  — nested
-   */
   async function fetchStatusCounts(workspaceId: number): Promise<void> {
     try {
       const { data } = await axios.get<{ data: Record<string, number> }>(
@@ -201,9 +205,6 @@ export const useProjectStore = defineStore("project", () => {
     }
   }
 
-  /**
-   * POST /workspaces/{workspaceId}/projects/kanban/move  — nested
-   */
   async function moveCard(
     event: KanbanMoveEvent<Project>,
     workspaceId: number,
@@ -215,9 +216,6 @@ export const useProjectStore = defineStore("project", () => {
     fetchStatusCounts(workspaceId);
   }
 
-  /**
-   * POST /workspaces/{workspaceId}/projects/kanban/reorder  — nested
-   */
   async function reorderCards(
     event: KanbanReorderEvent,
     workspaceId: number,
@@ -229,98 +227,90 @@ export const useProjectStore = defineStore("project", () => {
   }
 
   // ══════════════════════════════════════════════════════════════════════════
-  // WRITE — all shallow /projects/{id}
+  // WRITE
   // ══════════════════════════════════════════════════════════════════════════
 
-  /**
-   * POST /workspaces/{workspaceId}/projects  — nested (needs workspace scope)
-   */
-  async function createProject(
-    workspaceId: number,
-    payload: ProjectFormData,
-  ): Promise<Project> {
-    loading.value = true;
-    error.value = null;
-    try {
-      const { data } = await axios.post<{ data: Project }>(
-        `/workspaces/${workspaceId}/projects`,
-        payload,
-      );
-      projects.value.unshift(data.data);
-      meta.value.total += 1;
-      fetchStatusCounts(workspaceId);
-      return data.data;
-    } catch (err) {
-      error.value = extractMessage(err, "Failed to create project");
-      throw err;
-    } finally {
-      loading.value = false;
-    }
-  }
+  // ── CHANGE 3 of 5 ──────────────────────────────────────────────────────────
+  // Replace the manual fetchProjects.invalidate() call that was already here
+  // with withCacheInvalidation so the cache is also busted if the request
+  // throws (the finally block always fires). Function signature is identical —
+  // callers don't change.
+  const createProject = withCacheInvalidation(
+    async (workspaceId: number, payload: ProjectFormData): Promise<Project> => {
+      loading.value = true;
+      error.value = null;
+      try {
+        const { data } = await axios.post<{ data: Project }>(
+          `/workspaces/${workspaceId}/projects`,
+          payload,
+        );
+        projects.value.unshift(data.data);
+        meta.value.total += 1;
+        fetchStatusCounts(workspaceId);
+        return data.data;
+      } catch (err) {
+        error.value = extractMessage(err, "Failed to create project");
+        throw err;
+      } finally {
+        loading.value = false;
+      }
+    },
+    [fetchProjects, fetchKanbanBoard], // both busted in finally — always
+  );
 
-  /**
-   * PATCH /projects/{id}         ← SHALLOW
-   *
-   * IMPORTANT: Laravel apiResource shallow registers PATCH, not PUT.
-   * Using axios.put() here causes a 404 / 405 MethodNotAllowed.
-   * Always use axios.patch() for update.
-   */
-  async function updateProject(
-    id: number,
-    payload: ProjectFormData,
-  ): Promise<Project> {
-    loading.value = true;
-    error.value = null;
-    try {
-      // ✅ PATCH — matches Laravel's shallow apiResource registration
-      const { data } = await axios.post<{ data: Project }>(
-        `/projects/${id}/update`,
-        payload,
-      );
-      // Keep sidebar list in sync
-      const idx = projects.value.findIndex((p) => p.id === id);
-      if (idx !== -1) projects.value[idx] = data.data;
-      // Keep detail view in sync
-      if (currentProject.value?.id === id) currentProject.value = data.data;
-      // Refresh status counts for the workspace this project belongs to
-      if (data.data.workspace_id) fetchStatusCounts(data.data.workspace_id);
-      return data.data;
-    } catch (err) {
-      error.value = extractMessage(err, "Failed to update project");
-      throw err;
-    } finally {
-      loading.value = false;
-    }
-  }
+  // ── CHANGE 4 of 5 ──────────────────────────────────────────────────────────
+  // updateProject had no invalidation before. Wrap it so the cache is busted
+  // after every successful update. Body is word-for-word identical.
+  const updateProject = withCacheInvalidation(
+    async (id: number, payload: ProjectFormData): Promise<Project> => {
+      loading.value = true;
+      error.value = null;
+      try {
+        const { data } = await axios.post<{ data: Project }>(
+          `/projects/${id}/update`,
+          payload,
+        );
+        const idx = projects.value.findIndex((p) => p.id === id);
+        if (idx !== -1) projects.value[idx] = data.data;
+        if (currentProject.value?.id === id) currentProject.value = data.data;
+        if (data.data.workspace_id) fetchStatusCounts(data.data.workspace_id);
+        return data.data;
+      } catch (err) {
+        error.value = extractMessage(err, "Failed to update project");
+        throw err;
+      } finally {
+        loading.value = false;
+      }
+    },
+    [fetchProjects, fetchKanbanBoard],
+  );
 
-  /**
-   * DELETE /projects/{id}        ← SHALLOW
-   */
-  async function deleteProject(id: number, workspaceId: number): Promise<void> {
-    loading.value = true;
-    error.value = null;
-    try {
-      await axios.delete(`/projects/${id}`);
-      projects.value = projects.value.filter((p) => p.id !== id);
-      meta.value.total = Math.max(0, meta.value.total - 1);
-      if (currentProject.value?.id === id) currentProject.value = null;
-      fetchStatusCounts(workspaceId);
-    } catch (err) {
-      error.value = extractMessage(err, "Failed to delete project");
-      throw err;
-    } finally {
-      loading.value = false;
-    }
-  }
+  // ── CHANGE 5 of 5 ──────────────────────────────────────────────────────────
+  // deleteProject had no invalidation before. Same pattern.
+  const deleteProject = withCacheInvalidation(
+    async (id: number, workspaceId: number): Promise<void> => {
+      loading.value = true;
+      error.value = null;
+      try {
+        await axios.delete(`/projects/${id}`);
+        projects.value = projects.value.filter((p) => p.id !== id);
+        meta.value.total = Math.max(0, meta.value.total - 1);
+        if (currentProject.value?.id === id) currentProject.value = null;
+        fetchStatusCounts(workspaceId);
+      } catch (err) {
+        error.value = extractMessage(err, "Failed to delete project");
+        throw err;
+      } finally {
+        loading.value = false;
+      }
+    },
+    [fetchProjects, fetchKanbanBoard],
+  );
 
   // ══════════════════════════════════════════════════════════════════════════
-  // ENUMS  — flat routes, no workspace scope needed
+  // ENUMS  — unchanged, the existing ref-guard is already optimal
   // ══════════════════════════════════════════════════════════════════════════
 
-  /**
-   * GET /enums/project-statuses
-   * Result is cached in-memory — second call returns immediately.
-   */
   async function fetchStatuses(): Promise<ProjectStatus[]> {
     if (statuses.value.length > 0) return statuses.value;
     try {
@@ -335,10 +325,6 @@ export const useProjectStore = defineStore("project", () => {
     }
   }
 
-  /**
-   * GET /enums/project-visibilities
-   * Result is cached in-memory — second call returns immediately.
-   */
   async function fetchVisibilities(): Promise<ProjectVisibility[]> {
     if (visibilities.value.length > 0) return visibilities.value;
     try {
@@ -369,10 +355,12 @@ export const useProjectStore = defineStore("project", () => {
     visibilities.value = [];
     statusCounts.value = {};
     meta.value = { current_page: 1, per_page: 10, total: 0, last_page: 0 };
+    // Also wipe the cache so a post-logout mount always fetches fresh
+    globalCacheRegistry.invalidateTag("projects");
   }
 
+  // ── Return — IDENTICAL to your original. Zero changes here. ────────────────
   return {
-    // State — exposed as writable so AppSidebar can assign projects directly
     projects,
     currentProject,
     loading,
@@ -383,14 +371,12 @@ export const useProjectStore = defineStore("project", () => {
     visibilities,
     statusCounts,
 
-    // Computed
     activeProject,
     isLoading,
     isDetailLoading,
     hasError,
     errorMessage,
 
-    // Actions
     fetchProjects,
     fetchProject,
     fetchKanbanBoard,

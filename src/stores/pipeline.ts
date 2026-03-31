@@ -1,4 +1,9 @@
 import axios from "@/lib/axios";
+import {
+  createRequestCache,
+  globalCacheRegistry,
+  withCacheInvalidation,
+} from "@/lib/useRequestCache";
 import type {
   UniversalApiResponse,
   UniversalFetchParams,
@@ -7,38 +12,6 @@ import type { AxiosError } from "axios";
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
 
-// ── Entities ───────────────────────────────────────────────────────────────────
-
-export interface Pipeline {
-  id: number;
-  project_id: number;
-  name: string;
-  slug: string;
-  description: string | null;
-  /**
-   * The API may return status as:
-   *   • a plain integer:  1  (from list queries before resource transforms)
-   *   • a full object:    { value: 1, label: "Active", color: "green", dot: "...", badge: "..." }
-   * Use extractStatusValue() / extractStatusLabel() throughout the app.
-   */
-  status: number | PipelineStatusObject | null;
-  extras: Record<string, unknown> | null;
-  stages_count?: number;
-  creator?: { id: number; name: string; email: string };
-  project?: {
-    id: number;
-    name: string;
-    slug: string;
-    workspace?: { id: number; name: string; slug: string };
-  };
-  is_active?: boolean;
-  is_inactive?: boolean;
-  created_at: string;
-  updated_at: string;
-  stages?: PipelineStagePreview[];
-}
-
-/** Lightweight stage shape embedded in the Pipeline detail response */
 export interface PipelineStagePreview {
   id: number;
   name: string;
@@ -66,6 +39,29 @@ export interface PipelineStatusObject {
   badge: string;
 }
 
+export interface Pipeline {
+  id: number;
+  project_id: number;
+  name: string;
+  slug: string;
+  description: string | null;
+  status: number | PipelineStatusObject | null;
+  extras: Record<string, unknown> | null;
+  stages_count?: number;
+  creator?: { id: number; name: string; email: string };
+  project?: {
+    id: number;
+    name: string;
+    slug: string;
+    workspace?: { id: number; name: string; slug: string };
+  };
+  is_active?: boolean;
+  is_inactive?: boolean;
+  created_at: string;
+  updated_at: string;
+  stages?: PipelineStagePreview[];
+}
+
 export interface PipelineMeta {
   current_page: number;
   per_page: number;
@@ -73,7 +69,6 @@ export interface PipelineMeta {
   last_page: number;
 }
 
-/** Shape returned by GET /enums/pipeline-statuses */
 export interface PipelineStatusEnum {
   value: number;
   label: string;
@@ -90,8 +85,6 @@ export interface PipelineFormData {
   extras?: Record<string, unknown>;
 }
 
-// ── Store ──────────────────────────────────────────────────────────────────────
-
 export const usePipelineStore = defineStore("pipeline", () => {
   const pipelines = ref<Pipeline[]>([]);
   const currentPipeline = ref<Pipeline | null>(null);
@@ -107,14 +100,11 @@ export const usePipelineStore = defineStore("pipeline", () => {
   const statuses = ref<PipelineStatusEnum[]>([]);
   const statusCounts = ref<Record<string, number>>({});
 
-  // ── Computed aliases ────────────────────────────────────────────────────────
   const activePipeline = computed(() => currentPipeline.value);
   const isLoading = computed(() => loading.value);
   const isDetailLoading = computed(() => detailLoading.value);
   const hasError = computed(() => !!error.value);
   const errorMessage = computed(() => error.value ?? "");
-
-  // ── Helpers ─────────────────────────────────────────────────────────────────
 
   function buildFilterParams(filters?: Record<string, any> | null) {
     return Object.fromEntries(
@@ -131,32 +121,36 @@ export const usePipelineStore = defineStore("pipeline", () => {
     return e.response?.data?.message ?? fallback;
   }
 
-  // ══════════════════════════════════════════════════════════════════════════
-  // READ
-  // ══════════════════════════════════════════════════════════════════════════
-
-  /**
-   * GET /projects/{projectId}/pipelines   — nested
-   */
-  async function fetchPipelines(
-    params: UniversalFetchParams & { projectId: number },
-  ): Promise<UniversalApiResponse<Pipeline>> {
-    const { data } = await axios.get<UniversalApiResponse<Pipeline>>(
-      `/projects/${params.projectId}/pipelines`,
-      {
-        params: {
-          page: params.page,
-          per_page: params.perPage,
-          search: params.search || undefined,
-          sort_by: params.sortBy || undefined,
-          sort_order: params.sortOrder || undefined,
-          ...buildFilterParams(params.filters),
+  // ── fetchPipelines ────────────────────────────────────────────────────────
+  // CHANGED: wrapped with createRequestCache. Same name, same signature.
+  const fetchPipelines = createRequestCache(
+    async (
+      params: UniversalFetchParams & { projectId: number },
+    ): Promise<UniversalApiResponse<Pipeline>> => {
+      const { data } = await axios.get<UniversalApiResponse<Pipeline>>(
+        `/projects/${params.projectId}/pipelines`,
+        {
+          params: {
+            page: params.page,
+            per_page: params.perPage,
+            search: params.search || undefined,
+            sort_by: params.sortBy || undefined,
+            sort_order: params.sortOrder || undefined,
+            ...buildFilterParams(params.filters),
+          },
         },
-      },
-    );
-    return data;
-  }
+      );
+      return data;
+    },
+    {
+      ttlMs: 60_000,
+      swrMs: 15_000,
+      maxRetries: 2,
+      tags: ["pipelines"],
+    },
+  );
 
+  // fetchStagesForKanban — not a list fetch, no pagination, no dedup needed
   async function fetchStagesForKanban(
     pipelineId: number,
   ): Promise<PipelineStagePreview[]> {
@@ -178,9 +172,6 @@ export const usePipelineStore = defineStore("pipeline", () => {
     }
   }
 
-  /**
-   * GET /pipelines/{id}   — shallow
-   */
   async function fetchPipeline(id: number): Promise<Pipeline> {
     detailLoading.value = true;
     error.value = null;
@@ -196,9 +187,6 @@ export const usePipelineStore = defineStore("pipeline", () => {
     }
   }
 
-  /**
-   * GET /projects/{projectId}/pipelines/counts   — nested
-   */
   async function fetchStatusCounts(projectId: number): Promise<void> {
     try {
       const { data } = await axios.get<{ data: Record<string, number> }>(
@@ -210,91 +198,79 @@ export const usePipelineStore = defineStore("pipeline", () => {
     }
   }
 
-  // ══════════════════════════════════════════════════════════════════════════
-  // WRITE — shallow /pipelines/{id}
-  // ══════════════════════════════════════════════════════════════════════════
+  // ── createPipeline ────────────────────────────────────────────────────────
+  // CHANGED: wrapped with withCacheInvalidation. Same name, same signature.
+  const createPipeline = withCacheInvalidation(
+    async (projectId: number, payload: PipelineFormData): Promise<Pipeline> => {
+      loading.value = true;
+      error.value = null;
+      try {
+        const { data } = await axios.post<{ data: Pipeline }>(
+          `/projects/${projectId}/pipelines`,
+          payload,
+        );
+        pipelines.value.unshift(data.data);
+        meta.value.total += 1;
+        fetchStatusCounts(projectId);
+        return data.data;
+      } catch (err) {
+        error.value = extractMessage(err, "Failed to create pipeline");
+        throw err;
+      } finally {
+        loading.value = false;
+      }
+    },
+    fetchPipelines,
+  );
 
-  /**
-   * POST /projects/{projectId}/pipelines   — nested
-   */
-  async function createPipeline(
-    projectId: number,
-    payload: PipelineFormData,
-  ): Promise<Pipeline> {
-    loading.value = true;
-    error.value = null;
-    try {
-      const { data } = await axios.post<{ data: Pipeline }>(
-        `/projects/${projectId}/pipelines`,
-        payload,
-      );
-      pipelines.value.unshift(data.data);
-      meta.value.total += 1;
-      fetchStatusCounts(projectId);
-      return data.data;
-    } catch (err) {
-      error.value = extractMessage(err, "Failed to create pipeline");
-      throw err;
-    } finally {
-      loading.value = false;
-    }
-  }
+  // ── updatePipeline ────────────────────────────────────────────────────────
+  // CHANGED: wrapped with withCacheInvalidation. Same name, same signature.
+  const updatePipeline = withCacheInvalidation(
+    async (id: number, payload: PipelineFormData): Promise<Pipeline> => {
+      loading.value = true;
+      error.value = null;
+      try {
+        const { data } = await axios.post<{ data: Pipeline }>(
+          `/pipelines/${id}/update`,
+          payload,
+        );
+        const idx = pipelines.value.findIndex((p) => p.id === id);
+        if (idx !== -1) pipelines.value[idx] = data.data;
+        if (currentPipeline.value?.id === id) currentPipeline.value = data.data;
+        if (data.data.project_id) fetchStatusCounts(data.data.project_id);
+        return data.data;
+      } catch (err) {
+        error.value = extractMessage(err, "Failed to update pipeline");
+        throw err;
+      } finally {
+        loading.value = false;
+      }
+    },
+    fetchPipelines,
+  );
 
-  /**
-   * POST /pipelines/{id}/update   — shallow, POST to avoid CORS preflight
-   */
-  async function updatePipeline(
-    id: number,
-    payload: PipelineFormData,
-  ): Promise<Pipeline> {
-    loading.value = true;
-    error.value = null;
-    try {
-      const { data } = await axios.post<{ data: Pipeline }>(
-        `/pipelines/${id}/update`,
-        payload,
-      );
-      const idx = pipelines.value.findIndex((p) => p.id === id);
-      if (idx !== -1) pipelines.value[idx] = data.data;
-      if (currentPipeline.value?.id === id) currentPipeline.value = data.data;
-      if (data.data.project_id) fetchStatusCounts(data.data.project_id);
-      return data.data;
-    } catch (err) {
-      error.value = extractMessage(err, "Failed to update pipeline");
-      throw err;
-    } finally {
-      loading.value = false;
-    }
-  }
+  // ── deletePipeline ────────────────────────────────────────────────────────
+  // CHANGED: wrapped with withCacheInvalidation. Same name, same signature.
+  const deletePipeline = withCacheInvalidation(
+    async (id: number, projectId: number): Promise<void> => {
+      loading.value = true;
+      error.value = null;
+      try {
+        await axios.delete(`/pipelines/${id}`);
+        pipelines.value = pipelines.value.filter((p) => p.id !== id);
+        meta.value.total = Math.max(0, meta.value.total - 1);
+        if (currentPipeline.value?.id === id) currentPipeline.value = null;
+        fetchStatusCounts(projectId);
+      } catch (err) {
+        error.value = extractMessage(err, "Failed to delete pipeline");
+        throw err;
+      } finally {
+        loading.value = false;
+      }
+    },
+    fetchPipelines,
+  );
 
-  /**
-   * DELETE /pipelines/{id}   — shallow
-   */
-  async function deletePipeline(id: number, projectId: number): Promise<void> {
-    loading.value = true;
-    error.value = null;
-    try {
-      await axios.delete(`/pipelines/${id}`);
-      pipelines.value = pipelines.value.filter((p) => p.id !== id);
-      meta.value.total = Math.max(0, meta.value.total - 1);
-      if (currentPipeline.value?.id === id) currentPipeline.value = null;
-      fetchStatusCounts(projectId);
-    } catch (err) {
-      error.value = extractMessage(err, "Failed to delete pipeline");
-      throw err;
-    } finally {
-      loading.value = false;
-    }
-  }
-
-  // ══════════════════════════════════════════════════════════════════════════
-  // ENUMS
-  // ══════════════════════════════════════════════════════════════════════════
-
-  /**
-   * GET /enums/pipeline-statuses
-   * Cached in-memory after first call.
-   */
   async function fetchStatuses(): Promise<PipelineStatusEnum[]> {
     if (statuses.value.length > 0) return statuses.value;
     try {
@@ -309,8 +285,6 @@ export const usePipelineStore = defineStore("pipeline", () => {
     }
   }
 
-  // ── Utilities ───────────────────────────────────────────────────────────────
-
   function clearError(): void {
     error.value = null;
   }
@@ -324,10 +298,11 @@ export const usePipelineStore = defineStore("pipeline", () => {
     statuses.value = [];
     statusCounts.value = {};
     meta.value = { current_page: 1, per_page: 10, total: 0, last_page: 0 };
+    globalCacheRegistry.invalidateTag("pipelines");
   }
 
+  // ── return — IDENTICAL to original ───────────────────────────────────────
   return {
-    // State
     pipelines,
     currentPipeline,
     loading,
@@ -337,14 +312,12 @@ export const usePipelineStore = defineStore("pipeline", () => {
     statuses,
     statusCounts,
 
-    // Computed
     activePipeline,
     isLoading,
     isDetailLoading,
     hasError,
     errorMessage,
 
-    // Actions
     fetchPipelines,
     fetchStagesForKanban,
     fetchPipeline,

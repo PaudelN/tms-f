@@ -1,5 +1,6 @@
 import { notify } from "@/helpers/toast";
 import api, { resetCsrfToken } from "@/lib/axios";
+import { globalCacheRegistry } from "@/lib/useRequestCache";
 import router from "@/router";
 import type { LoginForm } from "@/types/loginForm";
 import type { Errors, RegisterForm } from "@/types/registerForm";
@@ -19,7 +20,6 @@ export const useAuthStore = defineStore(
         `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=${host}`,
         `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.${host}`,
       ];
-
       cookieVariants.forEach((cookie) => {
         document.cookie = cookie;
       });
@@ -32,14 +32,12 @@ export const useAuthStore = defineStore(
       });
     };
 
-    // State
     const user = ref<User | null>(null);
     const users = ref<User[]>([]);
     const isLoading = ref<boolean>(false);
     const registrationErrors = ref<Errors>({});
     const loginErrors = ref<Errors>({});
     const successMessage = ref<string>("");
-
     const isLoggedIn = ref<boolean>(false);
 
     const register = async (formData: RegisterForm) => {
@@ -59,7 +57,10 @@ export const useAuthStore = defineStore(
       if (formData.password.length < 8) {
         registrationErrors.value.password =
           "Password must be at least 8 characters";
-        notify.warning("Signup validation", "Password must be at least 8 characters.");
+        notify.warning(
+          "Signup validation",
+          "Password must be at least 8 characters.",
+        );
         return;
       }
       if (formData.password !== formData.password_confirmation) {
@@ -76,13 +77,11 @@ export const useAuthStore = defineStore(
         await getUser();
         successMessage.value = "Account created successfully! Redirecting...";
         notify.success("Signup successful", "Your account has been created.");
-
         setTimeout(() => {
           router.push({ name: "dashboard" });
         }, 1000);
       } catch (error: any) {
         console.error("Registration failed:", error);
-
         if (error.response?.data?.errors) {
           registrationErrors.value = error.response.data.errors;
         } else if (error.response?.data?.message) {
@@ -91,10 +90,10 @@ export const useAuthStore = defineStore(
           registrationErrors.value.general =
             "Registration failed. Please try again.";
         }
-
         notify.error(
           "Signup failed",
-          registrationErrors.value.general ?? "Please review your details and try again.",
+          registrationErrors.value.general ??
+            "Please review your details and try again.",
         );
       } finally {
         isLoading.value = false;
@@ -123,7 +122,6 @@ export const useAuthStore = defineStore(
           email: formData.email,
           password: formData.password,
         });
-
         await getUser();
         successMessage.value = "Login successful! Redirecting...";
         notify.success("Login successful", "Welcome back.");
@@ -132,7 +130,6 @@ export const useAuthStore = defineStore(
         }, 1000);
       } catch (error: any) {
         console.error("Login failed:", error);
-
         if (error.response?.data?.errors) {
           loginErrors.value = error.response.data.errors;
         } else if (error.response?.data?.message) {
@@ -141,10 +138,10 @@ export const useAuthStore = defineStore(
           loginErrors.value.general =
             "Login failed. Please check your credentials.";
         }
-
         notify.error(
           "Login failed",
-          loginErrors.value.general ?? "Please check your credentials and try again.",
+          loginErrors.value.general ??
+            "Please check your credentials and try again.",
         );
       } finally {
         isLoading.value = false;
@@ -170,7 +167,6 @@ export const useAuthStore = defineStore(
       } finally {
         cleanAuthState(true);
         notify.info("Logged out", "You have been signed out.");
-
         router.push({ name: "login" });
       }
     };
@@ -201,10 +197,20 @@ export const useAuthStore = defineStore(
         clearPersistedState();
       }
 
+      // CHANGED: wipe every tagged cache so the next login always gets
+      // fresh data. One call covers all stores.
+      globalCacheRegistry.invalidateTag("workspaces");
+      globalCacheRegistry.invalidateTag("projects");
+      globalCacheRegistry.invalidateTag("pipelines");
+      globalCacheRegistry.invalidateTag("pipeline-stages");
+      globalCacheRegistry.invalidateTag("tasks");
+      globalCacheRegistry.invalidateTag("media");
+
       clearCookie("XSRF-TOKEN");
       clearCookie("laravel_session");
     };
 
+    // ── return — IDENTICAL to original ───────────────────────────────────────
     return {
       user,
       users,
@@ -227,7 +233,7 @@ export const useAuthStore = defineStore(
   {
     persist: {
       storage: localStorage,
-      pick: ["user","isLoggedIn"],
+      pick: ["user", "isLoggedIn"],
     },
   },
 );

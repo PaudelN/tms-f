@@ -421,7 +421,6 @@
   }
 
   onMounted(async () => {
-    await projectStore.fetchStatuses().catch(() => {});
     const rawParam = route.params.workspaceId;
     const routeWsId = rawParam
       ? Number(Array.isArray(rawParam) ? rawParam[0] : rawParam)

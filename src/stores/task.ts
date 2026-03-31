@@ -1,4 +1,9 @@
 import axios from "@/lib/axios";
+import {
+  createRequestCache,
+  globalCacheRegistry,
+  withCacheInvalidation,
+} from "@/lib/useRequestCache";
 import type {
   UniversalApiResponse,
   UniversalFetchParams,
@@ -6,8 +11,6 @@ import type {
 import type { AxiosError } from "axios";
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
-
-// ── Entities ───────────────────────────────────────────────────────────────────
 
 export interface TaskPriorityObject {
   value: string;
@@ -70,8 +73,6 @@ export interface TaskFormData {
   extra?: Record<string, unknown>;
 }
 
-// ── Store ──────────────────────────────────────────────────────────────────────
-
 export const useTaskStore = defineStore("task", () => {
   const tasks = ref<Task[]>([]);
   const currentTask = ref<Task | null>(null);
@@ -86,14 +87,12 @@ export const useTaskStore = defineStore("task", () => {
   });
   const priorities = ref<TaskPriorityEnum[]>([]);
 
-  // ── Computed aliases ────────────────────────────────────────────────────────
   const activeTask = computed(() => currentTask.value);
   const isLoading = computed(() => loading.value);
   const isDetailLoading = computed(() => detailLoading.value);
   const hasError = computed(() => !!error.value);
   const errorMessage = computed(() => error.value ?? "");
 
-  // ── Helpers ─────────────────────────────────────────────────────────────────
   function buildFilterParams(filters?: Record<string, any> | null) {
     return Object.fromEntries(
       Object.entries(filters ?? {}).filter(([, v]) => {
@@ -109,37 +108,94 @@ export const useTaskStore = defineStore("task", () => {
     return e.response?.data?.message ?? fallback;
   }
 
-  // ══════════════════════════════════════════════════════════════════════════
-  // READ
-  // ══════════════════════════════════════════════════════════════════════════
-
-  /**
-   * GET /pipelines/{pipelineId}/tasks
-   * Serves UiTable, UiList, and UiKanban (via kanban_stage param).
-   */
-  async function fetchTasks(
-    params: UniversalFetchParams & { pipelineId: number },
-  ): Promise<UniversalApiResponse<Task>> {
-    const { data } = await axios.get<UniversalApiResponse<Task>>(
-      `/pipelines/${params.pipelineId}/tasks`,
-      {
-        params: {
-          page: params.page,
-          per_page: params.perPage,
-          search: params.search || undefined,
-          sort_by: params.sortBy || undefined,
-          sort_order: params.sortOrder || undefined,
-          kanban_stage: params.kanbanStage || undefined,
-          ...buildFilterParams(params.filters),
+  // ── fetchTasks ────────────────────────────────────────────────────────────
+  // CHANGED: wrapped with createRequestCache. Same name, same signature.
+  const fetchTasks = createRequestCache(
+    async (
+      params: UniversalFetchParams & { pipelineId: number },
+    ): Promise<UniversalApiResponse<Task>> => {
+      const { data } = await axios.get<UniversalApiResponse<Task>>(
+        `/pipelines/${params.pipelineId}/tasks`,
+        {
+          params: {
+            page: params.page,
+            per_page: params.perPage,
+            search: params.search || undefined,
+            sort_by: params.sortBy || undefined,
+            sort_order: params.sortOrder || undefined,
+            kanban_stage: params.kanbanStage || undefined,
+            ...buildFilterParams(params.filters),
+          },
         },
-      },
-    );
-    return data;
-  }
+      );
+      return data;
+    },
+    {
+      ttlMs: 15_000, // tasks change frequently
+      swrMs: 10_000,
+      maxRetries: 2,
+      tags: ["tasks"],
+    },
+  );
 
-  /**
-   * GET /tasks/{id}  — shallow
-   */
+  // ── fetchMyTasks ──────────────────────────────────────────────────────────
+  // CHANGED: wrapped with createRequestCache. Same name, same signature.
+  const fetchMyTasks = createRequestCache(
+    async (
+      params?: UniversalFetchParams,
+    ): Promise<UniversalApiResponse<Task>> => {
+      const { data } = await axios.get<UniversalApiResponse<Task>>(
+        "/tasks/my",
+        {
+          params: {
+            page: params?.page ?? 1,
+            per_page: params?.perPage ?? 25,
+            search: params?.search || undefined,
+            sort_by: params?.sortBy || undefined,
+            sort_order: params?.sortOrder || undefined,
+            ...buildFilterParams(params?.filters),
+          },
+        },
+      );
+      return data;
+    },
+    {
+      ttlMs: 15_000,
+      swrMs: 10_000,
+      maxRetries: 2,
+      tags: ["tasks"],
+    },
+  );
+
+  // ── fetchAllTasks ─────────────────────────────────────────────────────────
+  // CHANGED: wrapped with createRequestCache. Same name, same signature.
+  const fetchAllTasks = createRequestCache(
+    async (
+      params?: UniversalFetchParams,
+    ): Promise<UniversalApiResponse<Task>> => {
+      const { data } = await axios.get<UniversalApiResponse<Task>>(
+        "/tasks/all",
+        {
+          params: {
+            page: params?.page ?? 1,
+            per_page: params?.perPage ?? 25,
+            search: params?.search || undefined,
+            sort_by: params?.sortBy || undefined,
+            sort_order: params?.sortOrder || undefined,
+            ...buildFilterParams(params?.filters),
+          },
+        },
+      );
+      return data;
+    },
+    {
+      ttlMs: 15_000,
+      swrMs: 10_000,
+      maxRetries: 2,
+      tags: ["tasks"],
+    },
+  );
+
   async function fetchTask(id: number): Promise<Task> {
     detailLoading.value = true;
     error.value = null;
@@ -155,87 +211,76 @@ export const useTaskStore = defineStore("task", () => {
     }
   }
 
-  // ══════════════════════════════════════════════════════════════════════════
-  // WRITE
-  // ══════════════════════════════════════════════════════════════════════════
+  // ── createTask ────────────────────────────────────────────────────────────
+  // CHANGED: wrapped with withCacheInvalidation. Same name, same signature.
+  const createTask = withCacheInvalidation(
+    async (pipelineId: number, payload: TaskFormData): Promise<Task> => {
+      loading.value = true;
+      error.value = null;
+      try {
+        const { data } = await axios.post<{ data: Task }>(
+          `/pipelines/${pipelineId}/tasks`,
+          payload,
+        );
+        tasks.value.unshift(data.data);
+        meta.value.total += 1;
+        return data.data;
+      } catch (err) {
+        error.value = extractMessage(err, "Failed to create task");
+        throw err;
+      } finally {
+        loading.value = false;
+      }
+    },
+    [fetchTasks, fetchMyTasks, fetchAllTasks],
+  );
 
-  /**
-   * POST /pipelines/{pipelineId}/tasks  — nested
-   */
-  async function createTask(
-    pipelineId: number,
-    payload: TaskFormData,
-  ): Promise<Task> {
-    loading.value = true;
-    error.value = null;
-    try {
-      const { data } = await axios.post<{ data: Task }>(
-        `/pipelines/${pipelineId}/tasks`,
-        payload,
-      );
-      tasks.value.unshift(data.data);
-      meta.value.total += 1;
-      return data.data;
-    } catch (err) {
-      error.value = extractMessage(err, "Failed to create task");
-      throw err;
-    } finally {
-      loading.value = false;
-    }
-  }
+  // ── updateTask ────────────────────────────────────────────────────────────
+  // CHANGED: wrapped with withCacheInvalidation. Same name, same signature.
+  const updateTask = withCacheInvalidation(
+    async (id: number, payload: Partial<TaskFormData>): Promise<Task> => {
+      loading.value = true;
+      error.value = null;
+      try {
+        const { data } = await axios.post<{ data: Task }>(
+          `/tasks/${id}/update`,
+          payload,
+        );
+        const idx = tasks.value.findIndex((t) => t.id === id);
+        if (idx !== -1) tasks.value[idx] = data.data;
+        if (currentTask.value?.id === id) currentTask.value = data.data;
+        return data.data;
+      } catch (err) {
+        error.value = extractMessage(err, "Failed to update task");
+        throw err;
+      } finally {
+        loading.value = false;
+      }
+    },
+    [fetchTasks, fetchMyTasks, fetchAllTasks],
+  );
 
-  /**
-   * POST /tasks/{id}/update  — shallow POST to avoid CORS preflight
-   */
-  async function updateTask(
-    id: number,
-    payload: Partial<TaskFormData>,
-  ): Promise<Task> {
-    loading.value = true;
-    error.value = null;
-    try {
-      const { data } = await axios.post<{ data: Task }>(
-        `/tasks/${id}/update`,
-        payload,
-      );
-      const idx = tasks.value.findIndex((t) => t.id === id);
-      if (idx !== -1) tasks.value[idx] = data.data;
-      if (currentTask.value?.id === id) currentTask.value = data.data;
-      return data.data;
-    } catch (err) {
-      error.value = extractMessage(err, "Failed to update task");
-      throw err;
-    } finally {
-      loading.value = false;
-    }
-  }
+  // ── deleteTask ────────────────────────────────────────────────────────────
+  // CHANGED: wrapped with withCacheInvalidation. Same name, same signature.
+  const deleteTask = withCacheInvalidation(
+    async (id: number): Promise<void> => {
+      loading.value = true;
+      error.value = null;
+      try {
+        await axios.delete(`/tasks/${id}`);
+        tasks.value = tasks.value.filter((t) => t.id !== id);
+        meta.value.total = Math.max(0, meta.value.total - 1);
+        if (currentTask.value?.id === id) currentTask.value = null;
+      } catch (err) {
+        error.value = extractMessage(err, "Failed to delete task");
+        throw err;
+      } finally {
+        loading.value = false;
+      }
+    },
+    [fetchTasks, fetchMyTasks, fetchAllTasks],
+  );
 
-  /**
-   * DELETE /tasks/{id}  — shallow
-   */
-  async function deleteTask(id: number): Promise<void> {
-    loading.value = true;
-    error.value = null;
-    try {
-      await axios.delete(`/tasks/${id}`);
-      tasks.value = tasks.value.filter((t) => t.id !== id);
-      meta.value.total = Math.max(0, meta.value.total - 1);
-      if (currentTask.value?.id === id) currentTask.value = null;
-    } catch (err) {
-      error.value = extractMessage(err, "Failed to delete task");
-      throw err;
-    } finally {
-      loading.value = false;
-    }
-  }
-
-  // ══════════════════════════════════════════════════════════════════════════
-  // ENUMS
-  // ══════════════════════════════════════════════════════════════════════════
-
-  /**
-   * GET /enums/task-priorities  — cached in-memory after first call
-   */
   async function fetchPriorities(): Promise<TaskPriorityEnum[]> {
     if (priorities.value.length > 0) return priorities.value;
     try {
@@ -250,39 +295,6 @@ export const useTaskStore = defineStore("task", () => {
     }
   }
 
-  async function fetchMyTasks(
-    params?: UniversalFetchParams,
-  ): Promise<UniversalApiResponse<Task>> {
-    const { data } = await axios.get<UniversalApiResponse<Task>>("/tasks/my", {
-      params: {
-        page: params?.page ?? 1,
-        per_page: params?.perPage ?? 25,
-        search: params?.search || undefined,
-        sort_by: params?.sortBy || undefined,
-        sort_order: params?.sortOrder || undefined,
-        ...buildFilterParams(params?.filters),
-      },
-    });
-    return data;
-  }
-
-  async function fetchAllTasks(
-    params?: UniversalFetchParams,
-  ): Promise<UniversalApiResponse<Task>> {
-    const { data } = await axios.get<UniversalApiResponse<Task>>("/tasks/all", {
-      params: {
-        page: params?.page ?? 1,
-        per_page: params?.perPage ?? 25,
-        search: params?.search || undefined,
-        sort_by: params?.sortBy || undefined,
-        sort_order: params?.sortOrder || undefined,
-        ...buildFilterParams(params?.filters),
-      },
-    });
-    return data;
-  }
-
-  // ── Utilities ───────────────────────────────────────────────────────────────
   function clearError(): void {
     error.value = null;
   }
@@ -295,8 +307,10 @@ export const useTaskStore = defineStore("task", () => {
     error.value = null;
     priorities.value = [];
     meta.value = { current_page: 1, per_page: 25, total: 0, last_page: 0 };
+    globalCacheRegistry.invalidateTag("tasks");
   }
 
+  // ── return — IDENTICAL to original ───────────────────────────────────────
   return {
     tasks,
     currentTask,

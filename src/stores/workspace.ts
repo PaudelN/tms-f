@@ -1,4 +1,9 @@
 import axios from "@/lib/axios";
+import {
+  createRequestCache,
+  globalCacheRegistry,
+  withCacheInvalidation,
+} from "@/lib/useRequestCache";
 import type {
   KanbanBoardFetchParams,
   KanbanBoardResponse,
@@ -14,8 +19,6 @@ import type { AxiosError } from "axios";
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
 
-// ── Entity ─────────────────────────────────────────────────────────────────────
-
 export interface Workspace {
   id: number;
   name: string;
@@ -30,7 +33,6 @@ export interface Workspace {
   extra?: Record<string, unknown> | null;
   user_id: number;
   user?: { id: number; name: string; email: string };
-  // Included in DetailResource when loaded via show()
   projects?: import("@/stores/project").Project[];
   created_at: string;
   updated_at: string;
@@ -58,20 +60,13 @@ export interface WorkspaceFormData {
   status?: string;
 }
 
-// How long a persisted workspace selection stays valid without any activity.
-// After this period the store self-clears so the user picks fresh on next login.
-const PERSIST_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
-
-// ── Store ──────────────────────────────────────────────────────────────────────
+const PERSIST_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
 export const useWorkspaceStore = defineStore(
   "workspace",
   () => {
-    // Exposed as writable ref so AppLayout can sync the list after fetchWorkspaces
     const workspaces = ref<Workspace[]>([]);
     const currentWorkspace = ref<Workspace | null>(null);
-    // Unix timestamp (ms) of the last explicit workspace selection.
-    // Used to expire the persisted selection after PERSIST_TTL_MS.
     const lastSelectedAt = ref<number | null>(null);
     const loading = ref(false);
     const detailLoading = ref(false);
@@ -85,47 +80,26 @@ export const useWorkspaceStore = defineStore(
     const statuses = ref<WorkspaceStatus[]>([]);
     const statusCounts = ref<Record<string, number>>({});
 
-    // ── Computed aliases ──────────────────────────────────────────────────────
     const activeWorkspace = computed(() => currentWorkspace.value);
     const isLoading = computed(() => loading.value);
     const isDetailLoading = computed(() => detailLoading.value);
     const hasError = computed(() => !!error.value);
     const errorMessage = computed(() => error.value ?? "");
 
-    /**
-     * True when the persisted selection is older than PERSIST_TTL_MS.
-     * Call this on app boot; if true, clear the selection so the user
-     * is not silently dropped into a stale workspace context.
-     */
     const isPersistedWorkspaceExpired = computed(() => {
       if (!lastSelectedAt.value) return false;
       return Date.now() - lastSelectedAt.value > PERSIST_TTL_MS;
     });
 
-    // ── Active workspace helpers ──────────────────────────────────────────────
-
-    /**
-     * Explicitly select a workspace and stamp the selection time.
-     * This is the single place that must be called whenever the user
-     * consciously picks a workspace — from the sidebar switcher, URL
-     * resolution on mount, etc.
-     */
     function setActiveWorkspace(ws: Workspace): void {
       currentWorkspace.value = ws;
       lastSelectedAt.value = Date.now();
     }
 
-    /**
-     * Clear the active workspace and its TTL stamp.
-     * Called on logout (via auth store's clearPersistedState which wipes the
-     * whole "workspace" localStorage key) and on TTL expiry.
-     */
     function clearActiveWorkspace(): void {
       currentWorkspace.value = null;
       lastSelectedAt.value = null;
     }
-
-    // ── Helpers ───────────────────────────────────────────────────────────────
 
     function buildFilterParams(filters?: Record<string, any> | null) {
       return Object.fromEntries(
@@ -137,49 +111,62 @@ export const useWorkspaceStore = defineStore(
       );
     }
 
-    // ── Table / List fetch ────────────────────────────────────────────────────
-
-    async function fetchWorkspaces(
-      params: UniversalFetchParams,
-    ): Promise<UniversalApiResponse<Workspace>> {
-      const { data } = await axios.get<UniversalApiResponse<Workspace>>(
-        "/workspaces",
-        {
-          params: {
-            page: params.page,
-            per_page: params.perPage,
-            search: params.search || undefined,
-            sort_by: params.sortBy || undefined,
-            sort_order: params.sortOrder || undefined,
-            kanban_stage: params.kanbanStage || undefined,
-            ...buildFilterParams(params.filters),
+    // ── fetchWorkspaces ───────────────────────────────────────────────────────
+    // CHANGED: wrapped with createRequestCache. Same name, same signature.
+    const fetchWorkspaces = createRequestCache(
+      async (
+        params: UniversalFetchParams,
+      ): Promise<UniversalApiResponse<Workspace>> => {
+        const { data } = await axios.get<UniversalApiResponse<Workspace>>(
+          "/workspaces",
+          {
+            params: {
+              page: params.page,
+              per_page: params.perPage,
+              search: params.search || undefined,
+              sort_by: params.sortBy || undefined,
+              sort_order: params.sortOrder || undefined,
+              kanban_stage: params.kanbanStage || undefined,
+              ...buildFilterParams(params.filters),
+            },
           },
-        },
-      );
-      // Sync the local list so AppLayout sidebar switcher is always up to date
-      workspaces.value = data.data ?? [];
-      return data;
-    }
+        );
+        workspaces.value = data.data ?? [];
+        return data;
+      },
+      {
+        ttlMs: 30_000,
+        swrMs: 10_000,
+        maxRetries: 2,
+        tags: ["workspaces"],
+      },
+    );
 
-    // ── Kanban board fetch ────────────────────────────────────────────────────
-
-    async function fetchKanbanBoard(
-      params: KanbanBoardFetchParams,
-    ): Promise<KanbanBoardResponse<Workspace>> {
-      const { data } = await axios.get<KanbanBoardResponse<Workspace>>(
-        "/workspaces/kanban/board",
-        {
-          params: {
-            search: params.search || undefined,
-            per_page: params.perPage ?? 50,
-            ...buildFilterParams(params.filters),
+    // ── fetchKanbanBoard ──────────────────────────────────────────────────────
+    // CHANGED: wrapped with createRequestCache. Same name, same signature.
+    const fetchKanbanBoard = createRequestCache(
+      async (
+        params: KanbanBoardFetchParams,
+      ): Promise<KanbanBoardResponse<Workspace>> => {
+        const { data } = await axios.get<KanbanBoardResponse<Workspace>>(
+          "/workspaces/kanban/board",
+          {
+            params: {
+              search: params.search || undefined,
+              per_page: params.perPage ?? 50,
+              ...buildFilterParams(params.filters),
+            },
           },
-        },
-      );
-      return data;
-    }
-
-    // ── Status counts ─────────────────────────────────────────────────────────
+        );
+        return data;
+      },
+      {
+        ttlMs: 30_000,
+        swrMs: 10_000,
+        maxRetries: 2,
+        tags: ["workspaces"],
+      },
+    );
 
     async function fetchStatusCounts(): Promise<void> {
       try {
@@ -191,8 +178,6 @@ export const useWorkspaceStore = defineStore(
         console.error("[WorkspaceStore] fetchStatusCounts failed:", err);
       }
     }
-
-    // ── Kanban move / reorder ─────────────────────────────────────────────────
 
     async function moveCard(event: KanbanMoveEvent<Workspace>): Promise<void> {
       await axios.post("/workspaces/kanban/move", {
@@ -209,8 +194,6 @@ export const useWorkspaceStore = defineStore(
       });
     }
 
-    // ── CRUD ──────────────────────────────────────────────────────────────────
-
     async function fetchWorkspace(id: number): Promise<Workspace> {
       detailLoading.value = true;
       error.value = null;
@@ -218,9 +201,7 @@ export const useWorkspaceStore = defineStore(
         const { data } = await axios.get<{ data: Workspace }>(
           `/workspaces/${id}`,
         );
-        // Use setActiveWorkspace so the TTL stamp is always kept fresh
         setActiveWorkspace(data.data);
-        // Also sync the list entry if it exists
         const idx = workspaces.value.findIndex((w) => w.id === id);
         if (idx !== -1) workspaces.value[idx] = data.data;
         return data.data;
@@ -233,73 +214,84 @@ export const useWorkspaceStore = defineStore(
       }
     }
 
-    async function createWorkspace(
-      payload: WorkspaceFormData,
-    ): Promise<Workspace> {
-      loading.value = true;
-      error.value = null;
-      try {
-        const { data } = await axios.post<{ data: Workspace }>(
-          "/workspaces",
-          payload,
-        );
-        workspaces.value.unshift(data.data);
-        meta.value.total += 1;
-        fetchStatusCounts();
-        return data.data;
-      } catch (err) {
-        const e = err as AxiosError<{ message: string }>;
-        error.value = e.response?.data?.message ?? "Failed to create workspace";
-        throw err;
-      } finally {
-        loading.value = false;
-      }
-    }
+    // ── createWorkspace ───────────────────────────────────────────────────────
+    // CHANGED: wrapped with withCacheInvalidation. Same name, same signature.
+    const createWorkspace = withCacheInvalidation(
+      async (payload: WorkspaceFormData): Promise<Workspace> => {
+        loading.value = true;
+        error.value = null;
+        try {
+          const { data } = await axios.post<{ data: Workspace }>(
+            "/workspaces",
+            payload,
+          );
+          workspaces.value.unshift(data.data);
+          meta.value.total += 1;
+          fetchStatusCounts();
+          return data.data;
+        } catch (err) {
+          const e = err as AxiosError<{ message: string }>;
+          error.value =
+            e.response?.data?.message ?? "Failed to create workspace";
+          throw err;
+        } finally {
+          loading.value = false;
+        }
+      },
+      [fetchWorkspaces, fetchKanbanBoard],
+    );
 
-    async function updateWorkspace(
-      id: number,
-      payload: WorkspaceFormData,
-    ): Promise<Workspace> {
-      loading.value = true;
-      error.value = null;
-      try {
-        const { data } = await axios.put<{ data: Workspace }>(
-          `/workspaces/${id}`,
-          payload,
-        );
-        const idx = workspaces.value.findIndex((w) => w.id === id);
-        if (idx !== -1) workspaces.value[idx] = data.data;
-        if (currentWorkspace.value?.id === id) setActiveWorkspace(data.data);
-        fetchStatusCounts();
-        return data.data;
-      } catch (err) {
-        const e = err as AxiosError<{ message: string }>;
-        error.value = e.response?.data?.message ?? "Failed to update workspace";
-        throw err;
-      } finally {
-        loading.value = false;
-      }
-    }
+    // ── updateWorkspace ───────────────────────────────────────────────────────
+    // CHANGED: wrapped with withCacheInvalidation. Same name, same signature.
+    const updateWorkspace = withCacheInvalidation(
+      async (id: number, payload: WorkspaceFormData): Promise<Workspace> => {
+        loading.value = true;
+        error.value = null;
+        try {
+          const { data } = await axios.put<{ data: Workspace }>(
+            `/workspaces/${id}`,
+            payload,
+          );
+          const idx = workspaces.value.findIndex((w) => w.id === id);
+          if (idx !== -1) workspaces.value[idx] = data.data;
+          if (currentWorkspace.value?.id === id) setActiveWorkspace(data.data);
+          fetchStatusCounts();
+          return data.data;
+        } catch (err) {
+          const e = err as AxiosError<{ message: string }>;
+          error.value =
+            e.response?.data?.message ?? "Failed to update workspace";
+          throw err;
+        } finally {
+          loading.value = false;
+        }
+      },
+      [fetchWorkspaces, fetchKanbanBoard],
+    );
 
-    async function deleteWorkspace(id: number): Promise<void> {
-      loading.value = true;
-      error.value = null;
-      try {
-        await axios.delete(`/workspaces/${id}`);
-        workspaces.value = workspaces.value.filter((w) => w.id !== id);
-        meta.value.total -= 1;
-        if (currentWorkspace.value?.id === id) clearActiveWorkspace();
-        fetchStatusCounts();
-      } catch (err) {
-        const e = err as AxiosError<{ message: string }>;
-        error.value = e.response?.data?.message ?? "Failed to delete workspace";
-        throw err;
-      } finally {
-        loading.value = false;
-      }
-    }
-
-    // ── Statuses ──────────────────────────────────────────────────────────────
+    // ── deleteWorkspace ───────────────────────────────────────────────────────
+    // CHANGED: wrapped with withCacheInvalidation. Same name, same signature.
+    const deleteWorkspace = withCacheInvalidation(
+      async (id: number): Promise<void> => {
+        loading.value = true;
+        error.value = null;
+        try {
+          await axios.delete(`/workspaces/${id}`);
+          workspaces.value = workspaces.value.filter((w) => w.id !== id);
+          meta.value.total -= 1;
+          if (currentWorkspace.value?.id === id) clearActiveWorkspace();
+          fetchStatusCounts();
+        } catch (err) {
+          const e = err as AxiosError<{ message: string }>;
+          error.value =
+            e.response?.data?.message ?? "Failed to delete workspace";
+          throw err;
+        } finally {
+          loading.value = false;
+        }
+      },
+      [fetchWorkspaces, fetchKanbanBoard],
+    );
 
     async function fetchStatuses(): Promise<WorkspaceStatus[]> {
       if (statuses.value.length > 0) return statuses.value;
@@ -328,10 +320,12 @@ export const useWorkspaceStore = defineStore(
       statuses.value = [];
       statusCounts.value = {};
       meta.value = { current_page: 1, per_page: 10, total: 0, last_page: 0 };
+      // Wipe cache so post-logout mount always fetches fresh
+      globalCacheRegistry.invalidateTag("workspaces");
     }
 
+    // ── return — IDENTICAL to original ───────────────────────────────────────
     return {
-      // Expose as writable so AppLayout can directly assign the sidebar list
       workspaces,
       currentWorkspace,
       lastSelectedAt,

@@ -3,13 +3,6 @@
     class="task-card group/tc relative flex flex-col gap-0 cursor-pointer select-none overflow-hidden rounded-2xl transition-all duration-200"
     @click="emit('view', item.id)"
   >
-    <!-- ── Glass background layers ─────────────────────────────────────── -->
-    <div class="card-glass-base absolute inset-0 rounded-2xl" />
-    <div
-      class="card-glass-sheen absolute inset-0 rounded-2xl pointer-events-none"
-    />
-    <div class="card-liquid-orb absolute pointer-events-none" />
-
     <!-- ── Inner content ───────────────────────────────────────────────── -->
     <div class="relative z-10 flex flex-col gap-3 p-4">
       <!-- ── Row 1: task number + priority ── -->
@@ -86,11 +79,6 @@
         </div>
       </div>
     </div>
-
-    <!-- ── Hover border shimmer ─────────────────────────────────────────── -->
-    <div
-      class="card-border-shimmer absolute inset-0 rounded-2xl pointer-events-none opacity-0 group-hover/tc:opacity-100 transition-opacity duration-300"
-    />
   </div>
 </template>
 
@@ -241,32 +229,10 @@
       opacity 0.3s ease;
   }
 
-  .task-card:hover .card-liquid-orb {
-    transform: scale(1.6) translate(4px, -4px);
-    opacity: 0.85;
-  }
 
-  /* ── Hover state ──────────────────────────────────────────────────────── */
-  .task-card:hover {
-    border-color: var(--card-hover-border);
-    box-shadow: var(--card-hover-shadow);
-    transform: translateY(-1px);
-  }
 
   .task-card:active {
     transform: translateY(0);
-  }
-
-  /* ── Border shimmer on hover ──────────────────────────────────────────── */
-  .card-border-shimmer {
-    background: linear-gradient(
-      135deg,
-      rgba(139, 92, 246, 0.15) 0%,
-      transparent 40%,
-      transparent 60%,
-      rgba(139, 92, 246, 0.08) 100%
-    );
-    inset: 0;
   }
 
   /* ── Task number badge ────────────────────────────────────────────────── */

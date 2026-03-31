@@ -1213,7 +1213,7 @@
       router.push({ name: "analytics" });
       return;
     }
-    if(entity === "media") {
+    if (entity === "media") {
       taskSidebarOpen.value = false;
       router.push({ name: "media-index" });
       return;
@@ -1307,7 +1307,7 @@
       const res = await projectStore.fetchProjects({
         workspaceId: workspaceStore.activeWorkspace.id,
         page: 1,
-        perPage: 100,
+        perPage: 10,
       });
       projectStore.projects = res.data ?? [];
     } catch {
@@ -1328,7 +1328,7 @@
       const res = await pipelineStore.fetchPipelines({
         projectId,
         page: 1,
-        perPage: 50,
+        perPage: 10,
         search: "",
         sortBy: "name",
         sortOrder: "asc",
@@ -1430,13 +1430,12 @@
   onMounted(async () => {
     workspacesLoading.value = true;
     try {
-      await workspaceStore.fetchWorkspaces({ page: 1, perPage: 100 });
+      await workspaceStore.fetchWorkspaces({ page: 1, perPage: 10 });
     } catch {
       /**/
     } finally {
       workspacesLoading.value = false;
     }
-    await projectStore.fetchStatuses().catch(() => {});
     await loadProjects();
   });
 
