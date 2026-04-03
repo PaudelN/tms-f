@@ -63,6 +63,15 @@
             {{ authStore.loginErrors.general }}
           </p>
         </div>
+        <div
+          v-if="socialError"
+          class="mb-6 p-4 bg-red-500/10 border border-red-500/50 rounded-lg flex items-center gap-3"
+        >
+          <AlertCircle class="w-5 h-5 text-red-600 dark:text-red-400" />
+          <p class="text-red-600 dark:text-red-400 text-sm">
+            {{ socialError }}
+          </p>
+        </div>
 
         <form @submit.prevent="handleLogin" class="space-y-5">
           <!-- Email Field -->
@@ -157,7 +166,9 @@
           </div>
 
           <!-- Remember Me & Forgot Password -->
-          <div class="flex items-center justify-between animate-fade-in [animation-delay:0.3s]">
+          <div
+            class="flex items-center justify-between animate-fade-in [animation-delay:0.3s]"
+          >
             <div class="flex items-center gap-2">
               <Checkbox
                 type="checkbox"
@@ -207,11 +218,14 @@
         </div>
 
         <!-- Social Login Buttons -->
-        <div class="grid grid-cols-2 gap-3 animate-fade-in [animation-delay:0.6s]">
+        <div
+          class="grid grid-cols-2 gap-3 animate-fade-in [animation-delay:0.6s]"
+        >
           <Button
             type="button"
             variant="outline"
             class="w-full py-2.5 flex items-center justify-center gap-2 border-border hover:bg-accent transition-colors"
+            @click="handleSocialLogin('google')"
           >
             <Chrome class="w-5 h-5" />
             <span class="text-sm font-medium">Google</span>
@@ -220,6 +234,7 @@
             type="button"
             variant="outline"
             class="w-full py-2.5 flex items-center justify-center gap-2 border-border hover:bg-accent transition-colors"
+            @click="handleSocialLogin('github')"
           >
             <Github class="w-5 h-5" />
             <span class="text-sm font-medium">GitHub</span>
@@ -238,7 +253,9 @@
           </p>
         </div>
 
-        <div class="mt-6 flex items-center justify-center gap-2 text-muted-foreground text-xs animate-fade-in [animation-delay:0.8s]">
+        <div
+          class="mt-6 flex items-center justify-center gap-2 text-muted-foreground text-xs animate-fade-in [animation-delay:0.8s]"
+        >
           <ShieldCheck class="w-3.5 h-3.5" />
           <span>Secured with 256-bit encryption</span>
         </div>
@@ -271,11 +288,14 @@
     Sparkles,
   } from "lucide-vue-next";
   import { onMounted, ref } from "vue";
-  import { useRouter } from "vue-router";
+  import { useRoute, useRouter } from "vue-router";
 
   const authStore = useAuthStore();
   const showPassword = ref(false);
   const router = useRouter();
+  const route = useRoute();
+  const socialError = ref<string | null>(null);
+
   const formData = ref<LoginForm>({
     email: "",
     password: "",
@@ -284,12 +304,25 @@
 
   const handleLogin = async () => {
     authStore.clearErrors();
+    authStore.cleanAuthState();
     await authStore.login(formData.value);
+  };
+
+  // In Login.vue <script setup>
+
+  const handleSocialLogin = (provider: "google" | "github") => {
+    // Full page navigation — must leave the SPA to hit the Laravel redirect route.
+    // This is intentional: OAuth requires a real browser redirect, not fetch/axios.
+    window.location.href = `${import.meta.env.VITE_SANCTUM_URL}/auth/${provider}/redirect`;
   };
 
   onMounted(() => {
     if (authStore.isLoggedIn) {
       router.push({ name: "dashboard" });
+    }
+    if (route.query.error === "social_auth_failed") {
+      socialError.value =
+        "Social login failed. Please try again or use email/password.";
     }
   });
 </script>

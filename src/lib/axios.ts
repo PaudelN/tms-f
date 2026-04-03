@@ -13,7 +13,9 @@ const getApiUrl = (): string => {
 };
 
 const getSanctumUrl = (apiUrl: string): string => {
-  const explicitSanctumUrl = (import.meta as any).env?.VITE_SANCTUM_URL as string | undefined;
+  const explicitSanctumUrl = (import.meta as any).env?.VITE_SANCTUM_URL as
+    | string
+    | undefined;
 
   const toSanctumOrigin = (url: string): string => {
     try {
@@ -81,7 +83,10 @@ const fetchCsrfToken = async (): Promise<void> => {
 
 api.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
-    if (!config.url?.includes("sanctum/csrf-cookie") && shouldFetchCsrfToken(config)) {
+    if (
+      !config.url?.includes("sanctum/csrf-cookie") &&
+      shouldFetchCsrfToken(config)
+    ) {
       try {
         await fetchCsrfToken();
       } catch (error) {
@@ -102,12 +107,16 @@ api.interceptors.response.use(
   },
   async (error: AxiosError<{ message?: string }>) => {
     const auth = useAuthStore();
-    const config = error.config as (InternalAxiosRequestConfig & {
-      metadata?: { suppressErrorToast?: boolean };
-    }) | undefined;
+    const config = error.config as
+      | (InternalAxiosRequestConfig & {
+          metadata?: { suppressErrorToast?: boolean };
+        })
+      | undefined;
     const suppressErrorToast = !!config?.metadata?.suppressErrorToast;
     const status = error.response?.status;
-    const message = error.response?.data?.message ?? "Something went wrong. Please try again.";
+    const message =
+      error.response?.data?.message ??
+      "Something went wrong. Please try again.";
 
     if (!suppressErrorToast && (!status || status >= 500)) {
       notify.error("Request failed", message);
@@ -123,7 +132,9 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       csrfTokenFetched = false;
       auth.cleanAuthState();
-      router.push({ name: "login" });
+      if (!window.location.pathname.includes("/auth/social/callback")) {
+        router.push({ name: "login" });
+      }
       console.error("Unauthenticated. Redirecting to login...");
     }
 

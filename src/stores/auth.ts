@@ -151,11 +151,15 @@ export const useAuthStore = defineStore(
     const getUser = async () => {
       try {
         const response = await api.get("/user");
+        console.log(response);
+        
         user.value = response.data;
         isLoggedIn.value = true;
       } catch (error: any) {
         console.error("Failed to fetch user:", error);
         user.value = null;
+        isLoggedIn.value = false;
+        throw error; // ← rethrow so callers can handle it
       }
     };
 

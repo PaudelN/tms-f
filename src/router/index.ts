@@ -20,6 +20,12 @@ const routes: RouteRecordRaw[] = [
     component: () => import("@/views/auth/Register.vue"),
     meta: { requiresGuest: true },
   },
+  {
+    path: "/auth/social/callback",
+    name: "social-callback",
+    component: () => import("@/views/auth/SocialCallback.vue"),
+    // Not requiresGuest — user may already be logged in when landing here
+  },
 
   // ── Protected routes ──────────────────────────────────────────
   {
