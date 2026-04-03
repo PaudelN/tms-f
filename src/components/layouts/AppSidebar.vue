@@ -1164,8 +1164,8 @@
       badgeMuted: false,
     },
     {
-      entity: "inbox",
-      label: "Inbox",
+      entity: "chat",
+      label: "Chat",
       icon: MessageCircle,
       badge: 2,
       badgeMuted: true,
@@ -1203,9 +1203,9 @@
       taskSidebarOpen.value = !taskSidebarOpen.value;
       return;
     }
-    if (entity === "inbox") {
+    if (entity === "chat") {
       taskSidebarOpen.value = false;
-      router.push({ name: "inbox" });
+      router.push({ name: "chat" });
       return;
     }
     if (entity === "analytics") {

@@ -223,6 +223,16 @@ const routes: RouteRecordRaw[] = [
         name: "media-detail",
         component: () => import("@/views/media/detail.vue"),
       },
+      {
+        path: "chat",
+        name: "chat",
+        component: () => import("@/views/chat/index.vue"),
+      },
+      {
+        path: "analytics",
+        name: "analytics",
+        component: () => import("@/views/analytics/index.vue"),
+      },
     ],
   },
 
