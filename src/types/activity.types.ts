@@ -37,10 +37,10 @@ export type ActivityCategory =
 export const ACTIVITY_CATEGORIES: { value: ActivityCategory; label: string }[] =
   [
     { value: "all", label: "All" },
-    { value: "lifecycle", label: "Lifecycle" },
-    { value: "assignment", label: "Assignment" },
-    { value: "priority", label: "Priority" },
-    { value: "status", label: "Status" },
+    // { value: "lifecycle", label: "Lifecycle" },
+    // { value: "assignment", label: "Assignment" },
+    // { value: "priority", label: "Priority" },
+    // { value: "status", label: "Status" },
   ];
 
 export const CATEGORY_COLORS: Record<string, string> = {
