@@ -5,6 +5,7 @@ import "vue-sonner/style.css";
 import App from "./App.vue";
 import "./assets/tailwind-shadcn.css";
 import router from "./router";
+import "@/lib/echo"; 
 
 const app = createApp(App);
 const pinia = createPinia();

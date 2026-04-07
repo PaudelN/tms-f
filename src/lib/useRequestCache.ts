@@ -11,6 +11,8 @@
 //  ✅ 7. Retry            — exponential back-off, configurable attempts
 // ─────────────────────────────────────────────────────────────────────────────
 
+import { ActivityCategory } from "@/types/activity.types";
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export interface RequestCacheOptions {
@@ -335,3 +337,13 @@ export function withCacheInvalidation<TArgs extends unknown[], TResult>(
     }
   };
 }
+
+export function buildActivityCacheKey(
+  entityType: string,
+  entityId: number,
+  category: ActivityCategory,
+  page: number,
+): string {
+  return `activity::${entityType}::${entityId}::${category}::${page}`;
+}
+ 

@@ -104,6 +104,10 @@
       </div>
     </template>
 
+    <template #activity>
+      <ActivityPanel v-if="project?.id" entity-type="projects" :entity-id="project.id" />
+    </template>
+
     <template #delete-body>
       <span>
         <strong class="font-semibold">{{ project?.name }}</strong> and all its
@@ -114,7 +118,8 @@
 </template>
 
 <script setup lang="ts">
-  import type {
+  import ActivityPanel from "@/components/activity/ActivityPanel.vue";
+import type {
     ActionButton,
     BreadcrumbItem,
     MetaField,

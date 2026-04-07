@@ -10,7 +10,6 @@
     :delete-open="deleteModalOpen"
     :delete-loading="deleteLoading"
     :delete-dialog="deleteDialog"
-    activity-coming-soon
     @update:delete-open="deleteModalOpen = $event"
     @confirm-delete="confirmDelete"
   >
@@ -22,6 +21,7 @@
         label="Cover"
         filter-type="image"
       />
+
       <!-- Description -->
       <div class="space-y-2.5">
         <div class="flex items-center gap-2">
@@ -58,7 +58,6 @@
           </h2>
         </div>
         <div class="grid grid-cols-2 gap-3">
-          <!-- Stage -->
           <div class="rounded-lg border border-border/40 bg-muted/10 px-4 py-3">
             <p
               class="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1"
@@ -70,7 +69,6 @@
                 class="h-2 w-2 rounded-full shrink-0"
                 :style="{ background: task.stage.color ?? '#94a3b8' }"
               />
-              <!-- display_label can be null — fall back to name -->
               <span class="text-[13px] font-medium">
                 {{ task.stage.display_label ?? task.stage.name }}
               </span>
@@ -78,22 +76,13 @@
             <span v-else class="text-[13px] text-muted-foreground">—</span>
           </div>
 
-          <!-- Pipeline -->
           <div class="rounded-lg border border-border/40 bg-muted/10 px-4 py-3">
             <p
               class="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1"
             >
               Pipeline
             </p>
-            <!--
-              pipeline relation may be null even when pipeline_id is present
-              (relation not eager-loaded, or pipeline was soft-deleted).
-              Show the name if loaded, a human-readable fallback if only the
-              ID is available, or a dash when neither exists.
-            -->
-            <span class="text-[13px] font-medium">
-              {{ pipelineLabel }}
-            </span>
+            <span class="text-[13px] font-medium">{{ pipelineLabel }}</span>
           </div>
         </div>
       </div>
@@ -114,6 +103,17 @@
       </div>
     </template>
 
+    <!--
+      #activity slot — placed inside UiDetail's lower panel ScrollArea.
+      UiDetail already renders:
+        - "Activity & Comments" header
+        - ScrollArea with px-6 py-5 padding
+      So ActivityPanel renders ONLY the filter + timeline list.
+    -->
+    <template #activity>
+      <ActivityPanel v-if="task?.id" entity-type="tasks" :entity-id="task.id" />
+    </template>
+
     <template #delete-body>
       <span>
         Task <strong class="font-semibold">{{ task?.task_number }}</strong>
@@ -128,12 +128,14 @@
   import { computed, onMounted, ref } from "vue";
   import { useRoute, useRouter } from "vue-router";
 
+  import { ActivityPanel } from "@/components/activity";
   import type {
     ActionButton,
     BreadcrumbItem,
     MetaField,
   } from "@/components/common/UiDetail.vue";
   import UiDetail from "@/components/common/UiDetail.vue";
+  import EntityMediaCover from "@/components/media/EntityMediaCover.vue";
   import { notify } from "@/helpers/toast";
   import {
     AlignLeft,
@@ -147,7 +149,6 @@
     Trash2,
     User,
   } from "lucide-vue-next";
-import EntityMediaCover from "@/components/media/EntityMediaCover.vue";
 
   const route = useRoute();
   const router = useRouter();
@@ -157,18 +158,12 @@ import EntityMediaCover from "@/components/media/EntityMediaCover.vue";
   const deleteLoading = ref(false);
   const task = computed(() => taskStore.activeTask);
 
-  // ─── Pipeline label ──────────────────────────────────────────────────────────
-  // Three tiers:
-  //   1. pipeline relation is loaded  → use its name
-  //   2. pipeline is null but pipeline_id exists → show "Pipeline #<id>"
-  //   3. neither exists               → "—"
   const pipelineLabel = computed<string>(() => {
     if (task.value?.pipeline?.name) return task.value.pipeline.name;
     if (task.value?.pipeline_id) return `Pipeline #${task.value.pipeline_id}`;
     return "—";
   });
 
-  // ─── Breadcrumbs ─────────────────────────────────────────────────────────────
   const breadcrumbs = computed<BreadcrumbItem[]>(() => [
     {
       label:
@@ -187,14 +182,12 @@ import EntityMediaCover from "@/components/media/EntityMediaCover.vue";
     { label: task.value?.task_number ?? "Task" },
   ]);
 
-  // ─── Priority badge ───────────────────────────────────────────────────────────
   const priorityBadge = computed(() => {
     const p = task.value?.priority;
     if (!p || typeof p !== "object" || !("badge" in p)) return undefined;
     return { label: p.label, dot: p.dot, class: p.badge };
   });
 
-  // ─── Actions ──────────────────────────────────────────────────────────────────
   const actions = computed<ActionButton[]>(() => [
     {
       id: "refresh",
@@ -214,7 +207,6 @@ import EntityMediaCover from "@/components/media/EntityMediaCover.vue";
     },
   ]);
 
-  // ─── Helpers ──────────────────────────────────────────────────────────────────
   function formatDate(d: string | null | undefined): string {
     if (!d) return "—";
     return new Date(d).toLocaleDateString("en-US", {
@@ -224,7 +216,6 @@ import EntityMediaCover from "@/components/media/EntityMediaCover.vue";
     });
   }
 
-  // ─── Meta fields ──────────────────────────────────────────────────────────────
   const metaFields = computed<MetaField[]>(() => [
     { label: "Task Number", value: task.value?.task_number ?? "—", icon: Hash },
     {
@@ -238,7 +229,6 @@ import EntityMediaCover from "@/components/media/EntityMediaCover.vue";
           }
         : undefined,
     },
-
     {
       label: "Due Date",
       value: task.value?.due_date
@@ -259,14 +249,12 @@ import EntityMediaCover from "@/components/media/EntityMediaCover.vue";
     },
   ]);
 
-  // ─── Delete dialog config ─────────────────────────────────────────────────────
   const deleteDialog = {
     title: "Delete Task",
     description: "This action cannot be undone.",
     confirmLabel: "Delete Task",
   };
 
-  // ─── Lifecycle ────────────────────────────────────────────────────────────────
   onMounted(async () => {
     const id = Number(route.params.id);
     if (!id) {
@@ -276,7 +264,6 @@ import EntityMediaCover from "@/components/media/EntityMediaCover.vue";
     await Promise.all([taskStore.fetchPriorities(), taskStore.fetchTask(id)]);
   });
 
-  // ─── Handlers ─────────────────────────────────────────────────────────────────
   function handleEdit() {
     router.push({ name: "task-edit", params: { id: task.value?.id } });
   }

@@ -192,7 +192,7 @@
   import { Button } from "@/components/ui/button";
   import { Input } from "@/components/ui/input";
   import { notify } from "@/helpers/toast";
-  import { humanSize, mediaDisplayName, useMediaStore } from "@/stores/media";
+  import {useMediaStore } from "@/stores/media";
   import {
     AlignLeft,
     CalendarDays,
@@ -233,7 +233,7 @@
   const media = computed(() => mediaStore.currentMedia);
 
   const displayName = computed(() =>
-    media.value ? mediaDisplayName(media.value) : "Media",
+    media.value ? media.value.name : "Media",
   );
 
   // ── Alt text editing ───────────────────────────────────────────────────────
@@ -255,9 +255,7 @@
     if (!mediaId.value || savingAlt.value) return;
     savingAlt.value = true;
     try {
-      await mediaStore.updateMedia(mediaId.value, {
-        alt: altDraft.value.trim() || null,
-      });
+      await mediaStore.updateMedia(mediaId.value, altDraft.value.trim());
       editingAlt.value = false;
       notify.success("Alt text saved");
     } catch {
