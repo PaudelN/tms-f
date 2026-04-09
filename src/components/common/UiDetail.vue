@@ -319,7 +319,7 @@
           <ResizableHandle with-handle />
 
           <!-- LOWER PANEL: activity -->
-          <ResizablePanel :default-size="35" :min-size="30" :max-size="45">
+          <ResizablePanel :default-size="45" :min-size="30" :max-size="45">
             <div class="h-full flex flex-col bg-muted/[0.03]">
               <div
                 class="shrink-0 flex items-center justify-between px-6 py-3 border-b border-border/40"
@@ -332,17 +332,9 @@
                     Activity & Comments
                   </h3>
                 </div>
-                <div class="flex items-center gap-2">
-                  <slot name="activity-actions" />
-                  <span
-                    v-if="activityComingSoon"
-                    class="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/35 border border-border/40 px-2 py-0.5 rounded-full"
-                  >
-                    Coming soon
-                  </span>
-                </div>
               </div>
-              <ScrollArea class="flex-1">
+              <ScrollArea class="h-full flex-1">
+                
                 <div class="px-6 py-5">
                   <slot name="activity">
                     <div class="space-y-4">

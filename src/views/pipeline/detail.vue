@@ -161,6 +161,10 @@
       </div>
     </template>
 
+    <template #activity>
+      <ActivityPanel v-if="pipeline?.id" entity-type="pipelines" :entity-id="pipeline.id" />
+    </template>
+
     <template #delete-body>
       <span>
         <strong class="font-semibold">{{ pipeline?.name }}</strong>
@@ -193,9 +197,10 @@
     MetaField,
   } from "@/components/common/UiDetail.vue";
   import UiDetail from "@/components/common/UiDetail.vue";
+  import EntityMediaCover from "@/components/media/EntityMediaCover.vue";
   import { notify } from "@/helpers/toast";
   import { usePipelineStore } from "@/stores/pipeline";
-import EntityMediaCover from "@/components/media/EntityMediaCover.vue";
+import ActivityPanel from "@/components/activity/ActivityPanel.vue";
 
   const route = useRoute();
   const router = useRouter();

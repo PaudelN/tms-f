@@ -126,6 +126,14 @@
       </div>
     </template>
 
+    <template #activity>
+      <ActivityPanel
+        v-if="workspace?.id"
+        entity-type="workspaces"
+        :entity-id="workspace.id"
+      />
+    </template>
+
     <template #delete-body>
       <span>
         <strong class="font-semibold">{{ workspace?.name }}</strong>
@@ -161,6 +169,7 @@
     Trash2,
     User,
   } from "lucide-vue-next";
+import ActivityPanel from "@/components/activity/ActivityPanel.vue";
 
   const route = useRoute();
   const router = useRouter();

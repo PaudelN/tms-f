@@ -107,6 +107,14 @@
       </div>
     </template>
 
+    <template #activity>
+      <ActivityPanel
+        v-if="pipelineStage?.id"
+        entity-type="pipeline_stages"
+        :entity-id="pipelineStage.id"
+      />
+    </template>
+
     <template #delete-body>
       <span>
         <strong class="font-semibold">{{ stage?.display_label }}</strong>
@@ -143,10 +151,12 @@
   import UiDetail from "@/components/common/UiDetail.vue";
   import { notify } from "@/helpers/toast";
   import { usePipelineStageStore } from "@/stores/pipelineStages";
+import ActivityPanel from "@/components/activity/ActivityPanel.vue";
 
   const route = useRoute();
   const router = useRouter();
   const stageStore = usePipelineStageStore();
+  const pipelineStage = computed(() => stageStore.activeStage);
 
   const deleteModalOpen = ref(false);
   const deleteLoading = ref(false);

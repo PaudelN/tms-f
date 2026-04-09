@@ -1,5 +1,5 @@
 <template>
-  <div class="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
+  <div class="min-h-0 flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
     <button
       v-for="cat in ACTIVITY_CATEGORIES"
       :key="cat.value"
